@@ -1,78 +1,61 @@
-# cool-admin [vue3 - ts - vite]
+# Phoenix Admin Vue
 
-<p align="center">
-  <a href="https://show.cool-admin.com/" target="blank"><img src="https://admin.cool-js.com/logo.png" width="200" alt="cool-admin Logo" /></a>
-</p>
+Phoenix Admin Host 的前端宿主。仓库以 Cool Admin Vue `8.x` 为固定基线，保留经典管理界面，并逐步接入 Phoenix Wing 的 Ribbon 工作台能力。
 
-<p align="center">cool-admin 一个很酷的后台权限管理系统，开源免费，模块化、插件化、极速开发 CRUD，方便快速构建迭代后台管理系统， 到<a href="https://cool-js.com" target="_blank">文档</a> 进一步了解</p>
+> 本仓库是 PhoenixWing 维护的 MIT 分叉，不是 Cool Admin 官方发行物。原 Cool Admin 版权、MIT 许可和 Git 历史完整保留。
 
-<p align="center">
-    <a href="https://github.com/cool-team-official/cool-admin-vue/blob/master/LICENSE" target="_blank"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="GitHub license" />
-    <a href=""><img src="https://img.shields.io/github/package-json/v/cool-team-official/cool-admin-vue?style=flat-square" alt="GitHub tag"></a>
-    <img src="https://img.shields.io/github/last-commit/cool-team-official/cool-admin-vue?style=flat-square" alt="GitHub tag"></a>
-</p>
+## 当前阶段
 
-## 特性
+- `classic`：保留上游侧栏、顶栏、路由、页签与 KeepAlive，作为兼容和回退基线。
+- `workbench`：已使用 Phoenix Wing 0.5.1 组合 Ribbon、共享页签状态、Primary、Properties、Log 与 Footer。
+- `hybrid`：系统管理页使用经典壳，带 `route.meta.pahShell = 'workbench'` 的业务路由使用工作台壳。
+- Open Issue 与 Function 暂不迁入；首期只预留编译期模块边界，不实现运行时热插件。
 
-Ai时代，很多老旧的框架已经无法满足现代化的开发需求，Cool-Admin开发了一系列的功能，让开发变得更简单、更快速、更高效。
+Ribbon 菜单映射优先复用现有菜单树：Cool 一级菜单作为“模块”，模块内部目录映射 Ribbon Group，直属叶子菜单按稳定顺序自动分组，每组默认不超过 5 项。Phoenix 宿主再通过编译期适配层把模块组合为 2–3 个“大组”；当前默认是“系统与用户”“数据与扩展”“开发与示例”。未配置的新模块安全归入“其他模块”，首期不新增菜单分组表。
 
-- **Ai编码**：通过微调大模型学习框架特有写法，实现简单功能从Api接口到前端页面的一键生成
-- **流程编排**：通过拖拽编排方式，即可实现类似像智能客服这样的功能
-- **模块化**：代码是模块化的，清晰明了，方便维护
-- **插件化**：插件化的设计，可以通过安装插件的方式扩展如：支付、短信、邮件等功能
+通过 `.env` 的 `VITE_PAH_SHELL_MODE` 选择 `classic`、`workbench` 或 `hybrid`；当前开发基线默认展示 `workbench`。
 
-![](https://cool-show.oss-cn-shanghai.aliyuncs.com/admin/flow.png)
+工作台头部的“宿主设置”可在 `Ribbon 工作台` 与 `大分组侧栏` 之间即时切换。两种样式共享同一份权限过滤后的菜单树，选择保存在浏览器本地；`.env` 的 `VITE_PAH_NAVIGATION_STYLE` 只负责首次默认值，支持 `ribbon` 或 `grouped-sidebar`，未知值安全回退为 Ribbon。
 
-## 地址
+大分组侧栏使用单一 TreeView，层级为“大组 → 模块 → 功能页面”，不保留额外图标轨道。大组和模块首次默认展开；各节点展开状态由 Pinia 保存到 `pah.groupedNavigation.v1`，刷新后继续沿用。当前路由面包屑统一显示在 Footer。未来 Open Issue、Function 等编译期模块既可声明独立大组，也可配置到已有大组；运行时动态插件不在本阶段范围内。
 
-- [📌 v7 版本](https://github.com/cool-team-official/cool-admin-vue/tree/7.x)
+Primary、Properties、Log 与 Ribbon 紧凑模式使用带版本号的 `pah.workbenchPreferences.v1` 本地偏好。损坏或缺失字段逐项回退，宿主设置可一键恢复 `.env` 导航默认值和安全面板布局；这些偏好只控制呈现，不扩大菜单或 API 权限。
 
-- [🌐 码云仓库](https://gitee.com/cool-team-official/cool-admin-vue)
+## 仓库关系
 
-## 视频教程
+| 项目 | 地址/版本 |
+|---|---|
+| Phoenix 仓库 | <https://gitee.com/phoenixwing/phoenix-admin-vue> |
+| Cool Admin 上游 | <https://gitee.com/cool-team-official/cool-admin-vue> |
+| 固定基线 | `8.x` / `a2d4ee9bbfd6bfce880382f0bf6f8dd8f3397a2d` |
+| 配套后端 | <https://gitee.com/phoenixwing/phoenix-admin-node> |
 
-[官方 B 站视频教程](https://www.bilibili.com/video/BV1j1421R7aB)
+详细同步规则见 [UPSTREAM.md](UPSTREAM.md)。
 
-## 演示
+## 分支
 
-[https://show.cool-admin.com](https://show.cool-admin.com)
+- `master`：稳定发行线和默认克隆分支。
+- `develop`：日常集成分支。
+- `upstream-sync/*`：固定 SHA 的上游同步分支。
 
-账户：admin，密码：123456
-
-<img src="https://cool-show.oss-cn-shanghai.aliyuncs.com/admin/home-mini.png" alt="Admin Home" ></a>
-
-## 项目后端
-
-[https://github.com/cool-team-official/cool-admin-midway](https://github.com/cool-team-official/cool-admin-midway)
-
-或
-
-[https://gitee.com/cool-team-official/cool-admin-midway](https://gitee.com/cool-team-official/cool-admin-midway)
-
-或
-
-[https://gitcode.com/cool_team/cool-admin-midway](https://gitcode.com/cool_team/cool-admin-midway)
-
-## 微信群
-
-<img width="260" src="https://cool-show.oss-cn-shanghai.aliyuncs.com/admin/wechat.jpeg" alt="Admin Wechat"></a>
-
-## 安装项目依赖
-
-推荐使用 `pnpm`：
+## 本地开发
 
 ```shell
-pnpm i
-```
-
-## 运行应用程序
-
-安装过程完成后，运行以下命令启动服务。您可以在浏览器中预览网站 [http://localhost:9000](http://localhost:9000)
-
-```shell
+pnpm install
 pnpm dev
 ```
 
-### 低价服务器
+默认开发地址为 <http://localhost:9000>，开发代理连接 Phoenix Admin Node
+<http://localhost:8101>。构建与检查：
 
-[阿里云、腾讯云、华为云低价云服务器，不限新老](https://cool-js.com/service/cloud)
+```shell
+pnpm type-check
+pnpm test
+pnpm build
+```
+
+## 命名与许可
+
+Phoenix Admin Host 新增的源码、组件和类型统一使用 `Pah*` 前缀；Phoenix Wing 的公开符号继续使用其自身 `Pnw*` 前缀。数据库标识使用 SQL 安全的 `pah_` 前缀，不使用连字符。
+
+本仓库及仓内新增 `Pah*` 代码统一采用 MIT。根 [LICENSE](LICENSE) 保留上游原始版权和许可文本，Phoenix 分叉关系及第三方依赖边界见 [LICENSING.md](LICENSING.md) 与 [NOTICE](NOTICE)。

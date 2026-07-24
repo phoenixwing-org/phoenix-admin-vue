@@ -1,72 +1,110 @@
 <template>
 	<div class="page-login">
-		<div class="box">
-			<div class="logo">
-				<div class="icon">
-					<img src="/logo.png" alt="Logo" />
+		<section class="pah-login-hero" aria-label="Phoenix Admin Host">
+			<div class="pah-aurora pah-aurora--warm"></div>
+			<div class="pah-aurora pah-aurora--cool"></div>
+			<div class="pah-grid"></div>
+
+			<div class="pah-hero-content">
+				<div class="pah-mark-stage" aria-hidden="true">
+					<div class="pah-orbit pah-orbit--outer"></div>
+					<div class="pah-orbit pah-orbit--inner"></div>
+					<span class="pah-spark pah-spark--one"></span>
+					<span class="pah-spark pah-spark--two"></span>
+					<span class="pah-spark pah-spark--three"></span>
+					<img src="/pah-phoenixwing-mark.svg" alt="" />
 				</div>
 
-				<span>{{ app.info.name }}</span>
+				<p class="pah-eyebrow"><span></span> PHOENIXWING OPEN SOURCE</p>
+				<h1>Phoenix Admin Host</h1>
+				<p class="pah-hero-copy">
+					面向 Phoenix 业务模块的统一管理工作台。保留成熟权限底座，提供可切换的 Ribbon
+					与大分组侧栏。
+				</p>
+
+				<ul class="pah-capabilities" aria-label="宿主能力">
+					<li><span>01</span> Ribbon 工作台</li>
+					<li><span>02</span> 大分组侧栏</li>
+					<li><span>03</span> 统一权限与审计</li>
+				</ul>
 			</div>
 
-			<p class="desc">{{ $t('快速开发后台权限管理系统') }}</p>
-
-			<div class="form">
-				<el-form label-position="top" class="form" :disabled="saving">
-					<el-form-item :label="$t('用户名')">
-						<el-input
-							v-model="form.username"
-							:placeholder="$t('请输入用户名')"
-							maxlength="20"
-						/>
-					</el-form-item>
-
-					<el-form-item :label="$t('密码')">
-						<el-input
-							v-model="form.password"
-							type="password"
-							:placeholder="$t('请输入密码')"
-							maxlength="20"
-							show-password
-							autocomplete="new-password"
-						/>
-					</el-form-item>
-
-					<el-form-item :label="$t('验证码')">
-						<el-input
-							v-model="form.verifyCode"
-							:placeholder="$t('验证码')"
-							maxlength="4"
-							@keyup.enter="toLogin"
-						>
-							<template #suffix>
-								<pic-captcha
-									:ref="setRefs('picCaptcha')"
-									v-model="form.captchaId"
-									@change="
-										() => {
-											form.verifyCode = '';
-										}
-									"
-								/>
-							</template>
-						</el-input>
-					</el-form-item>
-
-					<div class="op">
-						<el-button type="primary" :loading="saving" @click="toLogin">
-							{{ $t('登录') }}
-						</el-button>
-					</div>
-				</el-form>
+			<div class="pah-origin">
+				<span>PHOENIX ADMIN / 8.x</span>
+				<span class="pah-origin-line"></span>
+				<span>POSTGRESQL READY</span>
 			</div>
-		</div>
+		</section>
 
-		<div class="bg">
-			<cl-svg name="bg"></cl-svg>
-		</div>
+		<section class="pah-login-panel">
+			<div class="pah-login-card">
+				<div class="pah-mobile-brand">
+					<img src="/pah-phoenixwing-mark.svg" alt="" />
+					<strong>Phoenix Admin</strong>
+				</div>
 
-		<a href="https://cool-js.com" class="copyright"> Copyright © COOL </a>
+				<p class="pah-console-label"><span></span> SECURE ADMIN CONSOLE</p>
+				<h2>欢迎回来</h2>
+				<p class="pah-login-intro">登录 Phoenix Admin Host，继续管理您的工作区。</p>
+
+				<div class="form">
+					<el-form label-position="top" class="form" :disabled="saving">
+						<el-form-item :label="$t('用户名')">
+							<el-input
+								v-model="form.username"
+								:placeholder="$t('请输入用户名')"
+								maxlength="20"
+							/>
+						</el-form-item>
+
+						<el-form-item :label="$t('密码')">
+							<el-input
+								v-model="form.password"
+								type="password"
+								:placeholder="$t('请输入密码')"
+								maxlength="20"
+								show-password
+								autocomplete="new-password"
+							/>
+						</el-form-item>
+
+						<el-form-item :label="$t('验证码')">
+							<el-input
+								v-model="form.verifyCode"
+								:placeholder="$t('验证码')"
+								maxlength="4"
+								@keyup.enter="toLogin"
+							>
+								<template #suffix>
+									<pic-captcha
+										:ref="setRefs('picCaptcha')"
+										v-model="form.captchaId"
+										@change="
+											() => {
+												form.verifyCode = '';
+											}
+										"
+									/>
+								</template>
+							</el-input>
+						</el-form-item>
+
+						<div class="op">
+							<el-button type="primary" :loading="saving" @click="toLogin">
+								{{ $t('登录') }}
+							</el-button>
+						</div>
+					</el-form>
+				</div>
+
+				<div class="pah-fork-note">
+					<span>MIT LICENSE</span>
+					<a href="https://gitee.com/phoenixwing/phoenix-admin-vue" target="_blank">
+						PhoenixWing 维护分叉 · 基于 Cool Admin 8.x
+					</a>
+				</div>
+			</div>
+		</section>
 	</div>
 </template>
 
@@ -148,160 +186,425 @@ async function toLogin() {
 </script>
 
 <style lang="scss" scoped>
-$color: #2c3142;
-
 .page-login {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	height: 100%;
+	display: grid;
+	grid-template-columns: minmax(460px, 1.08fr) minmax(420px, 0.92fr);
 	width: 100%;
+	height: 100%;
+	min-height: 620px;
+	overflow: hidden;
+	background: #f8fafc;
+	color: #111827;
+}
+
+.pah-login-hero {
 	position: relative;
-	background-color: #fff;
-	color: $color;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	padding: 64px clamp(42px, 7vw, 112px);
+	background: #09131f;
+	color: #f8fafc;
+	isolation: isolate;
+}
 
-	.bg {
-		position: absolute;
-		left: 0;
-		top: 0;
-		height: 100%;
-		width: 90%;
-		pointer-events: none;
-		transform: rotate(180deg) scaleY(-1);
+.pah-grid {
+	position: absolute;
+	inset: 0;
+	z-index: -2;
+	background-image:
+		linear-gradient(rgb(255 255 255 / 4%) 1px, transparent 1px),
+		linear-gradient(90deg, rgb(255 255 255 / 4%) 1px, transparent 1px);
+	background-size: 48px 48px;
+	mask-image: linear-gradient(to bottom, #000 20%, transparent 90%);
+}
 
-		.cl-svg {
-			height: 100%;
-			width: 100%;
-		}
+.pah-aurora {
+	position: absolute;
+	z-index: -1;
+	width: 520px;
+	height: 520px;
+	border-radius: 50%;
+	filter: blur(90px);
+	opacity: 0.22;
+	animation: pah-aurora 11s ease-in-out infinite alternate;
+
+	&--warm {
+		left: -240px;
+		bottom: -220px;
+		background: #ff5b21;
 	}
 
-	.copyright {
+	&--cool {
+		right: -280px;
+		top: -220px;
+		background: #15d8dc;
+		animation-delay: -4s;
+	}
+}
+
+.pah-hero-content {
+	width: min(580px, 100%);
+}
+
+.pah-mark-stage {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 190px;
+	height: 190px;
+	margin-bottom: 34px;
+
+	img {
+		position: relative;
+		z-index: 2;
+		width: 126px;
+		height: 126px;
+		filter: drop-shadow(0 20px 30px rgb(255 91 33 / 22%));
+		animation: pah-float 4.8s ease-in-out infinite;
+	}
+}
+
+.pah-orbit {
+	position: absolute;
+	border: 1px solid rgb(255 255 255 / 15%);
+	border-radius: 50%;
+	animation: pah-spin 14s linear infinite;
+
+	&::after {
 		position: absolute;
-		bottom: 15px;
-		left: 0;
-		text-align: center;
-		width: 100%;
-		color: var(--el-color-info);
-		font-size: 14px;
-		user-select: none;
+		top: -3px;
+		left: 50%;
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: #24dce0;
+		box-shadow: 0 0 12px #24dce0;
+		content: '';
 	}
 
-	.box {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		height: 100%;
-		width: 50%;
-		position: absolute;
-		right: 0;
-		top: 0;
-		z-index: 9;
+	&--outer {
+		inset: 0;
+	}
 
-		.logo {
-			height: 50px;
-			margin-bottom: 20px;
-			display: flex;
-			align-items: center;
-			user-select: none;
+	&--inner {
+		inset: 18px;
+		border-style: dashed;
+		animation-direction: reverse;
+		animation-duration: 10s;
 
-			.icon {
-				border-radius: 8px;
-				padding: 5px;
-				margin-right: 10px;
-				background-color: $color;
-
-				img {
-					height: 36px;
-				}
-			}
-
-			span {
-				font-size: 38px;
-				font-weight: bold;
-				line-height: 1;
-				letter-spacing: 3px;
-			}
-		}
-
-		.desc {
-			font-size: 15px;
-			letter-spacing: 1px;
-			margin-bottom: 50px;
-			user-select: none;
-			max-width: 80%;
-			text-align: center;
-		}
-
-		.form {
-			width: 300px;
-
-			:deep(.el-form) {
-				.el-form-item {
-					margin-bottom: 20px;
-				}
-
-				.el-form-item__label {
-					color: var(--el-color-info);
-					padding-left: 5px;
-					user-select: none;
-				}
-
-				.el-input {
-					box-sizing: border-box;
-					font-size: 15px;
-					border: 0;
-					border-radius: 0;
-					background-color: #f8f8f8;
-					padding: 0 5px;
-					border-radius: 8px;
-					position: relative;
-
-					&__wrapper {
-						box-shadow: none;
-						background-color: transparent;
-					}
-
-					&__inner {
-						height: 45px;
-						color: #333;
-					}
-
-					&:-webkit-autofill {
-						-webkit-box-shadow: 0 0 0 1000px #f8f8f8 inset;
-						box-shadow: 0 0 0 1000px #f8f8f8 inset;
-					}
-				}
-			}
-
-			:deep(.pic-captcha) {
-				position: absolute;
-				right: -5px;
-				top: 0;
-			}
-		}
-
-		.op {
-			display: flex;
-			justify-content: center;
-			margin-top: 40px;
-
-			:deep(.el-button) {
-				height: 45px;
-				width: 100%;
-				font-size: 16px;
-				border-radius: 8px;
-				letter-spacing: 1px;
-			}
+		&::after {
+			background: #ff8a1f;
+			box-shadow: 0 0 12px #ff8a1f;
 		}
 	}
 }
 
-@media screen and (max-width: 1024px) {
-	.page-login {
-		.box {
-			width: 100%;
+.pah-spark {
+	position: absolute;
+	width: 4px;
+	height: 4px;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 0 12px #fff;
+	animation: pah-pulse 2.4s ease-in-out infinite;
+
+	&--one {
+		left: 14px;
+		top: 54px;
+	}
+
+	&--two {
+		right: 18px;
+		bottom: 38px;
+		animation-delay: -0.8s;
+	}
+
+	&--three {
+		right: 35px;
+		top: 25px;
+		animation-delay: -1.6s;
+	}
+}
+
+.pah-eyebrow,
+.pah-console-label {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	margin: 0;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.18em;
+
+	span {
+		width: 26px;
+		height: 2px;
+		background: linear-gradient(90deg, #ff6b18, #26dce0);
+	}
+}
+
+.pah-hero-content h1 {
+	margin: 14px 0 20px;
+	font-size: clamp(40px, 4vw, 56px);
+	font-weight: 680;
+	line-height: 1.04;
+	letter-spacing: -0.045em;
+}
+
+.pah-hero-copy {
+	max-width: 540px;
+	margin: 0;
+	color: #a9b7c8;
+	font-size: 15px;
+	line-height: 1.8;
+}
+
+.pah-capabilities {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 10px;
+	margin: 38px 0 0;
+	padding: 0;
+
+	li {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding: 14px;
+		border: 1px solid rgb(255 255 255 / 9%);
+		border-radius: 10px;
+		background: rgb(255 255 255 / 4%);
+		color: #d8e0ea;
+		font-size: 11px;
+		list-style: none;
+		backdrop-filter: blur(8px);
+
+		span {
+			color: #57dfe2;
+			font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+			font-size: 10px;
 		}
+	}
+}
+
+.pah-origin {
+	position: absolute;
+	right: clamp(32px, 6vw, 88px);
+	bottom: 28px;
+	left: clamp(32px, 6vw, 88px);
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	color: #6f8194;
+	font-size: 9px;
+	letter-spacing: 0.12em;
+}
+
+.pah-origin-line {
+	flex: 1;
+	height: 1px;
+	background: rgb(255 255 255 / 9%);
+}
+
+.pah-login-panel {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 48px clamp(36px, 6vw, 88px);
+	background: radial-gradient(circle at 100% 0%, rgb(21 216 220 / 8%), transparent 35%), #f8fafc;
+}
+
+.pah-login-card {
+	width: min(390px, 100%);
+}
+
+.pah-mobile-brand {
+	display: none;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 34px;
+
+	img {
+		width: 34px;
+		height: 34px;
+	}
+}
+
+.pah-console-label {
+	color: #64748b;
+}
+
+.pah-login-card h2 {
+	margin: 14px 0 8px;
+	font-size: 32px;
+	letter-spacing: -0.03em;
+}
+
+.pah-login-intro {
+	margin: 0 0 34px;
+	color: #64748b;
+	font-size: 13px;
+}
+
+.form {
+	width: 100%;
+
+	:deep(.el-form-item) {
+		margin-bottom: 19px;
+	}
+
+	:deep(.el-form-item__label) {
+		height: auto;
+		padding: 0 0 7px 1px;
+		color: #475569;
+		font-size: 12px;
+		font-weight: 600;
+		line-height: 1.2;
+	}
+
+	:deep(.el-input__wrapper) {
+		min-height: 48px;
+		padding: 0 14px;
+		border: 1px solid #dbe3ec;
+		border-radius: 9px;
+		background: #fff;
+		box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
+		transition:
+			border-color 160ms ease,
+			box-shadow 160ms ease;
+
+		&.is-focus {
+			border-color: #198ee8;
+			box-shadow: 0 0 0 3px rgb(25 142 232 / 10%);
+		}
+	}
+
+	:deep(.el-input__inner) {
+		color: #172033;
+		font-size: 14px;
+	}
+
+	:deep(.pic-captcha) {
+		position: absolute;
+		right: -12px;
+		top: 0;
+	}
+}
+
+.op {
+	margin-top: 30px;
+
+	:deep(.el-button) {
+		width: 100%;
+		height: 48px;
+		border: 0;
+		border-radius: 9px;
+		background: linear-gradient(105deg, #126ec9 0%, #168fdd 55%, #14aeb8 100%);
+		box-shadow: 0 10px 20px rgb(20 124 197 / 18%);
+		font-size: 14px;
+		font-weight: 650;
+		letter-spacing: 0.08em;
+	}
+}
+
+.pah-fork-note {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-top: 36px;
+	padding-top: 18px;
+	border-top: 1px solid #e2e8f0;
+	font-size: 10px;
+
+	span {
+		padding: 3px 6px;
+		border: 1px solid #cbd5e1;
+		border-radius: 4px;
+		color: #64748b;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+	}
+
+	a {
+		color: #64748b;
+		text-decoration: none;
+
+		&:hover {
+			color: #168fdd;
+		}
+	}
+}
+
+@keyframes pah-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes pah-float {
+	0%,
+	100% {
+		transform: translateY(0) scale(1);
+	}
+	50% {
+		transform: translateY(-8px) scale(1.02);
+	}
+}
+
+@keyframes pah-pulse {
+	0%,
+	100% {
+		opacity: 0.35;
+		transform: scale(0.8);
+	}
+	50% {
+		opacity: 1;
+		transform: scale(1.4);
+	}
+}
+
+@keyframes pah-aurora {
+	to {
+		transform: translate3d(50px, -30px, 0) scale(1.12);
+	}
+}
+
+@media screen and (max-width: 980px) {
+	.page-login {
+		grid-template-columns: 1fr;
+		min-height: 100%;
+		overflow-y: auto;
+	}
+
+	.pah-login-hero {
+		display: none;
+	}
+
+	.pah-login-panel {
+		min-height: 100%;
+	}
+
+	.pah-mobile-brand {
+		display: flex;
+	}
+}
+
+@media screen and (max-width: 520px) {
+	.pah-login-panel {
+		align-items: flex-start;
+		padding: 40px 24px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pah-aurora,
+	.pah-mark-stage img,
+	.pah-orbit,
+	.pah-spark {
+		animation: none;
 	}
 }
 </style>

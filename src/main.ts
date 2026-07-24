@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import App from './App.vue';
 import { bootstrap } from './cool';
+import 'phoenix-wing/style.css';
 
 const app = createApp(App);
 
@@ -10,5 +11,5 @@ bootstrap(app)
 		app.mount('#app');
 	})
 	.catch(err => {
-		console.error('COOL-ADMIN 启动失败', err);
+		console.error('Phoenix Admin 启动失败', err);
 	});
