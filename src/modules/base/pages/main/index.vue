@@ -1,5 +1,9 @@
 <template>
-	<div class="app-layout" :class="{ 'is-collapse': app.isFold, 'is-full': app.isFull }">
+	<div
+		v-if="shellMode === 'classic'"
+		class="app-layout"
+		:class="{ 'is-collapse': app.isFold, 'is-full': app.isFull }"
+	>
 		<div class="app-layout__mask" @click="app.fold(true)"></div>
 
 		<div class="app-layout__left">
@@ -8,10 +12,17 @@
 
 		<div class="app-layout__right">
 			<topbar />
-			<process />
+			<Process />
 			<views />
 		</div>
 	</div>
+
+	<PahWorkbenchShell v-else :configured-mode="configuredShellMode">
+		<template #topbar>
+			<topbar />
+		</template>
+		<views />
+	</PahWorkbenchShell>
 </template>
 
 <script lang="ts" setup>
@@ -19,13 +30,20 @@ defineOptions({
 	name: 'app-layout'
 });
 
+import { computed } from 'vue';
 import { useBase } from '/$/base';
+import { useCool } from '/@/cool';
+import PahWorkbenchShell from '/@/pah/PahWorkbenchShell.vue';
+import { pahNormalizeShellMode, pahResolveShellMode } from '/@/pah/PahShellMode';
 import Topbar from './components/topbar.vue';
 import Slider from './components/slider.vue';
-import process from './components/process.vue';
+import Process from './components/process.vue';
 import Views from './components/views.vue';
 
 const { app } = useBase();
+const { route } = useCool();
+const configuredShellMode = pahNormalizeShellMode(import.meta.env.VITE_PAH_SHELL_MODE);
+const shellMode = computed(() => pahResolveShellMode(configuredShellMode, route.meta?.pahShell));
 </script>
 
 <style lang="scss" scoped>

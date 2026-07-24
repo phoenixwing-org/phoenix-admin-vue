@@ -1,6 +1,13 @@
 {
-	"name": "cool-admin-vue",
-	"version": "8.0.0",
+	"name": "phoenix-admin-vue",
+	"version": "8.0.0-phoenix.0",
+	"packageManager": "pnpm@10.15.1",
+	"description": "Phoenix Admin Host frontend maintained from Cool Admin Vue 8.x",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://gitee.com/phoenixwing/phoenix-admin-vue.git"
+	},
 	"type": "module",
 	"scripts": {
 		"dev": "vite --host",
@@ -8,6 +15,8 @@
 		"build-static": "vite build --mode static",
 		"build-demo": "vite build --mode demo",
 		"preview": "vite preview",
+		"test": "vitest run src/pah",
+		"verify": "pnpm run test && pnpm run type-check && pnpm run build",
 		"type-check": "vue-tsc --build --force",
 		"lint": "eslint . --fix",
 		"format": "prettier --write src/"
@@ -29,6 +38,7 @@
 		"marked": "^14.1.3",
 		"mitt": "^3.0.1",
 		"nprogress": "^0.2.0",
+		"phoenix-wing": "0.5.1",
 		"pinia": "^2.3.1",
 		"store": "^2.0.12",
 		"vue": "^3.5.13",
@@ -70,6 +80,7 @@
 		"vite": "^5.4.14",
 		"vite-plugin-compression": "^0.5.1",
 		"vite-plugin-vue-devtools": "^7.7.1",
+		"vitest": "^3.2.7",
 		"vue-tsc": "^2.2.0"
 	}
 }
