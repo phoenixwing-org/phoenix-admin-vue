@@ -23,6 +23,11 @@ export interface PahRibbonTab {
 	id: string;
 	label: string;
 	groups: PahRibbonGroup[];
+	/** Phoenix Admin 菜单资源图标；由 Pah 适配成 Wing 可渲染组件。 */
+	icon?: string;
+	/** 可配置大分组使用的稳定目标；普通菜单默认是 menu:<id>。 */
+	targetKey?: string;
+	menuId?: number;
 }
 
 export interface PahMenuTrailItem {
@@ -114,7 +119,8 @@ function pahCreateGroups(
 
 export function pahBuildRibbonTabs(
 	menuRoots: Menu.List,
-	groupSize = PAH_RIBBON_GROUP_SIZE
+	groupSize = PAH_RIBBON_GROUP_SIZE,
+	targetKeysByMenuId: Record<number, string> = {}
 ): PahRibbonTab[] {
 	return pahOrdered(menuRoots)
 		.filter(pahIsVisible)
@@ -125,6 +131,9 @@ export function pahBuildRibbonTabs(
 				return {
 					id: tabId,
 					label: root.meta?.label || root.name,
+					icon: root.icon,
+					menuId: root.id,
+					targetKey: targetKeysByMenuId[root.id] || `menu:${root.id}`,
 					groups: pahCreateGroups(
 						tabId,
 						root.meta?.label || root.name,
@@ -156,6 +165,9 @@ export function pahBuildRibbonTabs(
 			return {
 				id: tabId,
 				label: root.meta?.label || root.name,
+				icon: root.icon,
+				menuId: root.id,
+				targetKey: targetKeysByMenuId[root.id] || `menu:${root.id}`,
 				groups
 			};
 		})

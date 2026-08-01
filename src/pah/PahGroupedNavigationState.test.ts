@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { pahNormalizeGroupedNavigationSnapshot } from './PahGroupedNavigationState';
+import {
+	pahExpandedNavigationNodeIds,
+	pahNormalizeGroupedNavigationSnapshot,
+	pahSetExpandedNavigationNodeIds
+} from './PahGroupedNavigationState';
 
 describe('PahGroupedNavigationState', () => {
 	it('首次使用没有分组状态', () => {
@@ -31,5 +35,22 @@ describe('PahGroupedNavigationState', () => {
 			version: 1,
 			expanded: { valid: true }
 		});
+	});
+
+	it('把 Wing 受控展开 ID 写回完整分支状态', () => {
+		const snapshot = pahSetExpandedNavigationNodeIds(
+			{ version: 1, expanded: { stale: false } },
+			['management', 'system'],
+			['system']
+		);
+
+		expect(snapshot).toEqual({
+			version: 1,
+			expanded: { stale: false, management: false, system: true }
+		});
+		expect(pahExpandedNavigationNodeIds(snapshot, ['management', 'system', 'new'])).toEqual([
+			'system',
+			'new'
+		]);
 	});
 });

@@ -32,6 +32,7 @@ describe('PahRibbonMenuAdapter', () => {
 		]);
 
 		expect(tabs).toHaveLength(1);
+		expect(tabs[0].icon).toBe('menu');
 		expect(tabs[0].groups[0].label).toBe('权限');
 		expect(tabs[0].groups[0].items.map(item => item.label)).toEqual(['用户', '角色']);
 	});

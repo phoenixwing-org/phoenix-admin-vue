@@ -19,7 +19,7 @@
 
 	<PahWorkbenchShell v-else :configured-mode="configuredShellMode">
 		<template #topbar>
-			<topbar />
+			<topbar pah-mode />
 		</template>
 		<views />
 	</PahWorkbenchShell>

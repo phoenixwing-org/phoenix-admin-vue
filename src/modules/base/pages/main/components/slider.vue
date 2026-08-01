@@ -6,7 +6,7 @@
 		}"
 	>
 		<div class="app-slider__logo">
-			<img src="/logo.png" />
+			<img src="/pah-phoenixwing-mark.svg" alt="Phoenix Admin" />
 			<span v-if="!app.isFold || browser.isMini">{{ app.info.name }}</span>
 		</div>
 

@@ -11,7 +11,7 @@ function module(id: string, label: string): PahRibbonTab {
 }
 
 describe('PahModuleGroupAdapter', () => {
-	it('默认把五个 Cool 模块归入三个 Phoenix 大组', () => {
+	it('默认把五个 Cool 模块归入两个紧凑的 Phoenix 大组', () => {
 		const groups = pahBuildModuleGroups([
 			module('system', '系统管理'),
 			module('tutorial', '框架教程'),
@@ -20,17 +20,23 @@ describe('PahModuleGroupAdapter', () => {
 			module('extension', '扩展管理')
 		]);
 
-		expect(groups.map(group => group.label)).toEqual([
-			'系统与用户',
-			'数据与扩展',
-			'开发与示例'
-		]);
+		expect(groups.map(group => group.label)).toEqual(['管理', '开发']);
 		expect(groups.map(group => group.modules.map(item => item.label))).toEqual([
-			['系统管理', '用户管理'],
-			['数据管理', '扩展管理'],
+			['系统管理', '用户管理', '数据管理', '扩展管理'],
 			['框架教程']
 		]);
 		expect(PAH_DEFAULT_MODULE_GROUPS).toHaveLength(3);
+	});
+
+	it('不固化任何业务插件候选，未配置模块安全进入其他模块', () => {
+		const groups = pahBuildModuleGroups([
+			module('customer-workbench', '客户工作台'),
+			module('customer-governance', '客户治理')
+		]);
+
+		expect(groups).toHaveLength(1);
+		expect(groups[0].label).toBe('其他模块');
+		expect(groups[0].modules.map(item => item.label)).toEqual(['客户工作台', '客户治理']);
 	});
 
 	it('允许后续用编译期配置重新组合模块', () => {
@@ -43,6 +49,34 @@ describe('PahModuleGroupAdapter', () => {
 		);
 
 		expect(groups[0].modules.map(item => item.label)).toEqual(['用户管理', '数据管理']);
+	});
+
+	it('运行时稳定目标键优先于模块名称，可将任意插件模块移动到任意大分组', () => {
+		const definitions: PahModuleGroupDefinition[] = [
+			{
+				id: 'business',
+				label: '业务',
+				moduleTargetKeys: ['plugin:example-plugin:example-plugin-workbench']
+			},
+			{
+				id: 'management',
+				label: '管理',
+				moduleTargetKeys: ['plugin:example-plugin:example-plugin-governance']
+			}
+		];
+		const workbench = module('workbench', '示例工作台');
+		workbench.targetKey = 'plugin:example-plugin:example-plugin-workbench';
+		const governance = module('governance', '示例治理');
+		governance.targetKey = 'plugin:example-plugin:example-plugin-governance';
+
+		const groups = pahBuildModuleGroups([workbench, governance], definitions);
+
+		expect(
+			groups.map(group => [group.label, group.modules.map(module => module.label)])
+		).toEqual([
+			['业务', ['示例工作台']],
+			['管理', ['示例治理']]
+		]);
 	});
 
 	it('未配置的新模块进入其他模块且不会重复分配', () => {

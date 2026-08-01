@@ -60,6 +60,15 @@ export default ({ mode }: ConfigEnv): UserConfig => {
 			}
 		},
 		resolve: {
+			// 外部开发插件的 peer dependencies 始终复用 Host 单例。
+			dedupe: [
+				'vue',
+				'vue-router',
+				'pinia',
+				'element-plus',
+				'@element-plus/icons-vue',
+				'phoenix-wing'
+			],
 			alias: {
 				'/@': toPath('./src'),
 				'/$': toPath('./src/modules'),

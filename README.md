@@ -7,9 +7,10 @@ Phoenix Admin Host 的前端宿主。仓库以 Cool Admin Vue `8.x` 为固定基
 ## 当前阶段
 
 - `classic`：保留上游侧栏、顶栏、路由、页签与 KeepAlive，作为兼容和回退基线。
-- `workbench`：已使用 Phoenix Wing 0.5.1 组合 Ribbon、共享页签状态、Primary、Properties、Log 与 Footer。
+- `workbench`：已使用 Phoenix Wing 0.6.0 组合 Ribbon、共享页签状态、Primary、Secondary、Bottom 与 Footer。
 - `hybrid`：系统管理页使用经典壳，带 `route.meta.pahShell = 'workbench'` 的业务路由使用工作台壳。
-- Open Issue 与 Function 暂不迁入；首期只预留编译期模块边界，不实现运行时热插件。
+- 已增加通用 Pah 业务插件管理页，可登记任意独立插件提供的 manifest，并验证安装、启停和默认保留数据的卸载流程。
+- 业务插件与 Host 分 Git 开发；本仓库不归档产品源码或候选 manifest，也不实现在线上传或运行时热加载。
 
 Ribbon 菜单映射优先复用现有菜单树：Cool 一级菜单作为“模块”，模块内部目录映射 Ribbon Group，直属叶子菜单按稳定顺序自动分组，每组默认不超过 5 项。Phoenix 宿主再通过编译期适配层把模块组合为 2–3 个“大组”；当前默认是“系统与用户”“数据与扩展”“开发与示例”。未配置的新模块安全归入“其他模块”，首期不新增菜单分组表。
 
@@ -17,20 +18,24 @@ Ribbon 菜单映射优先复用现有菜单树：Cool 一级菜单作为“模�
 
 工作台头部的“宿主设置”可在 `Ribbon 工作台` 与 `大分组侧栏` 之间即时切换。两种样式共享同一份权限过滤后的菜单树，选择保存在浏览器本地；`.env` 的 `VITE_PAH_NAVIGATION_STYLE` 只负责首次默认值，支持 `ribbon` 或 `grouped-sidebar`，未知值安全回退为 Ribbon。
 
-大分组侧栏使用单一 TreeView，层级为“大组 → 模块 → 功能页面”，不保留额外图标轨道。大组和模块首次默认展开；各节点展开状态由 Pinia 保存到 `pah.groupedNavigation.v1`，刷新后继续沿用。当前路由面包屑统一显示在 Footer。未来 Open Issue、Function 等编译期模块既可声明独立大组，也可配置到已有大组；运行时动态插件不在本阶段范围内。
+大分组侧栏使用单一 TreeView，层级为“大组 → 模块 → 功能页面”，不保留额外图标轨道。大组和模块首次默认展开；各节点展开状态由 Pinia 保存到 `pah.groupedNavigation.v1`，刷新后继续沿用。当前路由面包屑统一显示在 Footer。独立业务插件既可声明建议大组，也可由管理员配置到已有大组；运行时动态插件不在本阶段范围内。
 
-Primary、Properties、Log 与 Ribbon 紧凑模式使用带版本号的 `pah.workbenchPreferences.v1` 本地偏好。损坏或缺失字段逐项回退，宿主设置可一键恢复 `.env` 导航默认值和安全面板布局；这些偏好只控制呈现，不扩大菜单或 API 权限。
+导航呈现、Primary/Secondary/Bottom、Footer 与 Ribbon 外观使用带版本号的 `pah.workbenchPreferences.v3` 本地偏好。损坏或缺失字段逐项回退，宿主设置可一键恢复 `.env` 导航默认值和安全面板布局；这些偏好只控制呈现，不扩大菜单或 API 权限。
 
 ## 仓库关系
 
-| 项目 | 地址/版本 |
-|---|---|
-| Phoenix 仓库 | <https://gitee.com/phoenixwing/phoenix-admin-vue> |
-| Cool Admin 上游 | <https://gitee.com/cool-team-official/cool-admin-vue> |
-| 固定基线 | `8.x` / `a2d4ee9bbfd6bfce880382f0bf6f8dd8f3397a2d` |
-| 配套后端 | <https://gitee.com/phoenixwing/phoenix-admin-node> |
+| 项目              | 地址/版本                                             |
+| ----------------- | ----------------------------------------------------- |
+| Phoenix 发行版    | `0.1.0`                                               |
+| Phoenix Wing      | Registry `phoenix-wing@0.6.0`                         |
+| Phoenix 仓库      | <https://gitee.com/phoenixwing/phoenix-admin-vue>     |
+| Cool Admin 上游   | <https://gitee.com/cool-team-official/cool-admin-vue> |
+| Cool 兼容固定基线 | `8.x` / `a2d4ee9bbfd6bfce880382f0bf6f8dd8f3397a2d`    |
+| 配套后端          | <https://gitee.com/phoenixwing/phoenix-admin-node>    |
 
 详细同步规则见 [UPSTREAM.md](UPSTREAM.md)。
+
+Phoenix Admin 使用独立 SemVer，不跟随 Cool Admin 的产品版本号。Cool Admin 仅作为兼容与上游同步基线记录；Phoenix 的后续版本按自身 Host API、Pah 插件契约和用户可见能力演进。
 
 ## 分支
 
@@ -47,6 +52,9 @@ pnpm dev
 
 默认开发地址为 <http://localhost:9000>，开发代理连接 Phoenix Admin Node
 <http://localhost:8101>。构建与检查：
+
+业务插件原型页为 <http://localhost:9000/pah/plugins>，操作边界见
+[PahPLUGIN.md](docs/PahPLUGIN.md)。
 
 ```shell
 pnpm type-check
