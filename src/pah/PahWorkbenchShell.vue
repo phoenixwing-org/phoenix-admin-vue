@@ -18,6 +18,10 @@
 			:tabs="workbenchTabs"
 			:active-tab-id="activeProcessTabId"
 			:page-icon="workbenchPageIcon"
+			:editor-maximized="app.isFull"
+			:locale="workbenchLocale"
+			:can-refresh-active-tab="Boolean(activeProcessTabId)"
+			:can-close-other-tabs="Boolean(activeProcessTabId) && workbenchTabs.length > 1"
 			:can-close-all-tabs="workbenchTabs.length > 0"
 			brand-title="Phoenix Admin"
 			:brand-subtitle="currentTitle"
@@ -42,6 +46,9 @@
 			@select-tab="selectProcessTab"
 			@close-tab="closeProcessTab"
 			@close-all-tabs="closeAllProcessTabs"
+			@refresh-active-tab="refreshActiveProcessTab"
+			@close-other-tabs="closeOtherProcessTabs"
+			@update:editor-maximized="app.setFull"
 			@display-settings-action="handleDisplaySettingsAction"
 		>
 			<template #brand>
@@ -109,7 +116,7 @@ defineOptions({
 	name: 'PahWorkbenchShell'
 });
 
-import { computed, markRaw, onMounted, reactive, ref, watch } from 'vue';
+import { computed, markRaw, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { isFunction, last, orderBy } from 'lodash-es';
 import {
@@ -124,6 +131,7 @@ import { useBase } from '/$/base';
 import { useTheme } from '/#/theme/hooks';
 import { module, useCool } from '/@/cool';
 import { storage } from '/@/cool/utils';
+import { config } from '/@/config';
 import { pahBuildRibbonTabs, pahFindMenuTrail } from './PahRibbonMenuAdapter';
 import {
 	pahBuildModuleGroups,
@@ -137,7 +145,13 @@ import {
 	pahFindNavigationNodeIdByPath,
 	pahNavigationBranchIds
 } from './PahNavigationAdapter';
-import { pahAdminResourceIcon, pahWingResourceIcon } from './PahResourceIcon';
+import {
+	pahAdminResourceIcon,
+	pahLegacyCoolIconName,
+	pahRegisterCoolNavigationIcons,
+	pahResourceIconComponent,
+	pahWingResourceIcon
+} from './PahResourceIcon';
 import type { PahShellMode } from './PahShellMode';
 import { PAH_NAVIGATION_STYLE_KEY } from './PahNavigationStyle';
 import {
@@ -153,6 +167,8 @@ import {
 import { pahWithWorkbenchBottomBlock } from './PahWorkbenchBlocks';
 import PahWorkbenchDefaultBottom from './PahWorkbenchDefaultBottom.vue';
 import { usePahWorkbenchThemeBridge } from './PahWorkbenchThemeBridge';
+import { pahWorkbenchLocale } from './PahWorkbenchLocale';
+import { pahProcessEntriesAfterCloseOthers } from './PahWorkbenchProcessActions';
 
 const props = defineProps<{
 	configuredMode: PahShellMode;
@@ -169,8 +185,8 @@ const PAH_WORKBENCH_BOTTOM_BLOCK = Object.freeze({
 	component: markRaw(PahWorkbenchDefaultBottom)
 });
 const navigationGroupIcon = pahWingResourceIcon('folder');
-const { menu, process } = useBase();
-const { browser, route, router, service } = useCool();
+const { menu, process, app } = useBase();
+const { browser, route, router, service, mitt } = useCool();
 const themeStore = useTheme();
 const { isDark: coolIsDark } = storeToRefs(themeStore);
 const { colorScheme: workbenchColorScheme, updateFromWorkbench } = usePahWorkbenchThemeBridge({
@@ -218,6 +234,20 @@ const ribbonTabs = computed(() =>
 const moduleGroups = computed(() =>
 	pahBuildModuleGroups(ribbonTabs.value, navigationDefinitions.value)
 );
+const coolNavigationIconNames = computed(() =>
+	Array.from(
+		new Set(
+			moduleGroups.value
+				.flatMap(group => group.modules)
+				.flatMap(module => [
+					module.icon,
+					...module.groups.flatMap(group => group.items.map(item => item.icon))
+				])
+				.map(pahLegacyCoolIconName)
+				.filter((name): name is string => Boolean(name))
+		)
+	).sort()
+);
 const navigationNodes = computed(() =>
 	pahBuildNavigationNodes(moduleGroups.value, {
 		group: () => navigationGroupIcon,
@@ -245,6 +275,7 @@ const workbenchTabs = computed(() =>
 	}))
 );
 const activeProcessTabId = computed(() => process.list.find(item => item.active)?.path || '');
+const workbenchLocale = computed(() => pahWorkbenchLocale(config.i18n.locale));
 const activeViewId = computed(() => activeProcessTabId.value || route.path);
 const registeredViewBlocks = usePnwRegisteredViewContribution(
 	pahViewContributionRegistry,
@@ -266,7 +297,9 @@ const presentationLabel = computed(() =>
 
 function workbenchPageIcon(pageId: string) {
 	const item = pahFindNavigationItem(moduleGroups.value, candidate => candidate.path === pageId);
-	return item ? pahAdminResourceIcon(item.icon) : pahWingResourceIcon('document');
+	return pahResourceIconComponent(
+		item ? pahAdminResourceIcon(item.icon) : pahWingResourceIcon('document')
+	);
 }
 
 const hostToolbar = reactive({
@@ -397,9 +430,32 @@ function closeAllProcessTabs() {
 	navigateToProcessFallback();
 }
 
+function refreshActiveProcessTab() {
+	if (activeProcessTabId.value) mitt.emit('view.refresh');
+}
+
+function closeOtherProcessTabs() {
+	const remaining = pahProcessEntriesAfterCloseOthers(process.list);
+	if (!remaining) return;
+	process.set(remaining);
+	void router.push(remaining[0].fullPath);
+}
+
 watch(navigationBranchIds, branchIds => groupedNavigation.ensureGroups(branchIds), {
 	immediate: true
 });
+
+let unregisterCoolNavigationIcons: () => void = () => undefined;
+watch(
+	coolNavigationIconNames,
+	iconNames => {
+		unregisterCoolNavigationIcons();
+		unregisterCoolNavigationIcons = pahRegisterCoolNavigationIcons(iconNames);
+	},
+	{ immediate: true }
+);
+
+onBeforeUnmount(() => unregisterCoolNavigationIcons());
 
 watch(
 	() => route.fullPath,
@@ -578,6 +634,7 @@ onMounted(() => {
 }
 
 :global(.pah-display-settings-tools) {
+	position: relative;
 	display: grid;
 	gap: 6px;
 	padding: 8px 10px;
@@ -585,13 +642,40 @@ onMounted(() => {
 }
 
 :global(.pah-display-settings-tools > strong) {
+	display: flex;
+	align-items: center;
+	min-height: 26px;
+	padding-right: 100px;
 	font-size: 11px;
 }
 
 :global(.pah-display-settings-tools > div) {
 	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 4px;
+}
+
+:global(.pah-display-settings-tools .ai-coding-toolbar) {
+	position: absolute;
+	top: 8px;
+	right: 10px;
+}
+
+:global(.pah-display-settings-tools button.gitee-link) {
+	box-sizing: border-box;
+	flex: 0 0 26px;
+	width: 26px !important;
+	min-width: 26px;
+	max-width: 26px;
+	height: 26px;
+	min-height: 26px;
+	max-height: 26px;
+	padding: 0 !important;
+}
+
+:global(.pah-display-settings-tools .ml-\[10px\]) {
+	margin-left: 0;
 }
 
 @media only screen and (max-width: 700px) {

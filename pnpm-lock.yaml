@@ -57,8 +57,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       phoenix-wing:
-        specifier: 0.6.0
-        version: 0.6.0(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4))
+        specifier: 0.6.1
+        version: 0.6.1(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4))
       pinia:
         specifier: ^2.3.1
         version: 2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4))
@@ -733,11 +733,11 @@ packages:
     resolution: {integrity: sha512-dfUnCxiN9H4ap84DvD2ubjw+3vUNpstxa0TneY/Paat8a3R4uQZDLSvWjmznAY/DoahqTHl9V46HF/Zs3F29pg==}
     engines: {node: '>= 10.0.0'}
 
-  '@phoenix-wing/code-core@0.6.0':
-    resolution: {integrity: sha512-tCoP7BNDfTM/fBHPKz31jysazI0LtcuvHTrh04VXLm6mxnRXQkayU0cWS8IzE3vbnOwXP6DP5i5dALavCkapjQ==}
+  '@phoenix-wing/code-core@0.6.1':
+    resolution: {integrity: sha512-4HH+XSx5ifGrdpi9N7hlwr2JghiJ7uywwQvgDoI3wh8vyBLLNCqYHn/LeNJKLDTa7vORqp3FYycAx1JDRtlWfA==}
 
-  '@phoenix-wing/db-node@0.6.0':
-    resolution: {integrity: sha512-SjwIxxHIOI5CSP4QH7nlKkK2mCnddCrcKYTQmQv5/WQ3DemDzXDhi83Afc8JjXRXabBIpFA2Pujc+mxwEzVsIg==}
+  '@phoenix-wing/db-node@0.6.1':
+    resolution: {integrity: sha512-yprZjZXb8EFeswIfwbUZKikHvNbgpyvjHHkixU2vIxQ9ep3JsUk50FYjHp0B3YyfjNmKy/S9GacFxBrJL2U94w==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -2266,8 +2266,8 @@ packages:
   node-releases@2.0.19:
     resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
 
-  node-sqlite3-wasm@0.8.59:
-    resolution: {integrity: sha512-BsVATSCxLzgpdj6Ey6bZ72MzhkXTCPmb9aVCqyptiwRojo/hzCCoXILoU0SiU7av+iiSyLCTLsCrV96yNUf2/w==}
+  node-sqlite3-wasm@0.8.60:
+    resolution: {integrity: sha512-woDEJy/Df0EBFKJ2N7HSL4SiH5UL1GDwxvBeBjaKvqmUApgTKapcoQiAgZKrLSUmrWU6VYyHz41Sz58Hi6YPmg==}
 
   nopt@7.2.1:
     resolution: {integrity: sha512-taM24ViiimT/XntxbPyJQzCG+p4EKOpgD3mxFwW38mGjVUrfERQOeY4EDHjdnptttfHuHQXFx+lTP08Q+mLa/w==}
@@ -2369,8 +2369,8 @@ packages:
   perfect-debounce@1.0.0:
     resolution: {integrity: sha512-xCy9V055GLEqoFaHoC1SoLIaLmWctgCUaBaWxDZ7/Zx4CTyX7cJQLJOok/orfjZAh9kEYpjJa4d0KcJmCbctZA==}
 
-  phoenix-wing@0.6.0:
-    resolution: {integrity: sha512-O0fPuEi2zr06fd9ivSJEDOFjiHNoJO/l0NIST7uDBBJ4OI3KK0gJtJ1zCxJpnCBAxx3847aUP8lNlR62lvJHdw==}
+  phoenix-wing@0.6.1:
+    resolution: {integrity: sha512-qkQO8nLnR1cKNghStV/WH4W84MwyQtoLSV8fki5hOQ8mxTQzWBr7F90g1KBObGVyCRy2y5KU8jLw1svXKTot9g==}
     peerDependencies:
       element-plus: ^2.0.0
       pinia: ^2.0.0 || ^3.0.0
@@ -3599,11 +3599,11 @@ snapshots:
       '@parcel/watcher-win32-x64': 2.5.1
     optional: true
 
-  '@phoenix-wing/code-core@0.6.0': {}
+  '@phoenix-wing/code-core@0.6.1': {}
 
-  '@phoenix-wing/db-node@0.6.0':
+  '@phoenix-wing/db-node@0.6.1':
     dependencies:
-      node-sqlite3-wasm: 0.8.59
+      node-sqlite3-wasm: 0.8.60
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
@@ -5225,7 +5225,7 @@ snapshots:
 
   node-releases@2.0.19: {}
 
-  node-sqlite3-wasm@0.8.59: {}
+  node-sqlite3-wasm@0.8.60: {}
 
   nopt@7.2.1:
     dependencies:
@@ -5313,13 +5313,13 @@ snapshots:
 
   perfect-debounce@1.0.0: {}
 
-  phoenix-wing@0.6.0(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4)):
+  phoenix-wing@0.6.1(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4)):
     dependencies:
-      '@phoenix-wing/code-core': 0.6.0
-      '@phoenix-wing/db-node': 0.6.0
+      '@phoenix-wing/code-core': 0.6.1
+      '@phoenix-wing/db-node': 0.6.1
     optionalDependencies:
       element-plus: 2.10.2(vue@3.5.18(typescript@5.5.4))
-      node-sqlite3-wasm: 0.8.59
+      node-sqlite3-wasm: 0.8.60
       pinia: 2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4))
       vue: 3.5.18(typescript@5.5.4)
 

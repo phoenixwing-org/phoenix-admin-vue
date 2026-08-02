@@ -1,6 +1,6 @@
 <template>
 	<div class="i18n-switch">
-		<el-dropdown trigger="click">
+		<el-dropdown trigger="click" popper-class="pah-host-toolbar-popper">
 			<div class="cl-comm__icon">
 				<cl-svg name="i18n-lang" />
 			</div>
@@ -68,5 +68,11 @@ function setLang(value: string) {
 			color: var(--el-color-primary);
 		}
 	}
+}
+</style>
+
+<style lang="scss">
+.pah-host-toolbar-popper {
+	z-index: var(--pnw-workbench-overlay-host-tools, 1400) !important;
 }
 </style>

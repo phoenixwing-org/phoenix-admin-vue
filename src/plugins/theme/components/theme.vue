@@ -172,6 +172,8 @@ function setTransition(val: any) {
 }
 
 .drawer-theme {
+	z-index: var(--pnw-workbench-overlay-modal, 2000) !important;
+
 	.el-drawer__header {
 		padding: 20px 20px;
 		margin-bottom: 0;
