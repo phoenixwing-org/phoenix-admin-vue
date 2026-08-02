@@ -132,7 +132,11 @@ import { useTheme } from '/#/theme/hooks';
 import { module, useCool } from '/@/cool';
 import { storage } from '/@/cool/utils';
 import { config } from '/@/config';
-import { pahBuildRibbonTabs, pahFindMenuTrail } from './PahRibbonMenuAdapter';
+import {
+	pahBuildRibbonTabs,
+	pahFindRouteMenuTrail,
+	pahRouteTemplatePath
+} from './PahRibbonMenuAdapter';
 import {
 	pahBuildModuleGroups,
 	PAH_DEFAULT_MODULE_GROUPS,
@@ -142,7 +146,7 @@ import {
 	pahBuildNavigationNodes,
 	pahFindNavigationItem,
 	pahFindNavigationItemByNodeId,
-	pahFindNavigationNodeIdByPath,
+	pahFindNavigationNodeIdByRoute,
 	pahNavigationBranchIds
 } from './PahNavigationAdapter';
 import {
@@ -256,8 +260,9 @@ const navigationNodes = computed(() =>
 	})
 );
 const navigationBranchIds = computed(() => pahNavigationBranchIds(navigationNodes.value));
+const routeTemplatePath = computed(() => pahRouteTemplatePath(route.path, route.matched));
 const routeNavigationNodeId = computed(() =>
-	pahFindNavigationNodeIdByPath(moduleGroups.value, route.path)
+	pahFindNavigationNodeIdByRoute(moduleGroups.value, menu.group, routeTemplatePath.value)
 );
 const activeNavigationNodeId = computed(
 	() => browsedNavigationRootId.value || routeNavigationNodeId.value
@@ -290,7 +295,7 @@ const currentTitle = computed(
 		process.list.find(item => item.active)?.meta?.label ||
 		String(route.meta?.label || route.name || 'Host 工作台')
 );
-const footerBreadcrumb = computed(() => pahFindMenuTrail(menu.group, route.path));
+const footerBreadcrumb = computed(() => pahFindRouteMenuTrail(menu.group, routeTemplatePath.value));
 const presentationLabel = computed(() =>
 	displayPreferences.value.presentation === 'tree' ? '侧面目录树' : '顶部 Ribbon'
 );

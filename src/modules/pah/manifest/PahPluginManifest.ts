@@ -1,6 +1,42 @@
 /** Phoenix Admin Host 接受的业务插件清单结构。 */
+export const PAH_PLUGIN_FORMAT_VERSION = 2 as const;
+export type PahSha256 = `sha256:${string}`;
+
+export interface PahPluginMigrationDeclaration {
+	id: string;
+	version: number;
+	checksum: PahSha256;
+	description: string;
+	artifact: {
+		format: 'sql';
+		path: string;
+	};
+}
+
+export interface PahMigrationDryRunItem {
+	id: string;
+	version: number;
+	checksum: PahSha256;
+	description: string;
+	artifactPath: string;
+	state: 'pending' | 'applied';
+}
+
+/** Node 是计划的权威生成者；Vue 仅做只读展示，不持有执行入口。 */
+export interface PahMigrationDryRunPlan {
+	dryRun: true;
+	planId: string;
+	expiresAt: string;
+	moduleId: string;
+	pluginVersion: string;
+	artifactsVerified: true;
+	transaction: 'required';
+	backupRequired: boolean;
+	items: PahMigrationDryRunItem[];
+}
+
 export interface PahPluginManifest {
-	formatVersion: number;
+	formatVersion: typeof PAH_PLUGIN_FORMAT_VERSION;
 	moduleId: string;
 	name: string;
 	version: string;
@@ -16,6 +52,7 @@ export interface PahPluginManifest {
 		id: string;
 		path: string;
 		title: string;
+		icon?: string;
 		moduleId: string;
 		capability: string;
 		viewPath: string;
@@ -24,7 +61,7 @@ export interface PahPluginManifest {
 	navigation: {
 		preferredGroupId: string;
 		preferredGroupLabel: string;
-		modules: Array<{ id: string; label: string; routeIds: string[] }>;
+		modules: Array<{ id: string; label: string; icon?: string; routeIds: string[] }>;
 	};
 	apiPrefix: string;
 	capabilities: Array<{
@@ -34,7 +71,7 @@ export interface PahPluginManifest {
 	}>;
 	resourcePolicies: string[];
 	auditCategories: Array<{ id: string; description: string }>;
-	migrations: Array<{ id: string; version: number; checksum: string; description: string }>;
+	migrations: PahPluginMigrationDeclaration[];
 	healthChecks: Array<{ id: string; path: string }>;
 	hostReuse: Array<
 		| 'identity'

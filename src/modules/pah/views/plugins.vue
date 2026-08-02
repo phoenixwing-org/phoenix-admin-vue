@@ -44,7 +44,7 @@
 				:rows="10"
 				resize="vertical"
 				spellcheck="false"
-				placeholder='例如：{ "formatVersion": 1, "moduleId": "example-plugin", ... }'
+				placeholder='例如：{ "formatVersion": 2, "moduleId": "example-plugin", ... }'
 			/>
 		</section>
 
@@ -72,6 +72,66 @@
 					<span>数据表</span>
 					<strong>{{ installation.manifest.dataOwnership.tables.length }}</strong>
 				</div>
+				<div>
+					<span>DDL 迁移</span>
+					<strong>{{ installation.manifest.migrations.length }}</strong>
+				</div>
+			</div>
+
+			<div v-if="pahHasMigrations(installation.manifest)" class="migration-governance">
+				<div class="migration-heading">
+					<div>
+						<strong>受控 DDL 发布</strong>
+						<p>
+							本页只能校验制品并生成短时、一次性的 dry-run 计划；不能执行
+							SQL，也不接收 planId、制品目录或备份证明。
+						</p>
+					</div>
+					<el-button
+						:loading="planLoadingModuleId === installation.moduleId"
+						@click="loadMigrationPlan(installation)"
+					>
+						生成 / 刷新 dry-run 计划
+					</el-button>
+				</div>
+
+				<div v-if="migrationPlans[installation.moduleId]" class="migration-plan">
+					<div class="plan-facts">
+						<span>制品：已校验</span>
+						<span>事务：必须</span>
+						<span>
+							备份：{{
+								migrationPlans[installation.moduleId]?.backupRequired
+									? '需可信证明'
+									: '本次无需'
+							}}
+						</span>
+						<span>
+							有效期至：{{
+								formatPlanExpiry(migrationPlans[installation.moduleId]?.expiresAt)
+							}}
+						</span>
+					</div>
+					<ul>
+						<li
+							v-for="item in migrationPlans[installation.moduleId]?.items || []"
+							:key="item.id"
+						>
+							<el-tag
+								:type="item.state === 'applied' ? 'success' : 'warning'"
+								effect="plain"
+							>
+								{{ item.state === 'applied' ? '已应用' : '待应用' }}
+							</el-tag>
+							<strong>{{ item.id }} · v{{ item.version }}</strong>
+							<span>{{ item.description }}</span>
+							<code>{{ item.artifactPath }}</code>
+						</li>
+					</ul>
+					<p class="controlled-release">
+						执行仅由受控发布编排完成；需要备份时，必须先通过 Host 的可信备份验证器。
+					</p>
+				</div>
 			</div>
 
 			<div class="reuse">
@@ -89,7 +149,10 @@
 
 			<div class="actions">
 				<el-button
-					v-if="installation.state === 'verified'"
+					v-if="
+						installation.state === 'verified' &&
+						pahCanDirectInstall(installation.manifest)
+					"
 					type="primary"
 					:loading="acting"
 					@click="runAction('install', installation)"
@@ -126,7 +189,7 @@
 				代码贡献已注销；{{
 					installation.manifest.dataOwnership.tables.length
 				}}
-				张业务表仍保留，备份标识：{{ installation.lastBackupId }}
+				张业务表仍保留，卸载关联号（不等于可信备份证明）：{{ installation.lastBackupId }}
 			</p>
 		</section>
 
@@ -140,7 +203,13 @@ defineOptions({ name: 'pah-business-plugins' });
 import { onMounted, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useCool } from '/@/cool';
-import type { PahPluginManifest } from '../manifest/PahPluginManifest';
+import type { PahMigrationDryRunPlan, PahPluginManifest } from '../manifest/PahPluginManifest';
+import {
+	pahAssertDirectInstallAllowed,
+	pahCanDirectInstall,
+	pahHasMigrations,
+	parsePahPluginManifest
+} from '../manifest/PahPluginPolicy';
 
 type LifecycleState =
 	| 'verified'
@@ -170,6 +239,8 @@ const list = ref<Installation[]>([]);
 const manifestText = ref('');
 const loading = ref(false);
 const acting = ref(false);
+const planLoadingModuleId = ref('');
+const migrationPlans = ref<Record<string, PahMigrationDryRunPlan | undefined>>({});
 
 const reuseLabel: Record<string, string> = {
 	identity: '统一登录',
@@ -202,16 +273,29 @@ function stateLabel(state: string) {
 }
 
 function parseManifest(): PahPluginManifest {
-	let value: unknown;
+	return parsePahPluginManifest(manifestText.value);
+}
+
+function formatPlanExpiry(value?: string) {
+	if (!value) return '未知';
+	return new Date(value).toLocaleString();
+}
+
+async function loadMigrationPlan(installation: Installation) {
+	planLoadingModuleId.value = installation.moduleId;
 	try {
-		value = JSON.parse(manifestText.value);
-	} catch {
-		throw new Error('manifest JSON 格式错误');
+		const plan = (await service.request({
+			url: '/admin/pah/plugin/migration-plan',
+			method: 'GET',
+			params: { moduleId: installation.moduleId }
+		})) as PahMigrationDryRunPlan;
+		migrationPlans.value = { ...migrationPlans.value, [installation.moduleId]: plan };
+		ElMessage.success('dry-run 计划已生成；该计划短时有效且只能由受控发布编排使用');
+	} catch (error: any) {
+		ElMessage.error(error.message || '迁移计划生成失败');
+	} finally {
+		planLoadingModuleId.value = '';
 	}
-	if (!value || typeof value !== 'object' || Array.isArray(value)) {
-		throw new Error('manifest 必须是 JSON 对象');
-	}
-	return value as PahPluginManifest;
 }
 
 async function refresh() {
@@ -249,6 +333,14 @@ async function registerManifest() {
 }
 
 async function runAction(action: 'install' | 'enable' | 'disable', installation: Installation) {
+	if (action === 'install') {
+		try {
+			pahAssertDirectInstallAllowed(installation.manifest);
+		} catch (error: any) {
+			ElMessage.error(error.message);
+			return;
+		}
+	}
 	acting.value = true;
 	try {
 		await service.request({
@@ -268,7 +360,7 @@ async function runAction(action: 'install' | 'enable' | 'disable', installation:
 async function uninstall(installation: Installation) {
 	try {
 		await ElMessageBox.confirm(
-			`仅注销 ${installation.name} 的代码、路由和任务贡献；${installation.manifest.dataOwnership.tables.length} 张业务表将保留。是否继续？`,
+			`仅注销 ${installation.name} 的代码、路由和任务贡献；${installation.manifest.dataOwnership.tables.length} 张业务表将保留。requiresBackup 时应先在受控流程完成可信备份；本页生成的只是卸载关联号。是否继续？`,
 			'安全卸载',
 			{ type: 'warning', confirmButtonText: '保留数据并卸载' }
 		);
@@ -278,13 +370,13 @@ async function uninstall(installation: Installation) {
 
 	acting.value = true;
 	try {
-		const backupId = `pah-${installation.moduleId}-${new Date()
+		const uninstallReference = `pah-uninstall-${installation.moduleId}-${new Date()
 			.toISOString()
 			.replace(/[:.]/g, '-')}`;
 		await service.request({
 			url: '/admin/pah/plugin/uninstall',
 			method: 'POST',
-			data: { moduleId: installation.moduleId, backupId }
+			data: { moduleId: installation.moduleId, backupId: uninstallReference }
 		});
 		ElMessage.success('已卸载，业务数据保持不变');
 		await refresh();
@@ -438,6 +530,65 @@ onMounted(refresh);
 	margin-top: 20px;
 }
 
+.migration-governance {
+	display: grid;
+	gap: 14px;
+	margin-top: 20px;
+	padding: 16px;
+	border: 1px solid var(--el-color-warning-light-5);
+	border-radius: 12px;
+	background: var(--el-color-warning-light-9);
+}
+
+.migration-heading {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.migration-heading p,
+.controlled-release {
+	margin: 5px 0 0;
+	color: var(--el-text-color-regular);
+}
+
+.migration-plan {
+	display: grid;
+	gap: 12px;
+}
+
+.plan-facts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+	color: var(--el-text-color-regular);
+	font-size: 13px;
+}
+
+.migration-plan ul {
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.migration-plan li {
+	display: grid;
+	grid-template-columns: auto minmax(160px, auto) minmax(180px, 1fr) auto;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 12px;
+	border-radius: 9px;
+	background: color-mix(in srgb, var(--el-bg-color) 80%, transparent);
+}
+
+.migration-plan code {
+	color: var(--el-text-color-secondary);
+	font-size: 12px;
+}
+
 .reuse div {
 	display: flex;
 	flex-wrap: wrap;
@@ -464,6 +615,13 @@ onMounted(refresh);
 
 	.facts {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.migration-heading,
+	.migration-plan li {
+		display: flex;
+		align-items: flex-start;
+		flex-direction: column;
 	}
 }
 </style>

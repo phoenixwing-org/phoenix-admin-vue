@@ -71,9 +71,14 @@ function pahCollectLeaves(items: Menu.List = []): PahRibbonItem[] {
 		});
 }
 
-export function pahFindMenuTrail(menuRoots: Menu.List, path: string): PahMenuTrailItem[] {
-	for (const item of pahOrdered(menuRoots).filter(pahIsVisible)) {
+function pahFindMenuTrailInternal(
+	menuRoots: Menu.List,
+	path: string,
+	includeHidden: boolean
+): PahMenuTrailItem[] {
+	for (const item of pahOrdered(menuRoots)) {
 		if (item.type === PAH_MENU_TYPE.PERMISSION) continue;
+		if (!includeHidden && !pahIsVisible(item)) continue;
 
 		const current = {
 			id: item.id,
@@ -83,11 +88,32 @@ export function pahFindMenuTrail(menuRoots: Menu.List, path: string): PahMenuTra
 
 		if (item.path === path) return [current];
 
-		const children = pahFindMenuTrail(item.children || [], path);
+		const children = pahFindMenuTrailInternal(item.children || [], path, includeHidden);
 		if (children.length > 0) return [current, ...children];
 	}
 
 	return [];
+}
+
+/** 只从可见导航项生成普通菜单路径。 */
+export function pahFindMenuTrail(menuRoots: Menu.List, path: string): PahMenuTrailItem[] {
+	return pahFindMenuTrailInternal(menuRoots, path, false);
+}
+
+/** hidden View 仍可沿权限菜单父链找到所属模块，但不会因此进入 Ribbon/Tree。 */
+export function pahFindRouteMenuTrail(menuRoots: Menu.List, path: string): PahMenuTrailItem[] {
+	return pahFindMenuTrailInternal(menuRoots, path, true);
+}
+
+/**
+ * Vue Router 的 route.path 是实际 URL；权限菜单保存的是 /items/:id 这类模板。
+ * hidden 页归属必须使用最后一个 matched record 的模板，不能猜 URL 前缀。
+ */
+export function pahRouteTemplatePath(
+	actualPath: string,
+	matched: ReadonlyArray<{ path: string }>
+): string {
+	return [...matched].reverse().find(record => record.path)?.path || actualPath;
 }
 
 export function pahChunkRibbonItems(

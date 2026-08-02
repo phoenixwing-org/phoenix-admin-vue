@@ -4,6 +4,7 @@ import {
 	pahBuildNavigationNodes,
 	pahFindNavigationItemByNodeId,
 	pahFindNavigationNodeIdByPath,
+	pahFindNavigationNodeIdByRoute,
 	pahNavigationBranchIds
 } from './PahNavigationAdapter';
 
@@ -15,6 +16,7 @@ const groups: PahModuleGroup[] = [
 			{
 				id: 'system',
 				label: '系统管理',
+				menuId: 1,
 				groups: [
 					{
 						id: 'permission',
@@ -69,6 +71,38 @@ describe('PahNavigationAdapter', () => {
 		expect(pahFindNavigationItemByNodeId(groups, 'pah-menu-4')?.path).toBe('/system/role');
 		expect(pahFindNavigationNodeIdByPath(groups, '/system/user')).toBe('pah-menu-3');
 		expect(pahFindNavigationNodeIdByPath(groups, '/missing')).toBe('');
+	});
+
+	it('hidden 深链按菜单父链选中所属模块且不伪造叶子节点', () => {
+		const hiddenDetail: Menu.Item = {
+			id: 5,
+			parentId: 1,
+			path: '/items/:id',
+			type: 1 as Menu.Type,
+			name: '详情',
+			icon: 'pnw:document',
+			orderNum: 2,
+			isShow: false,
+			children: []
+		};
+		const menuRoots: Menu.List = [
+			{
+				id: 1,
+				parentId: 0,
+				path: '/module-1',
+				type: 0 as Menu.Type,
+				name: '系统管理',
+				icon: 'pnw:folder',
+				orderNum: 1,
+				isShow: true,
+				children: [hiddenDetail]
+			}
+		];
+
+		expect(pahFindNavigationNodeIdByRoute(groups, menuRoots, '/items/:id')).toBe('system');
+		expect(pahFindNavigationNodeIdByRoute(groups, menuRoots, '/system/user')).toBe(
+			'pah-menu-3'
+		);
 	});
 
 	it('只把有子节点的 ID 交给 Tree 展开状态', () => {

@@ -1,6 +1,6 @@
 import type { PnwNavigationNode } from 'phoenix-wing';
 import type { PahModuleGroup } from './PahModuleGroupAdapter';
-import type { PahRibbonItem } from './PahRibbonMenuAdapter';
+import { pahFindRouteMenuTrail, type PahRibbonItem } from './PahRibbonMenuAdapter';
 
 export interface PahNavigationIconResolvers {
 	group?: (group: PahModuleGroup) => unknown;
@@ -67,6 +67,27 @@ export function pahFindNavigationNodeIdByPath(
 	path: string
 ): string {
 	return pahFindNavigationItem(groups, item => item.path === path)?.pageId || '';
+}
+
+/**
+ * 可见页面返回叶子节点；hidden 深链返回其可见根模块节点。
+ * 归属只来自同一权限菜单父链，不按 URL、标题或产品 ID 猜测。
+ */
+export function pahFindNavigationNodeIdByRoute(
+	groups: readonly PahModuleGroup[],
+	menuRoots: Menu.List,
+	path: string
+): string {
+	const visibleNodeId = pahFindNavigationNodeIdByPath(groups, path);
+	if (visibleNodeId) return visibleNodeId;
+
+	const rootMenuId = pahFindRouteMenuTrail(menuRoots, path)[0]?.id;
+	if (rootMenuId === undefined) return '';
+
+	return (
+		groups.flatMap(group => group.modules).find(module => module.menuId === rootMenuId)?.id ||
+		''
+	);
 }
 
 export function pahNavigationBranchIds(nodes: readonly PnwNavigationNode[]): string[] {

@@ -3,7 +3,9 @@ import {
 	PAH_MENU_TYPE,
 	PAH_RIBBON_GROUP_SIZE,
 	pahBuildRibbonTabs,
-	pahFindMenuTrail
+	pahFindMenuTrail,
+	pahFindRouteMenuTrail,
+	pahRouteTemplatePath
 } from './PahRibbonMenuAdapter';
 
 function menu(id: number, type: number, name: string, children: Menu.List = []): Menu.Item {
@@ -60,6 +62,26 @@ describe('PahRibbonMenuAdapter', () => {
 
 		expect(tabs[0].groups).toHaveLength(1);
 		expect(tabs[0].groups[0].items.map(item => item.label)).toEqual(['可见']);
+	});
+
+	it('hidden 深链保留父模块归属但不进入可见菜单路径', () => {
+		const hidden = menu(2, PAH_MENU_TYPE.PAGE, '详情');
+		hidden.path = '/items/:id';
+		hidden.isShow = false;
+		const roots = [menu(1, PAH_MENU_TYPE.DIRECTORY, '业务模块', [hidden])];
+
+		expect(pahBuildRibbonTabs(roots)).toEqual([]);
+		expect(pahFindMenuTrail(roots, '/items/:id')).toEqual([]);
+		expect(pahFindRouteMenuTrail(roots, '/items/:id').map(item => item.label)).toEqual([
+			'业务模块',
+			'详情'
+		]);
+		expect(
+			pahFindRouteMenuTrail(
+				roots,
+				pahRouteTemplatePath('/items/42', [{ path: '/' }, { path: '/items/:id' }])
+			).map(item => item.label)
+		).toEqual(['业务模块', '详情']);
 	});
 
 	it('从同一权限菜单树生成 Footer 面包屑', () => {

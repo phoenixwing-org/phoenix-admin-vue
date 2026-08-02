@@ -53,7 +53,7 @@ export declare interface Module extends ModuleConfig {
 }
 
 export declare interface Router extends VueRouter {
-	find(path: string): { route: RouteRecordRaw; isReg: boolean };
+	find(path: string): { route?: RouteRecordRaw; isReg: boolean };
 	del(name: string): void;
 	clear(): void;
 	append(data: any | any[]): void;
