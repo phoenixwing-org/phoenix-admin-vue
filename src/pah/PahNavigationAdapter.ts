@@ -30,16 +30,14 @@ export function pahBuildNavigationNodes(
 			label: module.label,
 			order: moduleIndex,
 			...pahNavigationIcon(icons.module?.(module)),
-			children: module.groups.flatMap(ribbonGroup =>
-				ribbonGroup.items.map((item, itemIndex) => {
-					return {
-						id: item.pageId,
-						label: item.label,
-						order: itemIndex,
-						...pahNavigationIcon(icons.item?.(item))
-					};
-				})
-			)
+			children: module.groups
+				.flatMap(ribbonGroup => ribbonGroup.items)
+				.map((item, itemIndex) => ({
+					id: item.pageId,
+					label: item.label,
+					order: itemIndex,
+					...pahNavigationIcon(icons.item?.(item))
+				}))
 		}))
 	}));
 }

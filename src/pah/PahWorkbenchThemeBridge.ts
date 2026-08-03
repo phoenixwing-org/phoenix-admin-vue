@@ -1,12 +1,14 @@
-import { computed, type ComputedRef, type Ref } from 'vue';
+import { watch, type Ref } from 'vue';
 import type { PnwColorScheme } from 'phoenix-wing';
 
 export type PahResolvedColorScheme = Exclude<PnwColorScheme, 'system'>;
 
 export interface PahWorkbenchThemeBridgeOptions {
 	coolIsDark: Ref<boolean>;
+	colorScheme: Ref<PnwColorScheme>;
 	setCoolDark: (isDark: boolean) => void;
-	systemPrefersDark: () => boolean;
+	systemPrefersDark: Ref<boolean>;
+	applyHostColorScheme?: (colorScheme: PahResolvedColorScheme) => void;
 }
 
 /** Cool 的全局暗黑状态是 Admin 与 Wing 共同显示主题的唯一真源。 */
@@ -14,7 +16,7 @@ export function pahWorkbenchColorScheme(isDark: boolean): PahResolvedColorScheme
 	return isDark ? 'dark' : 'light';
 }
 
-/** Wing 的 system 选择只在操作时解析一次，随后仍由 Cool 持有确定状态。 */
+/** system 是持久偏好；这里只把偏好与当前系统状态解析成有效显示。 */
 export function pahWorkbenchDarkState(
 	colorScheme: PnwColorScheme,
 	systemPrefersDark: boolean
@@ -27,15 +29,42 @@ export function pahWorkbenchDarkState(
  * 比较当前值后再通知，避免双向同步形成循环。
  */
 export function usePahWorkbenchThemeBridge(options: PahWorkbenchThemeBridgeOptions): {
-	colorScheme: ComputedRef<PahResolvedColorScheme>;
+	colorScheme: Ref<PnwColorScheme>;
 	updateFromWorkbench: (colorScheme: PnwColorScheme) => void;
 } {
-	const colorScheme = computed(() => pahWorkbenchColorScheme(options.coolIsDark.value));
+	let syncingCoolState = false;
+
+	watch(
+		[options.colorScheme, options.systemPrefersDark],
+		([colorScheme, systemPrefersDark]) => {
+			const nextDark = pahWorkbenchDarkState(colorScheme, systemPrefersDark);
+			if (nextDark !== options.coolIsDark.value) {
+				syncingCoolState = true;
+				options.setCoolDark(nextDark);
+				syncingCoolState = false;
+			}
+			options.applyHostColorScheme?.(pahWorkbenchColorScheme(nextDark));
+		},
+		{ immediate: true, flush: 'sync' }
+	);
+
+	watch(
+		options.coolIsDark,
+		isDark => {
+			if (syncingCoolState) return;
+			const nextColorScheme = pahWorkbenchColorScheme(isDark);
+			if (options.colorScheme.value !== nextColorScheme) {
+				options.colorScheme.value = nextColorScheme;
+			}
+		},
+		{ flush: 'sync' }
+	);
 
 	function updateFromWorkbench(nextColorScheme: PnwColorScheme) {
-		const nextDark = pahWorkbenchDarkState(nextColorScheme, options.systemPrefersDark());
-		if (nextDark !== options.coolIsDark.value) options.setCoolDark(nextDark);
+		if (options.colorScheme.value !== nextColorScheme) {
+			options.colorScheme.value = nextColorScheme;
+		}
 	}
 
-	return { colorScheme, updateFromWorkbench };
+	return { colorScheme: options.colorScheme, updateFromWorkbench };
 }

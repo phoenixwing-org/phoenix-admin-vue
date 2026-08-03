@@ -14,6 +14,7 @@
 			:visibility="displayPreferences.layoutState.visibility"
 			:display-settings-positions="displayPreferences.settingsPositions"
 			:view-blocks="activeViewBlocks"
+			:default-bottom-block="workbenchBottomBlock"
 			:active-bottom-tab-id="activeBottomTabId"
 			:tabs="workbenchTabs"
 			:active-tab-id="activeProcessTabId"
@@ -116,13 +117,25 @@ defineOptions({
 	name: 'PahWorkbenchShell'
 });
 
-import { computed, markRaw, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import {
+	computed,
+	markRaw,
+	onBeforeUnmount,
+	onMounted,
+	reactive,
+	ref,
+	shallowRef,
+	watch
+} from 'vue';
 import { storeToRefs } from 'pinia';
 import { isFunction, last, orderBy } from 'lodash-es';
 import {
 	PnwPhoenixWingMark,
 	PnwWorkbenchShell as PnwWorkbenchShellLayout,
+	pnwApplyColorScheme,
+	pnwCreateOutputBuffer,
 	usePnwRegisteredViewContribution,
+	type PnwBottomViewBlockComponentContribution,
 	type PnwColorScheme,
 	type PnwViewBlockVisibility,
 	type PnwWorkbenchDisplayPreferences
@@ -168,8 +181,12 @@ import {
 	pahViewContributionRegistry,
 	type PahViewBlockComponentContributions
 } from './PahViewContributions';
-import { pahWithWorkbenchBottomBlock } from './PahWorkbenchBlocks';
+import { pahWorkbenchSideBlocks } from './PahWorkbenchBlocks';
 import PahWorkbenchDefaultBottom from './PahWorkbenchDefaultBottom.vue';
+import {
+	pahCreateWorkbenchOutput,
+	pahProvideWorkbenchOutput
+} from './PahWorkbenchOutput';
 import { usePahWorkbenchThemeBridge } from './PahWorkbenchThemeBridge';
 import { pahWorkbenchLocale } from './PahWorkbenchLocale';
 import { pahProcessEntriesAfterCloseOthers } from './PahWorkbenchProcessActions';
@@ -185,23 +202,9 @@ type NavigationResponse = {
 };
 
 const EMPTY_VIEW_BLOCKS: PahViewBlockComponentContributions = Object.freeze({});
-const PAH_WORKBENCH_BOTTOM_BLOCK = Object.freeze({
-	component: markRaw(PahWorkbenchDefaultBottom)
-});
 const navigationGroupIcon = pahWingResourceIcon('folder');
 const { menu, process, app } = useBase();
 const { browser, route, router, service, mitt } = useCool();
-const themeStore = useTheme();
-const { isDark: coolIsDark } = storeToRefs(themeStore);
-const { colorScheme: workbenchColorScheme, updateFromWorkbench } = usePahWorkbenchThemeBridge({
-	coolIsDark,
-	setCoolDark: isDark => themeStore.setTheme({ color: themeStore.color, dark: isDark }),
-	systemPrefersDark: () => window.matchMedia('(prefers-color-scheme: dark)').matches
-});
-const groupedNavigation = usePahGroupedNavigationStore();
-const navigationResponse = ref<NavigationResponse | null>(null);
-const browsedNavigationRootId = ref('');
-const activeBottomTabId = ref('');
 
 const storedPreferences =
 	storage.get(PAH_WORKBENCH_PREFERENCES_KEY) ?? storage.get(PAH_LEGACY_WORKBENCH_PREFERENCES_KEY);
@@ -212,6 +215,48 @@ const initialWorkbenchPreferences = pahNormalizeWorkbenchPreferences(
 const displayPreferences = ref<PnwWorkbenchDisplayPreferences>(
 	initialWorkbenchPreferences.displayPreferences
 );
+
+const themeStore = useTheme();
+const { isDark: coolIsDark } = storeToRefs(themeStore);
+const systemThemeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+const systemPrefersDark = ref(systemThemeMedia.matches);
+const preferredColorScheme = computed<PnwColorScheme>({
+	get: () => displayPreferences.value.colorScheme,
+	set: colorScheme => updateDisplayPreference('colorScheme', colorScheme)
+});
+const { colorScheme: workbenchColorScheme, updateFromWorkbench } = usePahWorkbenchThemeBridge({
+	coolIsDark,
+	colorScheme: preferredColorScheme,
+	setCoolDark: isDark => themeStore.setTheme({ color: themeStore.color, dark: isDark }),
+	systemPrefersDark,
+	applyHostColorScheme: colorScheme => {
+		document.documentElement.classList.toggle('dark', colorScheme === 'dark');
+		pnwApplyColorScheme(colorScheme);
+	}
+});
+const groupedNavigation = usePahGroupedNavigationStore();
+const navigationResponse = ref<NavigationResponse | null>(null);
+const browsedNavigationRootId = ref('');
+const activeBottomTabId = ref('output');
+const workbenchOutputBuffer = pnwCreateOutputBuffer({
+	maxCharacters: 200_000,
+	initialText: '[Runtime] Phoenix Admin 工作台已就绪\n'
+});
+const workbenchOutputSnapshot = shallowRef(workbenchOutputBuffer.getSnapshot());
+const unsubscribeWorkbenchOutput = workbenchOutputBuffer.subscribe(snapshot => {
+	workbenchOutputSnapshot.value = snapshot;
+});
+const workbenchOutput = pahCreateWorkbenchOutput(workbenchOutputBuffer);
+pahProvideWorkbenchOutput(workbenchOutput);
+const workbenchBottomProps = computed(() => ({
+	text: workbenchOutputSnapshot.value.text
+}));
+const workbenchBottomTabs = Object.freeze([{ id: 'output', label: '输出' }]);
+const workbenchBottomBlock: PnwBottomViewBlockComponentContribution = {
+	component: markRaw(PahWorkbenchDefaultBottom),
+	props: workbenchBottomProps,
+	tabs: workbenchBottomTabs
+};
 
 const configuredMode = computed(() => props.configuredMode);
 const navigationTargetKeysByMenuId = computed(() =>
@@ -287,9 +332,7 @@ const registeredViewBlocks = usePnwRegisteredViewContribution(
 	activeViewId,
 	EMPTY_VIEW_BLOCKS
 );
-const activeViewBlocks = computed(() =>
-	pahWithWorkbenchBottomBlock(registeredViewBlocks.value, PAH_WORKBENCH_BOTTOM_BLOCK)
-);
+const activeViewBlocks = computed(() => pahWorkbenchSideBlocks(registeredViewBlocks.value));
 const currentTitle = computed(
 	() =>
 		process.list.find(item => item.active)?.meta?.label ||
@@ -354,6 +397,10 @@ function updateLayoutVisibility(visibility: PnwViewBlockVisibility) {
 
 function updateWorkbenchColorScheme(colorScheme: PnwColorScheme) {
 	updateFromWorkbench(colorScheme);
+}
+
+function updateSystemColorScheme(event: MediaQueryListEvent) {
+	systemPrefersDark.value = event.matches;
 }
 
 function updateExpandedNavigationNodeIds(nodeIds: readonly string[]) {
@@ -460,7 +507,10 @@ watch(
 	{ immediate: true }
 );
 
-onBeforeUnmount(() => unregisterCoolNavigationIcons());
+onBeforeUnmount(() => {
+	unregisterCoolNavigationIcons();
+	unsubscribeWorkbenchOutput();
+});
 
 watch(
 	() => route.fullPath,
@@ -468,16 +518,6 @@ watch(
 		// Router/Process/KeepAlive 是活动 View 唯一真源；新的路由导航结束 Ribbon 浏览态。
 		browsedNavigationRootId.value = '';
 	}
-);
-
-watch(
-	workbenchColorScheme,
-	colorScheme => {
-		if (displayPreferences.value.colorScheme !== colorScheme) {
-			updateDisplayPreference('colorScheme', colorScheme);
-		}
-	},
-	{ immediate: true }
 );
 
 watch(
@@ -492,9 +532,12 @@ watch(
 );
 
 onMounted(() => {
+	systemThemeMedia.addEventListener('change', updateSystemColorScheme);
 	void hostToolbar.load();
 	void loadNavigationGroups();
 });
+
+onBeforeUnmount(() => systemThemeMedia.removeEventListener('change', updateSystemColorScheme));
 </script>
 
 <style lang="scss" scoped>
@@ -505,6 +548,14 @@ onMounted(() => {
 	min-width: 0;
 	min-height: 0;
 	overflow: hidden;
+}
+
+:deep(.pnw-workbench-layout[data-pnw-color-scheme='light']) {
+	--pnw-ribbon-tool-muted: #475569;
+}
+
+:deep(.pnw-workbench-layout[data-pnw-color-scheme='dark']) {
+	--pnw-ribbon-tool-muted: #cbd5e1;
 }
 
 .pah-brand {
@@ -610,7 +661,10 @@ onMounted(() => {
 :deep(.pnw-workbench-editor > .app-views) {
 	width: 100%;
 	height: 100%;
+	min-height: 0;
 	margin: 0;
+	overflow: auto;
+	overscroll-behavior: contain;
 	border-radius: 0;
 }
 

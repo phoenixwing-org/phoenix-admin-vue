@@ -62,6 +62,7 @@ import { useDict } from '../index';
 import { useViewGroup } from '/@/plugins/view';
 import { useI18n } from 'vue-i18n';
 import { Plugins } from '/#/crud';
+import { DICT_TYPE_KEY_MAX_LENGTH, isValidDictTypeKey } from '../utils/type-key';
 
 const { service } = useCool();
 const { dict } = useDict();
@@ -103,7 +104,18 @@ const { ViewGroup } = useViewGroup({
 					component: {
 						name: 'el-input',
 						props: {
-							maxlength: 20
+							maxlength: DICT_TYPE_KEY_MAX_LENGTH,
+							showWordLimit: true,
+							placeholder: 'brand 或 example-plugin.status'
+						}
+					},
+					rules: {
+						validator(_, value, callback) {
+							if (!isValidDictTypeKey(value)) {
+								callback(new Error(t('Key 仅允许字母开头，并使用字母、数字、点、横线或下划线')));
+							} else {
+								callback();
+							}
 						}
 					},
 					required: true

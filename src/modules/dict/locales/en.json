@@ -12,5 +12,6 @@
   "新增": "Add",
   "ID": "ID",
   "创建时间": "Create Time",
-  "更新时间": "Update Time"
+  "更新时间": "Update Time",
+  "Key 仅允许字母开头，并使用字母、数字、点、横线或下划线": "Key must start with a letter and contain only letters, numbers, dots, hyphens, or underscores"
 }

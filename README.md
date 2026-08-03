@@ -22,6 +22,8 @@ Ribbon 菜单映射优先复用现有菜单树：Cool 一级菜单作为“模�
 
 导航呈现、Primary/Secondary/Bottom、Footer 与 Ribbon 外观使用带版本号的 `pah.workbenchPreferences.v3` 本地偏好。损坏或缺失字段逐项回退，宿主设置可一键恢复 `.env` 导航默认值和安全面板布局；这些偏好只控制呈现，不扩大菜单或 API 权限。
 
+Bottom 是工作台实例级的全局“输出”窗口，使用 Wing 的 `PnwOutputBlock` 原样显示自由文本；切换 View 不会清空，View 也不能自行贡献或覆盖 Bottom。Host 与插件可通过 `usePahWorkbenchOutput()` 发送 append、appendLine、replace、clear 信号；服务端分页日志、结构化诊断、审计记录、请求体和秘密信息仍属于各自业务能力，不进入该窗口。
+
 ## 仓库关系
 
 | 项目              | 地址/版本                                             |

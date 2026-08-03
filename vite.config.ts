@@ -11,6 +11,7 @@ import vueDevTools from 'vite-plugin-vue-devtools';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { proxy } from './src/config/proxy';
 import { cool } from '@cool-vue/vite-plugin';
+import { pahLocalWingAliases } from './scripts/pah-wing-mode.mjs';
 
 function toPath(dir: string) {
 	return fileURLToPath(new URL(dir, import.meta.url));
@@ -56,6 +57,7 @@ function pahHostRuntimeDependencies(): Plugin {
 // https://vitejs.dev/config
 export default ({ mode }: ConfigEnv): UserConfig => {
 	const isDev = mode === 'development';
+	const localWingAliases = pahLocalWingAliases();
 
 	return {
 		plugins: [
@@ -104,6 +106,7 @@ export default ({ mode }: ConfigEnv): UserConfig => {
 			// 外部开发插件的 peer dependencies 始终复用 Host 单例。
 			dedupe: [...pahHostSingletonDependencies],
 			alias: [
+				...localWingAliases,
 				{ find: '/@', replacement: toPath('./src') },
 				{ find: '/$', replacement: toPath('./src/modules') },
 				{ find: '/#', replacement: toPath('./src/plugins') },
@@ -113,6 +116,7 @@ export default ({ mode }: ConfigEnv): UserConfig => {
 		// Element Plus 的按需子模块会直接导入这些 CommonJS 插件；显式预构建，
 		// 避免浏览器把 dayjs/plugin/*.js 当作原生 ESM 加载。
 		optimizeDeps: {
+			exclude: localWingAliases.length ? ['phoenix-wing'] : [],
 			include: [
 				'dayjs/plugin/advancedFormat.js',
 				'dayjs/plugin/customParseFormat.js',

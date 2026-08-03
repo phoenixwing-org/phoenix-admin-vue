@@ -67,6 +67,39 @@ describe('PahNavigationAdapter', () => {
 		]);
 	});
 
+	it('跨多个 Ribbon 分块仍使用模块内连续顺序', () => {
+		const items = Array.from({ length: 13 }, (_, index) => ({
+			pageId: `page-${index + 1}`,
+			menuId: index + 1,
+			label: `页面 ${index + 1}`,
+			path: `/pages/${index + 1}`
+		}));
+		const manyGroups: PahModuleGroup[] = [
+			{
+				id: 'business',
+				label: '业务',
+				modules: [
+					{
+						id: 'example-module',
+						label: '示例模块',
+						groups: [
+							{ id: 'group-1', label: '常用', items: items.slice(0, 5) },
+							{ id: 'group-2', label: '常用 2', items: items.slice(5, 10) },
+							{ id: 'group-3', label: '常用 3', items: items.slice(10) }
+						]
+					}
+				]
+			}
+		];
+
+		const children = pahBuildNavigationNodes(manyGroups)[0]?.children?.[0]?.children;
+
+		expect(children?.map(node => node.id)).toEqual(items.map(item => item.pageId));
+		expect(children?.map(node => node.order)).toEqual(
+			Array.from({ length: 13 }, (_, index) => index)
+		);
+	});
+
 	it('节点只保存稳定 ID，路由动作仍由 Pah 查表', () => {
 		expect(pahFindNavigationItemByNodeId(groups, 'pah-menu-4')?.path).toBe('/system/role');
 		expect(pahFindNavigationNodeIdByPath(groups, '/system/user')).toBe('pah-menu-3');

@@ -58,6 +58,14 @@ onUnmounted(() => {
 	border-radius: 6px;
 	position: relative;
 
+	:deep(.app-view-transition-host) {
+		width: 100%;
+		height: 100%;
+		min-width: 0;
+		min-height: 0;
+		overflow: hidden;
+	}
+
 	.none-enter-active {
 		position: absolute;
 	}

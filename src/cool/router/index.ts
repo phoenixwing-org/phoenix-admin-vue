@@ -16,12 +16,13 @@ import {
 	coolIsCatchAllRoute,
 	coolResolveDynamicRouteWithRefresh
 } from './resolve';
+import { coolWrapRouteViewLoader } from './view';
 
 // 基本路径
 const baseUrl = import.meta.env.BASE_URL;
 
 // 扫描文件
-const files = import.meta.glob(['/src/modules/*/{views,pages}/**/*', '!**/components']);
+const files = import.meta.glob(['/src/modules/*/{views,pages}/**/*.vue', '!**/components']);
 
 // 默认路由
 const routes: RouteRecordRaw[] = [
@@ -102,7 +103,8 @@ router.append = function (routeData) {
 					route.component = () => import('/$/base/views/frame.vue');
 				} else {
 					// 从文件系统中动态导入组件
-					route.component = files['/src/' + viewPath.replace('cool/', '')];
+					const loader = files['/src/' + viewPath.replace('cool/', '')];
+					route.component = loader ? coolWrapRouteViewLoader(loader) : undefined;
 				}
 			} else if (!route.redirect) {
 				// 如果没有组件路径且没有重定向，默认重定向到 404

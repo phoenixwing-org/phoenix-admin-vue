@@ -268,8 +268,18 @@ onMounted(load);
 	box-sizing: border-box;
 	padding: 28px;
 	overflow: auto;
-	color: #182236;
-	background: radial-gradient(circle at 90% 0%, rgb(73 108 255 / 12%), transparent 32%), #f5f7fb;
+	color: var(--pnw-workbench-text, var(--el-text-color-primary));
+	background:
+		radial-gradient(
+			circle at 90% 0%,
+			color-mix(
+				in srgb,
+				var(--pnw-control-active-bg, var(--el-color-primary)) 12%,
+				transparent
+			),
+			transparent 32%
+		),
+		var(--pnw-workbench-bg, var(--el-bg-color-page));
 }
 .hero,
 .section-head {
@@ -287,7 +297,7 @@ onMounted(load);
 }
 .eyebrow {
 	margin: 0;
-	color: #7b8494;
+	color: var(--pnw-workbench-muted, var(--el-text-color-secondary));
 	font-size: 12px;
 	font-weight: 700;
 	letter-spacing: 0.14em;
@@ -295,24 +305,33 @@ onMounted(load);
 .hero p:last-child,
 .section-head span {
 	margin: 0;
-	color: #687386;
+	color: var(--pnw-workbench-muted, var(--el-text-color-secondary));
 }
 .notice,
 .card {
 	margin-top: 20px;
-	border: 1px solid #e0e5ef;
+	border: 1px solid var(--pnw-workbench-border, var(--el-border-color));
 	border-radius: 16px;
-	background: rgb(255 255 255 / 88%);
-	box-shadow: 0 12px 36px rgb(35 52 89 / 6%);
+	background: color-mix(
+		in srgb,
+		var(--pnw-workbench-surface, var(--el-bg-color)) 92%,
+		transparent
+	);
+	box-shadow: 0 12px 36px
+		color-mix(
+			in srgb,
+			var(--pnw-workbench-text, var(--el-text-color-primary)) 6%,
+			transparent
+		);
 }
 .notice {
 	display: flex;
 	gap: 12px;
 	padding: 16px 20px;
-	color: #4b5c77;
+	color: var(--pnw-workbench-muted, var(--el-text-color-regular));
 }
 .notice strong {
-	color: #3158d8;
+	color: var(--pnw-control-active-bg, var(--el-color-primary));
 	white-space: nowrap;
 }
 .card {
@@ -330,17 +349,21 @@ onMounted(load);
 	align-items: center;
 	padding: 10px;
 	border-radius: 10px;
-	background: #f7f9fd;
+	background: color-mix(
+		in srgb,
+		var(--pnw-workbench-bg, var(--el-bg-color-page)) 72%,
+		var(--pnw-workbench-surface, var(--el-bg-color))
+	);
 }
 .group-row__flag {
-	color: #63718a;
+	color: var(--pnw-workbench-muted, var(--el-text-color-secondary));
 	font-size: 12px;
 	font-weight: 700;
 }
 .modules small {
 	display: block;
 	margin-top: 3px;
-	color: #7b8494;
+	color: var(--pnw-workbench-muted, var(--el-text-color-secondary));
 }
 @media (max-width: 850px) {
 	.group-row {
