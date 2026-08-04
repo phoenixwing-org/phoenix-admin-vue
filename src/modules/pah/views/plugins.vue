@@ -6,7 +6,10 @@
 				<h1>业务插件</h1>
 				<p class="summary">登记并验证跨前后端业务模块；Host 不归档或执行插件业务源码。</p>
 			</div>
-			<el-button :loading="loading" @click="refresh">刷新</el-button>
+			<div class="hero-actions">
+				<el-button @click="router.push('/pah/identity')">外部身份审查</el-button>
+				<el-button :loading="loading" @click="refresh">刷新</el-button>
+			</div>
 		</header>
 
 		<section class="notice">
@@ -439,7 +442,7 @@ interface LocalRuntimeStatus {
 	pendingMigrations: number;
 }
 
-const { service } = useCool();
+const { service, router } = useCool();
 const workbenchOutput = usePahWorkbenchOutput();
 const list = ref<Installation[]>([]);
 const loading = ref(false);
@@ -936,6 +939,11 @@ onMounted(refresh);
 
 .hero h1 {
 	font-size: 30px;
+}
+
+.hero-actions {
+	display: flex;
+	gap: 8px;
 }
 
 .eyebrow {
