@@ -1,8 +1,51 @@
 import {
 	PAH_PLUGIN_FORMAT_VERSION,
+	type PahDictionaryContribution,
 	type PahPluginManifest,
 	type PahPluginMigrationDeclaration
 } from './PahPluginManifest';
+
+const dictionaryTagPattern = /^[a-z0-9][a-z0-9._-]{0,63}$/u;
+
+function assertDictionaryContribution(
+	value: unknown,
+	index: number
+): asserts value is PahDictionaryContribution {
+	if (!isRecord(value)) throw new Error(`dictionaryContributions[${index}] 必须是对象`);
+	if (
+		typeof value.typeKey !== 'string' ||
+		value.typeKey.length > 128 ||
+		!value.typeKey.includes('.')
+	) {
+		throw new Error(`dictionaryContributions[${index}] typeKey 无效`);
+	}
+	if (value.retainOnUninstall !== true) {
+		throw new Error(`dictionaryContributions[${index}] 必须在卸载时保留`);
+	}
+	if (!Array.isArray(value.items) || value.items.length === 0) {
+		throw new Error(`dictionaryContributions[${index}] items 不能为空`);
+	}
+	for (const [itemIndex, item] of value.items.entries()) {
+		if (!isRecord(item)) {
+			throw new Error(`dictionaryContributions[${index}].items[${itemIndex}] 必须是对象`);
+		}
+		if (item.tags !== undefined) {
+			if (
+				!Array.isArray(item.tags) ||
+				item.tags.length > 32 ||
+				item.tags.some(tag => typeof tag !== 'string' || !dictionaryTagPattern.test(tag))
+			) {
+				throw new Error(`dictionaryContributions[${index}].items[${itemIndex}] tags 无效`);
+			}
+		}
+		if (item.enabled !== undefined && typeof item.enabled !== 'boolean') {
+			throw new Error(`dictionaryContributions[${index}].items[${itemIndex}] enabled 无效`);
+		}
+		if (item.itemClass === 'core' && item.enabled === false) {
+			throw new Error(`dictionaryContributions[${index}].items[${itemIndex}] core 不能停用`);
+		}
+	}
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -51,6 +94,12 @@ export function parsePahPluginManifest(text: string): PahPluginManifest {
 	}
 	if (!Array.isArray(value.migrations)) throw new Error('migrations 必须是数组');
 	value.migrations.forEach(assertMigration);
+	if (value.dictionaryContributions !== undefined) {
+		if (!Array.isArray(value.dictionaryContributions)) {
+			throw new Error('dictionaryContributions 必须是数组');
+		}
+		value.dictionaryContributions.forEach(assertDictionaryContribution);
+	}
 	return value as unknown as PahPluginManifest;
 }
 

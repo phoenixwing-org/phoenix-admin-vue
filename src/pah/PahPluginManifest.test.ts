@@ -113,4 +113,33 @@ describe('PahPluginManifest', () => {
 			'只能生成 dry-run 计划'
 		);
 	});
+
+	it('轻量校验同步 enabled/tags/core 字典契约', () => {
+		const manifest = createManifest();
+		manifest.dictionaryContributions = [
+			{
+				id: 'example-plugin-status',
+				typeKey: 'example-plugin.status',
+				typeName: '示例状态',
+				policyVersion: 1,
+				retainOnUninstall: true,
+				items: [
+					{
+						value: 'open',
+						name: '打开',
+						orderNum: 0,
+						itemClass: 'core',
+						tags: ['core']
+					}
+				]
+			}
+		];
+
+		expect(parsePahPluginManifest(JSON.stringify(manifest))).toEqual(manifest);
+		manifest.dictionaryContributions[0].items[0].enabled = false;
+		expect(() => parsePahPluginManifest(JSON.stringify(manifest))).toThrow('core 不能停用');
+		manifest.dictionaryContributions[0].items[0].enabled = true;
+		manifest.dictionaryContributions[0].items[0].tags = ['中文'];
+		expect(() => parsePahPluginManifest(JSON.stringify(manifest))).toThrow('tags 无效');
+	});
 });

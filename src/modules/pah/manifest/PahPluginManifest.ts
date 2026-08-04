@@ -1,6 +1,33 @@
 /** Phoenix Admin Host 接受的业务插件清单结构。 */
 export const PAH_PLUGIN_FORMAT_VERSION = 2 as const;
 export type PahSha256 = `sha256:${string}`;
+export type PahCapabilityHttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+export interface PahCapabilityEndpoint {
+	method: PahCapabilityHttpMethod;
+	path: string;
+}
+
+export type PahDictionaryItemClass = 'core' | 'default' | 'transitional';
+
+export interface PahDictionaryContribution {
+	id: string;
+	typeKey: string;
+	typeName: string;
+	policyVersion: number;
+	retainOnUninstall: true;
+	installPresets?: string[];
+	items: Array<{
+		value: string;
+		name: string;
+		orderNum: number;
+		itemClass: PahDictionaryItemClass;
+		presets?: string[];
+		tags?: string[];
+		enabled?: boolean;
+		customizable?: Array<'name' | 'orderNum' | 'enabled' | 'tags'>;
+	}>;
+}
 
 export interface PahPluginMigrationDeclaration {
 	id: string;
@@ -68,9 +95,11 @@ export interface PahPluginManifest {
 		id: string;
 		description: string;
 		risk: 'read' | 'write' | 'admin';
+		endpoints?: PahCapabilityEndpoint[];
 	}>;
 	resourcePolicies: string[];
 	auditCategories: Array<{ id: string; description: string }>;
+	dictionaryContributions?: PahDictionaryContribution[];
 	migrations: PahPluginMigrationDeclaration[];
 	healthChecks: Array<{ id: string; path: string }>;
 	hostReuse: Array<

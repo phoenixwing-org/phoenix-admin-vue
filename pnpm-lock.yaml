@@ -57,8 +57,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       phoenix-wing:
-        specifier: 0.6.1
-        version: 0.6.1(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4))
+        specifier: 0.6.2
+        version: 0.6.2(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4))
       pinia:
         specifier: ^2.3.1
         version: 2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4))
@@ -733,11 +733,11 @@ packages:
     resolution: {integrity: sha512-dfUnCxiN9H4ap84DvD2ubjw+3vUNpstxa0TneY/Paat8a3R4uQZDLSvWjmznAY/DoahqTHl9V46HF/Zs3F29pg==}
     engines: {node: '>= 10.0.0'}
 
-  '@phoenix-wing/code-core@0.6.1':
-    resolution: {integrity: sha512-4HH+XSx5ifGrdpi9N7hlwr2JghiJ7uywwQvgDoI3wh8vyBLLNCqYHn/LeNJKLDTa7vORqp3FYycAx1JDRtlWfA==}
+  '@phoenix-wing/code-core@0.6.2':
+    resolution: {integrity: sha512-FGITJFHZrBbuzfeVKglIwxZOTJyFJnCp8rU+I3UqiS5WK9lkfQLpxpUUOB+V2CGeeKXKZPOgGK3uF+IrxXNlZQ==}
 
-  '@phoenix-wing/db-node@0.6.1':
-    resolution: {integrity: sha512-yprZjZXb8EFeswIfwbUZKikHvNbgpyvjHHkixU2vIxQ9ep3JsUk50FYjHp0B3YyfjNmKy/S9GacFxBrJL2U94w==}
+  '@phoenix-wing/db-node@0.6.2':
+    resolution: {integrity: sha512-OXgYlYT9ceyUnuV+z7X6YovFKJ8Ry25vv71kBdBWNpCMIylELY/nGoHm+cDVbvLtK8Qzte7Lzceg+mu0mMZYcw==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -872,8 +872,8 @@ packages:
     resolution: {integrity: sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ==}
     engines: {node: '>=18'}
 
-  '@sxzz/popperjs-es@2.11.7':
-    resolution: {integrity: sha512-Ccy0NlLkzr0Ex2FKvh2X+OyERHXJ88XJ1MXtsI9y9fGexlaXaVTPzBCRBwIxFkORuOb+uBqeu+RqnpgYTEZRUQ==}
+  '@sxzz/popperjs-es@2.11.8':
+    resolution: {integrity: sha512-wOwESXvvED3S8xBmcPWHs2dUuzrE4XiZeFu7e1hROIJkm02a49N120pmOXxY33sBb6hArItm5W5tcg1cBtV+HQ==}
 
   '@transloadit/prettier-bytes@0.0.7':
     resolution: {integrity: sha512-VeJbUb0wEKbcwaSlj5n+LscBl9IPgLPkHVGBkh00cztv6X4L/TJXK58LzFuBKX7/GAfiGhIwH67YTLTlzvIzBA==}
@@ -1377,8 +1377,8 @@ packages:
     resolution: {integrity: sha512-QOSvevhslijgYwRx6Rv7zKdMF8lbRmx+uQGx2+vDc+KI/eBnsy9kit5aj23AgGu3pa4t9AgwbnXWqS+iOY+2aA==}
     engines: {node: '>= 6'}
 
-  caniuse-lite@1.0.30001727:
-    resolution: {integrity: sha512-pB68nIHmbN6L/4C6MH1DokyR3bYqFwjaSs/sWDHGj4CTcFtQUQMuJftVwWkXq7mNWOybD3KhUv3oWHoGxgP14Q==}
+  caniuse-lite@1.0.30001806:
+    resolution: {integrity: sha512-72Cuvd95zbSYPKq6Fhg8eDJRlzgWDf7/mtoZv6Qe/DYNCEBdNxoA3+rZAU2ZhGCpZlns3EssFavaZomckT5Uuw==}
 
   cfb@1.2.2:
     resolution: {integrity: sha512-KfdUZsSOw19/ObEWasvBP/Ac4reZvAGauZhs6S/gqNhXhI7cKwvlH7ulj+dOEYnca4bm4SGo8C1bTAQvnTjgQA==}
@@ -2369,8 +2369,8 @@ packages:
   perfect-debounce@1.0.0:
     resolution: {integrity: sha512-xCy9V055GLEqoFaHoC1SoLIaLmWctgCUaBaWxDZ7/Zx4CTyX7cJQLJOok/orfjZAh9kEYpjJa4d0KcJmCbctZA==}
 
-  phoenix-wing@0.6.1:
-    resolution: {integrity: sha512-qkQO8nLnR1cKNghStV/WH4W84MwyQtoLSV8fki5hOQ8mxTQzWBr7F90g1KBObGVyCRy2y5KU8jLw1svXKTot9g==}
+  phoenix-wing@0.6.2:
+    resolution: {integrity: sha512-sPNU/+erS5gaHTCOpSCRrwiG6b7blQ98XskzFTUfXLmFwxgciUiRfwyZxhsQOsjC/xBbjWgrAojpTX9tofl1mQ==}
     peerDependencies:
       element-plus: ^2.0.0
       pinia: ^2.0.0 || ^3.0.0
@@ -3599,9 +3599,9 @@ snapshots:
       '@parcel/watcher-win32-x64': 2.5.1
     optional: true
 
-  '@phoenix-wing/code-core@0.6.1': {}
+  '@phoenix-wing/code-core@0.6.2': {}
 
-  '@phoenix-wing/db-node@0.6.1':
+  '@phoenix-wing/db-node@0.6.2':
     dependencies:
       node-sqlite3-wasm: 0.8.60
 
@@ -3688,7 +3688,7 @@ snapshots:
 
   '@sindresorhus/merge-streams@4.0.0': {}
 
-  '@sxzz/popperjs-es@2.11.7': {}
+  '@sxzz/popperjs-es@2.11.8': {}
 
   '@transloadit/prettier-bytes@0.0.7': {}
 
@@ -4274,7 +4274,7 @@ snapshots:
   autoprefixer@10.4.21(postcss@8.5.6):
     dependencies:
       browserslist: 4.25.1
-      caniuse-lite: 1.0.30001727
+      caniuse-lite: 1.0.30001806
       fraction.js: 4.3.7
       normalize-range: 0.1.2
       picocolors: 1.1.1
@@ -4312,7 +4312,7 @@ snapshots:
 
   browserslist@4.25.1:
     dependencies:
-      caniuse-lite: 1.0.30001727
+      caniuse-lite: 1.0.30001806
       electron-to-chromium: 1.5.190
       node-releases: 2.0.19
       update-browserslist-db: 1.1.3(browserslist@4.25.1)
@@ -4334,7 +4334,7 @@ snapshots:
 
   camelcase-css@2.0.1: {}
 
-  caniuse-lite@1.0.30001727: {}
+  caniuse-lite@1.0.30001806: {}
 
   cfb@1.2.2:
     dependencies:
@@ -4541,7 +4541,7 @@ snapshots:
       '@ctrl/tinycolor': 3.6.1
       '@element-plus/icons-vue': 2.3.1(vue@3.5.18(typescript@5.5.4))
       '@floating-ui/dom': 1.7.2
-      '@popperjs/core': '@sxzz/popperjs-es@2.11.7'
+      '@popperjs/core': '@sxzz/popperjs-es@2.11.8'
       '@types/lodash': 4.17.20
       '@types/lodash-es': 4.17.12
       '@vueuse/core': 9.13.0(vue@3.5.18(typescript@5.5.4))
@@ -4562,7 +4562,7 @@ snapshots:
       '@ctrl/tinycolor': 3.6.1
       '@element-plus/icons-vue': 2.3.1(vue@3.5.18(typescript@5.5.4))
       '@floating-ui/dom': 1.7.2
-      '@popperjs/core': '@sxzz/popperjs-es@2.11.7'
+      '@popperjs/core': '@sxzz/popperjs-es@2.11.8'
       '@types/lodash': 4.17.20
       '@types/lodash-es': 4.17.12
       '@vueuse/core': 9.13.0(vue@3.5.18(typescript@5.5.4))
@@ -5313,10 +5313,10 @@ snapshots:
 
   perfect-debounce@1.0.0: {}
 
-  phoenix-wing@0.6.1(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4)):
+  phoenix-wing@0.6.2(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4)):
     dependencies:
-      '@phoenix-wing/code-core': 0.6.1
-      '@phoenix-wing/db-node': 0.6.1
+      '@phoenix-wing/code-core': 0.6.2
+      '@phoenix-wing/db-node': 0.6.2
     optionalDependencies:
       element-plus: 2.10.2(vue@3.5.18(typescript@5.5.4))
       node-sqlite3-wasm: 0.8.60
