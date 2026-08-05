@@ -1,6 +1,6 @@
 {
 	"name": "phoenix-admin-vue",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"packageManager": "pnpm@10.15.1",
 	"description": "Phoenix Admin Host frontend maintained from Cool Admin Vue 8.x",
 	"license": "MIT",
