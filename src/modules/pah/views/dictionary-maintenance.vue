@@ -271,7 +271,7 @@ function recordType(status: DictionaryRecord['status']) {
 
 async function loadInstallations() {
 	installations.value = await service.request({
-		url: '/admin/pah/plugin/list',
+		url: '/admin/phoenix/plugin/list',
 		method: 'POST',
 		data: {}
 	});
@@ -290,12 +290,12 @@ async function refreshPlan({ emitOutput = false }: { emitOutput?: boolean } = {}
 	try {
 		const [nextPlan, recordPage] = await Promise.all([
 			service.request({
-				url: '/admin/pah/plugin/dictionary-plan',
+				url: '/admin/phoenix/plugin/dictionary-plan',
 				method: 'GET',
 				params: { moduleId: selectedModuleId.value }
 			}),
 			service.request({
-				url: '/admin/pah/plugin/dictionary-records',
+				url: '/admin/phoenix/plugin/dictionary-records',
 				method: 'GET',
 				params: { moduleId: selectedModuleId.value, page: 1, size: 20 }
 			})
@@ -351,7 +351,7 @@ async function reconcile() {
 	appendOutput(`开始补全：${selectedModuleId.value}，计划 ${totalChanges.value} 项。`);
 	try {
 		await service.request({
-			url: '/admin/pah/plugin/dictionary-reconcile',
+			url: '/admin/phoenix/plugin/dictionary-reconcile',
 			method: 'POST',
 			data: {
 				moduleId: selectedModuleId.value,

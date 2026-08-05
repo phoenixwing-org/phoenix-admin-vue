@@ -46,9 +46,9 @@ describe('Cool 字典 type key', () => {
 		]) {
 			expect(dictViewSource).toContain(field);
 		}
-		expect(maintenanceViewSource).toContain('/admin/pah/plugin/dictionary-plan');
-		expect(maintenanceViewSource).toContain('/admin/pah/plugin/dictionary-reconcile');
-		expect(maintenanceViewSource).toContain('/admin/pah/plugin/dictionary-records');
+		expect(maintenanceViewSource).toContain('/admin/phoenix/plugin/dictionary-plan');
+		expect(maintenanceViewSource).toContain('/admin/phoenix/plugin/dictionary-reconcile');
+		expect(maintenanceViewSource).toContain('/admin/phoenix/plugin/dictionary-records');
 		expect(maintenanceViewSource).not.toContain('ALTER TABLE dict_');
 	});
 
@@ -86,9 +86,11 @@ describe('Cool 字典 type key', () => {
 		expect(dictViewSource).toContain('changeEnabled(scope.row, $event)');
 		expect(dictViewSource).toContain('service.dict.info.update({ id: row.id, enabled })');
 		expect(dictViewSource).not.toContain("label: '启用',\n\t\t\tprop: 'enabled'");
-		expect(dictViewSource).toContain('<template #slot-tags="{ scope }">');
-		expect(dictViewSource).toContain('@keydown.enter.prevent="commitTagDraft(scope)"');
-		expect(dictViewSource).toContain('if (!commitTagDraft(data)) return;');
+		expect(dictViewSource).toContain('<template #slot-tags>');
+		expect(dictViewSource).toContain('@keydown.enter.prevent="commitTagDraft()"');
+		expect(dictViewSource).toContain('tagValues.value = normalizeTags(data.tags)');
+		expect(dictViewSource).toContain('if (!commitTagDraft()) return;');
+		expect(dictViewSource).toContain('tags: [...tagValues.value]');
 		expect(dictViewSource).not.toContain('allowCreate: true');
 		expect(dictViewSource).toContain("label: t('名称'),\n\t\t\tprop: 'name',\n\t\t\tspan: 12");
 	});

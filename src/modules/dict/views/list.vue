@@ -124,14 +124,14 @@
 
 				<!-- 新增、编辑 -->
 				<cl-upsert ref="Upsert">
-					<template #slot-tags="{ scope }">
+					<template #slot-tags>
 						<div class="dict-tags-editor">
 							<el-tag
-								v-for="tag in normalizeTags(scope.tags)"
+								v-for="tag in tagValues"
 								:key="tag"
 								closable
 								:disable-transitions="true"
-								@close="removeTag(scope, tag)"
+								@close="removeTag(tag)"
 							>
 								{{ tag }}
 							</el-tag>
@@ -139,7 +139,7 @@
 								v-model="tagDraft"
 								placeholder="输入标签后按回车；点确定也会提交"
 								clearable
-								@keydown.enter.prevent="commitTagDraft(scope)"
+								@keydown.enter.prevent="commitTagDraft()"
 							/>
 						</div>
 						<div class="dict-tags-hint">仅支持小写字母、数字、点、下划线和连字符</div>
@@ -194,6 +194,7 @@ const availableTags = computed(() =>
 );
 const enabledUpdatingIds = reactive(new Set<number>());
 const tagDraft = ref('');
+const tagValues = ref<string[]>([]);
 
 const { ViewGroup } = useViewGroup({
 	label: t('类型'),
@@ -361,11 +362,15 @@ const Upsert = useUpsert({
 			}
 		}
 	],
+	onOpened(data) {
+		tagValues.value = normalizeTags(data.tags);
+		tagDraft.value = '';
+	},
 	onSubmit(data, { next }) {
-		if (!commitTagDraft(data)) return;
+		if (!commitTagDraft()) return;
 		next({
 			...data,
-			tags: normalizeTags(data.tags),
+			tags: [...tagValues.value],
 			typeId: ViewGroup.value?.selected?.id
 		});
 		tagDraft.value = '';
@@ -532,7 +537,7 @@ function normalizeTags(value: unknown): string[] {
 	].sort();
 }
 
-function commitTagDraft(scope: any): boolean {
+function commitTagDraft(): boolean {
 	const draft = tagDraft.value.trim().toLowerCase();
 	if (!draft) return true;
 	const candidates = draft
@@ -543,18 +548,18 @@ function commitTagDraft(scope: any): boolean {
 		ElMessage.warning('标签只能包含小写字母、数字、点、下划线和连字符');
 		return false;
 	}
-	const tags = normalizeTags([...(Array.isArray(scope.tags) ? scope.tags : []), ...candidates]);
+	const tags = normalizeTags([...tagValues.value, ...candidates]);
 	if (tags.length > 32) {
 		ElMessage.warning('字典标签不能超过 32 个');
 		return false;
 	}
-	scope.tags = tags;
+	tagValues.value = tags;
 	tagDraft.value = '';
 	return true;
 }
 
-function removeTag(scope: any, tag: string) {
-	scope.tags = normalizeTags(scope.tags).filter(item => item !== tag);
+function removeTag(tag: string) {
+	tagValues.value = tagValues.value.filter(item => item !== tag);
 }
 
 // 追加子集

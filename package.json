@@ -17,7 +17,7 @@
 		"build-static": "vite build --mode static",
 		"build-demo": "vite build --mode demo",
 		"preview": "vite preview",
-		"test": "vitest run src/pah src/modules/dict/utils",
+		"test": "vitest run src/pah src/modules/dict/utils src/cool/service",
 		"test:wing-local": "node scripts/run-with-phoenix-wing.mjs -- pnpm exec vitest run src/pah",
 		"wing:local:check": "node scripts/run-with-phoenix-wing.mjs --check",
 		"type-check:wing-local": "node scripts/typecheck-with-phoenix-wing.mjs --build",

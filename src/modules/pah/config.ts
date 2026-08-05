@@ -14,7 +14,7 @@ export default (): ModuleConfig => {
 				component: () => import('./views/navigation.vue')
 			},
 			{
-				path: '/pah/plugins',
+				path: '/phoenix/plugins',
 				meta: {
 					label: 'Phoenix 业务插件',
 					keepAlive: true
