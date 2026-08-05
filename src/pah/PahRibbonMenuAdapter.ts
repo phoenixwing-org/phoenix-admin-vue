@@ -23,6 +23,11 @@ export interface PahRibbonTab {
 	id: string;
 	label: string;
 	groups: PahRibbonGroup[];
+	/** Phoenix Admin 菜单资源图标；由 Pah 适配成 Wing 可渲染组件。 */
+	icon?: string;
+	/** 可配置大分组使用的稳定目标；普通菜单默认是 menu:<id>。 */
+	targetKey?: string;
+	menuId?: number;
 }
 
 export interface PahMenuTrailItem {
@@ -66,9 +71,14 @@ function pahCollectLeaves(items: Menu.List = []): PahRibbonItem[] {
 		});
 }
 
-export function pahFindMenuTrail(menuRoots: Menu.List, path: string): PahMenuTrailItem[] {
-	for (const item of pahOrdered(menuRoots).filter(pahIsVisible)) {
+function pahFindMenuTrailInternal(
+	menuRoots: Menu.List,
+	path: string,
+	includeHidden: boolean
+): PahMenuTrailItem[] {
+	for (const item of pahOrdered(menuRoots)) {
 		if (item.type === PAH_MENU_TYPE.PERMISSION) continue;
+		if (!includeHidden && !pahIsVisible(item)) continue;
 
 		const current = {
 			id: item.id,
@@ -78,11 +88,32 @@ export function pahFindMenuTrail(menuRoots: Menu.List, path: string): PahMenuTra
 
 		if (item.path === path) return [current];
 
-		const children = pahFindMenuTrail(item.children || [], path);
+		const children = pahFindMenuTrailInternal(item.children || [], path, includeHidden);
 		if (children.length > 0) return [current, ...children];
 	}
 
 	return [];
+}
+
+/** 只从可见导航项生成普通菜单路径。 */
+export function pahFindMenuTrail(menuRoots: Menu.List, path: string): PahMenuTrailItem[] {
+	return pahFindMenuTrailInternal(menuRoots, path, false);
+}
+
+/** hidden View 仍可沿权限菜单父链找到所属模块，但不会因此进入 Ribbon/Tree。 */
+export function pahFindRouteMenuTrail(menuRoots: Menu.List, path: string): PahMenuTrailItem[] {
+	return pahFindMenuTrailInternal(menuRoots, path, true);
+}
+
+/**
+ * Vue Router 的 route.path 是实际 URL；权限菜单保存的是 /items/:id 这类模板。
+ * hidden 页归属必须使用最后一个 matched record 的模板，不能猜 URL 前缀。
+ */
+export function pahRouteTemplatePath(
+	actualPath: string,
+	matched: ReadonlyArray<{ path: string }>
+): string {
+	return [...matched].reverse().find(record => record.path)?.path || actualPath;
 }
 
 export function pahChunkRibbonItems(
@@ -114,7 +145,8 @@ function pahCreateGroups(
 
 export function pahBuildRibbonTabs(
 	menuRoots: Menu.List,
-	groupSize = PAH_RIBBON_GROUP_SIZE
+	groupSize = PAH_RIBBON_GROUP_SIZE,
+	targetKeysByMenuId: Record<number, string> = {}
 ): PahRibbonTab[] {
 	return pahOrdered(menuRoots)
 		.filter(pahIsVisible)
@@ -125,6 +157,9 @@ export function pahBuildRibbonTabs(
 				return {
 					id: tabId,
 					label: root.meta?.label || root.name,
+					icon: root.icon,
+					menuId: root.id,
+					targetKey: targetKeysByMenuId[root.id] || `menu:${root.id}`,
 					groups: pahCreateGroups(
 						tabId,
 						root.meta?.label || root.name,
@@ -156,6 +191,9 @@ export function pahBuildRibbonTabs(
 			return {
 				id: tabId,
 				label: root.meta?.label || root.name,
+				icon: root.icon,
+				menuId: root.id,
+				targetKey: targetKeysByMenuId[root.id] || `menu:${root.id}`,
 				groups
 			};
 		})

@@ -1,5 +1,6 @@
 import { config } from '/@/config';
 import { request } from './request';
+import { joinServiceUrl } from './url';
 import { AxiosRequestConfig } from 'axios';
 
 export class BaseService {
@@ -17,11 +18,11 @@ export class BaseService {
 
 		if (url && url.indexOf('http') < 0) {
 			if (this.namespace) {
-				url = this.namespace + url;
+				url = joinServiceUrl(this.namespace, url);
 			}
 
 			if (options.proxy !== false) {
-				url = config.baseUrl + '/' + url;
+				url = joinServiceUrl(config.baseUrl, url);
 			}
 		}
 

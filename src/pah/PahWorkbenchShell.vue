@@ -1,250 +1,114 @@
 <template>
 	<section class="pah-workbench-shell">
-		<header class="pah-host-header">
-			<button type="button" class="pah-brand" title="Phoenix Admin Host 首页" @click="goHome">
-				<img src="/pah-phoenixwing-mark.svg" alt="" />
-				<span class="pah-brand-copy">
-					<strong>Phoenix Admin</strong>
-					<small>{{ activeRibbonTabLabel || 'Host 工作台' }}</small>
-				</span>
-			</button>
-
-			<div v-if="navigationStyle === 'ribbon'" class="pah-header-tabs">
-				<PnwRibbonTabBar v-model:active-tab="activeRibbonTab" :tabs="ribbonTabOptions" />
-			</div>
-			<div v-else class="pah-header-context">
-				<span>工作区</span>
-				<strong>{{ activeRibbonTabLabel || '未选择分组' }}</strong>
-			</div>
-
-			<div class="pah-workbench-topbar">
-				<slot name="topbar" />
-			</div>
-
-			<el-popover placement="bottom-end" :width="280" trigger="click">
-				<template #reference>
-					<button
-						type="button"
-						class="pah-settings-button"
-						:title="`宿主设置 · ${navigationStyleLabel}`"
-					>
-						<el-icon><Setting /></el-icon>
-					</button>
-				</template>
-				<div class="pah-settings-panel">
-					<strong>宿主导航样式</strong>
-					<p>两种样式共享当前账号的菜单和资源权限。</p>
-					<button
-						type="button"
-						:class="{ active: navigationStyle === 'ribbon' }"
-						:aria-pressed="navigationStyle === 'ribbon'"
-						@click="setNavigationStyle('ribbon')"
-					>
-						<el-icon><Grid /></el-icon>
-						<span><b>Ribbon 工作台</b><small>顶部大分组与工具带</small></span>
-					</button>
-					<button
-						type="button"
-						:class="{ active: navigationStyle === 'grouped-sidebar' }"
-						:aria-pressed="navigationStyle === 'grouped-sidebar'"
-						@click="setNavigationStyle('grouped-sidebar')"
-					>
-						<el-icon><Collection /></el-icon>
-						<span><b>大分组侧栏</b><small>分组树、模块与功能</small></span>
-					</button>
-
-					<div class="pah-settings-layout">
-						<strong>区域显示</strong>
-						<label><input v-model="primaryOpen" type="checkbox" /> Primary</label>
-						<label><input v-model="propertiesOpen" type="checkbox" /> Properties</label>
-						<label><input v-model="logOpen" type="checkbox" /> Log</label>
-						<label>
-							<input
-								type="checkbox"
-								:checked="ribbonLayout === 'inline'"
-								@change="toggleRibbonLayout"
-							/>
-							紧凑 Ribbon
-						</label>
-					</div>
-					<button type="button" class="pah-settings-reset" @click="resetHostPreferences">
-						恢复宿主默认布局
-					</button>
-				</div>
-			</el-popover>
-		</header>
-
-		<PnwRibbonShell v-if="navigationStyle === 'ribbon'" v-model:layout="ribbonLayout">
-			<div v-for="group in activeRibbonGroups" :key="group.id" class="pah-ribbon-group">
-				<PnwRibbonGroup
-					:label="group.label"
-					:items="ribbonGroupItems(group)"
-					:layout="ribbonLayout"
-					@open="openRibbonPage"
-				/>
-				<span class="pah-ribbon-group-label">{{ group.label }}</span>
-			</div>
-		</PnwRibbonShell>
-
-		<div class="pah-workbench-body">
-			<aside
-				v-if="navigationStyle === 'grouped-sidebar'"
-				class="pah-grouped-sidebar"
-				aria-label="Phoenix 大分组导航"
-			>
-				<div class="pah-group-pages">
-					<div class="pah-group-pages__title">
-						<div>
-							<small>PHOENIX WORKSPACE</small>
-							<strong>分组导航</strong>
-						</div>
-						<button type="button" @click="expandAllNavigation">全部展开</button>
-					</div>
-					<div class="pah-navigation-tree" role="tree" aria-label="Phoenix 分组模块导航">
-						<section
-							v-for="moduleGroup in moduleGroups"
-							:key="moduleGroup.id"
-							class="pah-navigation-tree__root"
-							role="treeitem"
-							:aria-expanded="groupedNavigation.isExpanded(moduleGroup.id)"
-						>
-							<button
-								type="button"
-								class="pah-navigation-tree__root-toggle"
-								:class="{ active: moduleGroup.id === activeRibbonTab }"
-								@click="groupedNavigation.toggle(moduleGroup.id)"
-							>
-								<el-icon
-									:class="{ open: groupedNavigation.isExpanded(moduleGroup.id) }"
-								>
-									<ArrowRightBold />
-								</el-icon>
-								<strong>{{ moduleGroup.label }}</strong>
-								<small>{{ moduleGroup.modules.length }}</small>
-							</button>
-							<div
-								v-show="groupedNavigation.isExpanded(moduleGroup.id)"
-								class="pah-navigation-tree__root-children"
-								role="group"
-							>
-								<section
-									v-for="module in moduleGroup.modules"
-									:key="module.id"
-									class="pah-navigation-tree__module"
-									role="treeitem"
-									:aria-expanded="groupedNavigation.isExpanded(module.id)"
-								>
-									<button
-										type="button"
-										class="pah-navigation-tree__module-toggle"
-										:class="{ active: module.id === activeModuleId }"
-										@click="groupedNavigation.toggle(module.id)"
-									>
-										<el-icon
-											:class="{
-												open: groupedNavigation.isExpanded(module.id)
-											}"
-										>
-											<ArrowRightBold />
-										</el-icon>
-										<strong>{{ module.label }}</strong>
-										<small>{{ moduleItems(module).length }}</small>
-									</button>
-									<div
-										v-show="groupedNavigation.isExpanded(module.id)"
-										class="pah-navigation-tree__children"
-										role="group"
-									>
-										<button
-											v-for="item in moduleItems(module)"
-											:key="item.pageId"
-											type="button"
-											role="treeitem"
-											:class="{ active: route.path === item.path }"
-											@click="openRibbonPage(item.pageId)"
-										>
-											<span class="pah-tree-joint" aria-hidden="true"></span>
-											<span>{{ item.label }}</span>
-										</button>
-									</div>
-								</section>
-							</div>
-						</section>
-					</div>
-				</div>
-			</aside>
-
-			<aside v-else-if="primaryOpen" class="pah-side-panel pah-primary" aria-label="Primary">
-				<h3>Primary · 大分组</h3>
-				<button
-					v-for="moduleGroup in moduleGroups"
-					:key="moduleGroup.id"
-					type="button"
-					:class="{ active: moduleGroup.id === activeRibbonTab }"
-					@click="activeRibbonTab = moduleGroup.id"
-				>
-					{{ moduleGroup.label }}
+		<PnwWorkbenchShellLayout
+			:nodes="navigationNodes"
+			:active-node-id="activeNavigationNodeId"
+			:expanded-node-ids="expandedNavigationNodeIds"
+			:presentation="displayPreferences.presentation"
+			:ribbon-appearance="displayPreferences.ribbonAppearance"
+			:tree-collapsed="displayPreferences.treeCollapsed"
+			:tree-appearance="displayPreferences.treeAppearance"
+			:tab-bar-placement="displayPreferences.tabBarPlacement"
+			:color-scheme="workbenchColorScheme"
+			:layout-state="displayPreferences.layoutState"
+			:visibility="displayPreferences.layoutState.visibility"
+			:display-settings-positions="displayPreferences.settingsPositions"
+			:view-blocks="activeViewBlocks"
+			:default-bottom-block="workbenchBottomBlock"
+			:active-bottom-tab-id="activeBottomTabId"
+			:tabs="workbenchTabs"
+			:active-tab-id="activeProcessTabId"
+			:page-icon="workbenchPageIcon"
+			:editor-maximized="app.isFull"
+			:locale="workbenchLocale"
+			:can-refresh-active-tab="Boolean(activeProcessTabId)"
+			:can-close-other-tabs="Boolean(activeProcessTabId) && workbenchTabs.length > 1"
+			:can-close-all-tabs="workbenchTabs.length > 0"
+			brand-title="Phoenix Admin"
+			:brand-subtitle="currentTitle"
+			header-aria-label="Phoenix Admin 工作台页眉"
+			activity-aria-label="Phoenix Admin 全局导航"
+			tree-header-label="功能目录"
+			@activate="activateNavigationNode"
+			@select-module="selectNavigationRoot"
+			@update:expanded-node-ids="updateExpandedNavigationNodeIds"
+			@update:presentation="updateDisplayPreference('presentation', $event)"
+			@update:ribbon-appearance="updateDisplayPreference('ribbonAppearance', $event)"
+			@update:tree-collapsed="updateDisplayPreference('treeCollapsed', $event)"
+			@update:tree-appearance="updateDisplayPreference('treeAppearance', $event)"
+			@update:tab-bar-placement="updateDisplayPreference('tabBarPlacement', $event)"
+			@update:color-scheme="updateWorkbenchColorScheme"
+			@update:display-settings-positions="
+				updateDisplayPreference('settingsPositions', $event)
+			"
+			@update:visibility="updateLayoutVisibility"
+			@update:layout-state="updateDisplayPreference('layoutState', $event)"
+			@update:active-bottom-tab-id="activeBottomTabId = $event"
+			@select-tab="selectProcessTab"
+			@close-tab="closeProcessTab"
+			@close-all-tabs="closeAllProcessTabs"
+			@refresh-active-tab="refreshActiveProcessTab"
+			@close-other-tabs="closeOtherProcessTabs"
+			@update:editor-maximized="app.setFull"
+			@display-settings-action="handleDisplaySettingsAction"
+		>
+			<template #brand>
+				<button type="button" class="pah-brand" title="Phoenix Admin 首页" @click="goHome">
+					<PnwPhoenixWingMark class="pah-brand__mark" decorative />
+					<span>
+						<strong>Phoenix Admin</strong>
+						<small>{{ currentTitle }}</small>
+					</span>
 				</button>
-			</aside>
+			</template>
 
-			<main class="pah-workbench-main">
-				<PnwWorkbenchTabBar
-					:tabs="workbenchTabs"
-					:active-tab-id="activeProcessTabId"
-					:can-close-all="workbenchTabs.length > 0"
-					@select="selectProcessTab"
-					@close="closeProcessTab"
-					@close-all="closeAllProcessTabs"
-				/>
-				<div class="pah-workbench-view">
-					<slot />
+			<template #header-actions>
+				<div class="pah-workbench-topbar">
+					<slot name="topbar" />
 				</div>
-			</main>
+			</template>
 
-			<aside
-				v-if="propertiesOpen"
-				class="pah-side-panel pah-properties"
-				aria-label="Properties"
-			>
-				<h3>Properties</h3>
-				<dl>
-					<dt>页面</dt>
-					<dd>{{ currentTitle }}</dd>
-					<dt>路径</dt>
-					<dd>{{ route.fullPath }}</dd>
-					<dt>壳模式</dt>
-					<dd>{{ configuredMode }}</dd>
-					<dt>导航样式</dt>
-					<dd>{{ navigationStyleLabel }}</dd>
-				</dl>
-			</aside>
-		</div>
+			<template #display-settings-actions="{ emitAction }">
+				<button
+					type="button"
+					class="pah-display-settings-action"
+					@click="emitAction('pah.open-navigation-management')"
+				>
+					管理大分组与模块归属
+				</button>
+				<div v-if="hostToolbarComponents.length" class="pah-display-settings-tools">
+					<strong>常用工具</strong>
+					<div>
+						<component
+							v-for="item in hostToolbarComponents"
+							:key="item.name"
+							:is="item.component"
+						/>
+					</div>
+				</div>
+				<button
+					type="button"
+					class="pah-display-settings-action pah-display-settings-action--reset"
+					@click="emitAction('pah.reset-display-preferences')"
+				>
+					恢复 Admin 默认显示
+				</button>
+			</template>
 
-		<div v-if="logOpen" class="pah-log-panel">
-			<PnwShellLogPanel
-				:log-text="logText"
-				source-label="Phoenix Admin Host"
-				@clear="logLines = []"
-				@close="logOpen = false"
-			/>
-		</div>
+			<template #footer>
+				<div class="pah-footer-context">
+					<span>Phoenix Admin · {{ presentationLabel }} · {{ configuredMode }}</span>
+					<nav v-if="footerBreadcrumb.length" aria-label="当前路径">
+						<template v-for="(item, index) in footerBreadcrumb" :key="item.id">
+							<b v-if="index > 0" aria-hidden="true">/</b>
+							<span>{{ item.label }}</span>
+						</template>
+					</nav>
+				</div>
+			</template>
 
-		<footer class="pah-workbench-footer">
-			<div class="pah-footer-context">
-				<span>Phoenix Admin Host · {{ navigationStyleLabel }} · {{ configuredMode }}</span>
-				<nav v-if="footerBreadcrumb.length" aria-label="当前路径">
-					<template v-for="(item, index) in footerBreadcrumb" :key="item.id">
-						<b v-if="index > 0" aria-hidden="true">/</b>
-						<span>{{ item.label }}</span>
-					</template>
-				</nav>
-			</div>
-			<div>
-				<button type="button" @click="primaryOpen = !primaryOpen">Primary</button>
-				<button type="button" @click="propertiesOpen = !propertiesOpen">Properties</button>
-				<button type="button" @click="logOpen = !logOpen">Log</button>
-			</div>
-		</footer>
+			<slot />
+		</PnwWorkbenchShellLayout>
 	</section>
 </template>
 
@@ -253,88 +117,204 @@ defineOptions({
 	name: 'PahWorkbenchShell'
 });
 
-import { computed, ref, watch } from 'vue';
-import { ArrowRightBold, Collection, Grid, Setting } from '@element-plus/icons-vue';
-import PnwRibbonGroup from 'phoenix-wing/layout/PnwRibbonGroup.vue';
-import PnwRibbonShell from 'phoenix-wing/layout/PnwRibbonShell.vue';
-import PnwRibbonTabBar from 'phoenix-wing/layout/PnwRibbonTabBar.vue';
-import PnwShellLogPanel from 'phoenix-wing/layout/PnwShellLogPanel.vue';
-import PnwWorkbenchTabBar from 'phoenix-wing/layout/PnwWorkbenchTabBar.vue';
+import {
+	computed,
+	markRaw,
+	onBeforeUnmount,
+	onMounted,
+	reactive,
+	ref,
+	shallowRef,
+	watch
+} from 'vue';
+import { storeToRefs } from 'pinia';
+import { isFunction, last, orderBy } from 'lodash-es';
+import {
+	PnwPhoenixWingMark,
+	PnwWorkbenchShell as PnwWorkbenchShellLayout,
+	pnwApplyColorScheme,
+	pnwCreateOutputBuffer,
+	usePnwRegisteredViewContribution,
+	type PnwBottomViewBlockComponentContribution,
+	type PnwColorScheme,
+	type PnwViewBlockVisibility,
+	type PnwWorkbenchDisplayPreferences
+} from 'phoenix-wing';
 import { useBase } from '/$/base';
-import { useCool } from '/@/cool';
+import { useTheme } from '/#/theme/hooks';
+import { module, useCool } from '/@/cool';
 import { storage } from '/@/cool/utils';
+import { config } from '/@/config';
 import {
 	pahBuildRibbonTabs,
-	pahFindMenuTrail,
-	type PahRibbonGroup,
-	type PahRibbonItem,
-	type PahRibbonTab
+	pahFindRouteMenuTrail,
+	pahRouteTemplatePath
 } from './PahRibbonMenuAdapter';
-import { pahBuildModuleGroups } from './PahModuleGroupAdapter';
+import {
+	pahBuildModuleGroups,
+	PAH_DEFAULT_MODULE_GROUPS,
+	type PahModuleGroupDefinition
+} from './PahModuleGroupAdapter';
+import {
+	pahBuildNavigationNodes,
+	pahFindNavigationItem,
+	pahFindNavigationItemByNodeId,
+	pahFindNavigationNodeIdByRoute,
+	pahNavigationBranchIds
+} from './PahNavigationAdapter';
+import {
+	pahAdminResourceIcon,
+	pahLegacyCoolIconName,
+	pahRegisterCoolNavigationIcons,
+	pahResourceIconComponent,
+	pahWingResourceIcon
+} from './PahResourceIcon';
 import type { PahShellMode } from './PahShellMode';
+import { PAH_NAVIGATION_STYLE_KEY } from './PahNavigationStyle';
 import {
-	PAH_NAVIGATION_STYLE_KEY,
-	pahNavigationStyleLabel,
-	pahNormalizeNavigationStyle,
-	type PahNavigationStyle
-} from './PahNavigationStyle';
-import {
-	PAH_DEFAULT_WORKBENCH_PREFERENCES,
+	PAH_LEGACY_WORKBENCH_PREFERENCES_KEY,
 	PAH_WORKBENCH_PREFERENCES_KEY,
-	pahNormalizeWorkbenchPreferences,
-	type PahRibbonLayout
+	pahNormalizeWorkbenchPreferences
 } from './PahWorkbenchPreferences';
 import { usePahGroupedNavigationStore } from './PahGroupedNavigationStore';
+import {
+	pahViewContributionRegistry,
+	type PahViewBlockComponentContributions
+} from './PahViewContributions';
+import { pahWorkbenchSideBlocks } from './PahWorkbenchBlocks';
+import PahWorkbenchDefaultBottom from './PahWorkbenchDefaultBottom.vue';
+import {
+	pahCreateWorkbenchOutput,
+	pahProvideWorkbenchOutput
+} from './PahWorkbenchOutput';
+import { usePahWorkbenchThemeBridge } from './PahWorkbenchThemeBridge';
+import { pahWorkbenchLocale } from './PahWorkbenchLocale';
+import { pahProcessEntriesAfterCloseOthers } from './PahWorkbenchProcessActions';
 
 const props = defineProps<{
 	configuredMode: PahShellMode;
 }>();
 
-const { menu, process } = useBase();
-const { route, router } = useCool();
-const groupedNavigation = usePahGroupedNavigationStore();
-const ribbonTabs = computed(() => pahBuildRibbonTabs(menu.group));
-const moduleGroups = computed(() => pahBuildModuleGroups(ribbonTabs.value));
-const activeRibbonTab = ref('');
+type NavigationResponse = {
+	groups: Array<{ id: number; label: string; orderNum: number; isEnabled: boolean }>;
+	assignments: Array<{ targetKey: string; groupId: number }>;
+	modules: Array<{ menuId: number; targetKey: string }>;
+};
+
+const EMPTY_VIEW_BLOCKS: PahViewBlockComponentContributions = Object.freeze({});
+const navigationGroupIcon = pahWingResourceIcon('folder');
+const { menu, process, app } = useBase();
+const { browser, route, router, service, mitt } = useCool();
+
+const storedPreferences =
+	storage.get(PAH_WORKBENCH_PREFERENCES_KEY) ?? storage.get(PAH_LEGACY_WORKBENCH_PREFERENCES_KEY);
 const initialWorkbenchPreferences = pahNormalizeWorkbenchPreferences(
-	storage.get(PAH_WORKBENCH_PREFERENCES_KEY)
+	storedPreferences,
+	storage.get(PAH_NAVIGATION_STYLE_KEY) || import.meta.env.VITE_PAH_NAVIGATION_STYLE
 );
-const ribbonLayout = ref<PahRibbonLayout>(initialWorkbenchPreferences.ribbonLayout);
-const primaryOpen = ref(initialWorkbenchPreferences.primaryOpen);
-const propertiesOpen = ref(initialWorkbenchPreferences.propertiesOpen);
-const logOpen = ref(initialWorkbenchPreferences.logOpen);
-const logLines = ref<string[]>([]);
-const navigationStyle = ref(
-	pahNormalizeNavigationStyle(
-		storage.get(PAH_NAVIGATION_STYLE_KEY) || import.meta.env.VITE_PAH_NAVIGATION_STYLE
-	)
+const displayPreferences = ref<PnwWorkbenchDisplayPreferences>(
+	initialWorkbenchPreferences.displayPreferences
 );
 
+const themeStore = useTheme();
+const { isDark: coolIsDark } = storeToRefs(themeStore);
+const systemThemeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+const systemPrefersDark = ref(systemThemeMedia.matches);
+const preferredColorScheme = computed<PnwColorScheme>({
+	get: () => displayPreferences.value.colorScheme,
+	set: colorScheme => updateDisplayPreference('colorScheme', colorScheme)
+});
+const { colorScheme: workbenchColorScheme, updateFromWorkbench } = usePahWorkbenchThemeBridge({
+	coolIsDark,
+	colorScheme: preferredColorScheme,
+	setCoolDark: isDark => themeStore.setTheme({ color: themeStore.color, dark: isDark }),
+	systemPrefersDark,
+	applyHostColorScheme: colorScheme => {
+		document.documentElement.classList.toggle('dark', colorScheme === 'dark');
+		pnwApplyColorScheme(colorScheme);
+	}
+});
+const groupedNavigation = usePahGroupedNavigationStore();
+const navigationResponse = ref<NavigationResponse | null>(null);
+const browsedNavigationRootId = ref('');
+const activeBottomTabId = ref('output');
+const workbenchOutputBuffer = pnwCreateOutputBuffer({
+	maxCharacters: 200_000,
+	initialText: '[Runtime] Phoenix Admin 工作台已就绪\n'
+});
+const workbenchOutputSnapshot = shallowRef(workbenchOutputBuffer.getSnapshot());
+const unsubscribeWorkbenchOutput = workbenchOutputBuffer.subscribe(snapshot => {
+	workbenchOutputSnapshot.value = snapshot;
+});
+const workbenchOutput = pahCreateWorkbenchOutput(workbenchOutputBuffer);
+pahProvideWorkbenchOutput(workbenchOutput);
+const workbenchBottomProps = computed(() => ({
+	text: workbenchOutputSnapshot.value.text
+}));
+const workbenchBottomTabs = Object.freeze([{ id: 'output', label: '输出' }]);
+const workbenchBottomBlock: PnwBottomViewBlockComponentContribution = {
+	component: markRaw(PahWorkbenchDefaultBottom),
+	props: workbenchBottomProps,
+	tabs: workbenchBottomTabs
+};
+
 const configuredMode = computed(() => props.configuredMode);
-const ribbonTabOptions = computed(() =>
-	moduleGroups.value.map(group => ({ id: group.id, label: group.label }))
-);
-const activeRibbonGroups = computed(() =>
-	(moduleGroups.value.find(group => group.id === activeRibbonTab.value)?.modules || []).flatMap(
-		module =>
-			module.groups.map(group => ({
-				...group,
-				id: `${module.id}-${group.id}`,
-				label: `${module.label} · ${group.label}`
-			}))
+const navigationTargetKeysByMenuId = computed(() =>
+	Object.fromEntries(
+		(navigationResponse.value?.modules || []).map(item => [item.menuId, item.targetKey])
 	)
 );
-const activeRibbonTabLabel = computed(
-	() => moduleGroups.value.find(group => group.id === activeRibbonTab.value)?.label || ''
+const navigationDefinitions = computed<PahModuleGroupDefinition[]>(() => {
+	if (!navigationResponse.value) return PAH_DEFAULT_MODULE_GROUPS;
+	return navigationResponse.value.groups
+		.filter(group => group.isEnabled)
+		.map(group => ({
+			id: `pah-group-${group.id}`,
+			label: group.label,
+			orderNum: group.orderNum,
+			moduleTargetKeys: navigationResponse
+				.value!.assignments.filter(assignment => assignment.groupId === group.id)
+				.map(assignment => assignment.targetKey)
+		}));
+});
+const ribbonTabs = computed(() =>
+	pahBuildRibbonTabs(menu.group, undefined, navigationTargetKeysByMenuId.value)
 );
-const activeModuleId = computed(
-	() =>
-		ribbonTabs.value.find(module =>
-			module.groups.some(group => group.items.some(item => item.path === route.path))
-		)?.id || ''
+const moduleGroups = computed(() =>
+	pahBuildModuleGroups(ribbonTabs.value, navigationDefinitions.value)
 );
-const navigationStyleLabel = computed(() => pahNavigationStyleLabel(navigationStyle.value));
-const footerBreadcrumb = computed(() => pahFindMenuTrail(menu.group, route.path));
+const coolNavigationIconNames = computed(() =>
+	Array.from(
+		new Set(
+			moduleGroups.value
+				.flatMap(group => group.modules)
+				.flatMap(module => [
+					module.icon,
+					...module.groups.flatMap(group => group.items.map(item => item.icon))
+				])
+				.map(pahLegacyCoolIconName)
+				.filter((name): name is string => Boolean(name))
+		)
+	).sort()
+);
+const navigationNodes = computed(() =>
+	pahBuildNavigationNodes(moduleGroups.value, {
+		group: () => navigationGroupIcon,
+		module: module => pahAdminResourceIcon(module.icon, 'folder'),
+		item: item => pahAdminResourceIcon(item.icon)
+	})
+);
+const navigationBranchIds = computed(() => pahNavigationBranchIds(navigationNodes.value));
+const routeTemplatePath = computed(() => pahRouteTemplatePath(route.path, route.matched));
+const routeNavigationNodeId = computed(() =>
+	pahFindNavigationNodeIdByRoute(moduleGroups.value, menu.group, routeTemplatePath.value)
+);
+const activeNavigationNodeId = computed(
+	() => browsedNavigationRootId.value || routeNavigationNodeId.value
+);
+const expandedNavigationNodeIds = computed(() =>
+	groupedNavigation.expandedNodeIds(navigationBranchIds.value)
+);
 const workbenchTabs = computed(() =>
 	process.list.map(item => ({
 		id: item.path,
@@ -345,90 +325,138 @@ const workbenchTabs = computed(() =>
 	}))
 );
 const activeProcessTabId = computed(() => process.list.find(item => item.active)?.path || '');
+const workbenchLocale = computed(() => pahWorkbenchLocale(config.i18n.locale));
+const activeViewId = computed(() => activeProcessTabId.value || route.path);
+const registeredViewBlocks = usePnwRegisteredViewContribution(
+	pahViewContributionRegistry,
+	activeViewId,
+	EMPTY_VIEW_BLOCKS
+);
+const activeViewBlocks = computed(() => pahWorkbenchSideBlocks(registeredViewBlocks.value));
 const currentTitle = computed(
 	() =>
 		process.list.find(item => item.active)?.meta?.label ||
-		String(route.meta?.label || route.name || 'Phoenix Admin')
+		String(route.meta?.label || route.name || 'Host 工作台')
 );
-const logText = computed(() => logLines.value.join('\n'));
+const footerBreadcrumb = computed(() => pahFindRouteMenuTrail(menu.group, routeTemplatePath.value));
+const presentationLabel = computed(() =>
+	displayPreferences.value.presentation === 'tree' ? '侧面目录树' : '顶部 Ribbon'
+);
 
-function record(message: string) {
-	logLines.value = [...logLines.value.slice(-49), message];
+function workbenchPageIcon(pageId: string) {
+	const item = pahFindNavigationItem(moduleGroups.value, candidate => candidate.path === pageId);
+	return pahResourceIconComponent(
+		item ? pahAdminResourceIcon(item.icon) : pahWingResourceIcon('document')
+	);
+}
+
+const hostToolbar = reactive({
+	list: [] as Array<{ name: string; component: unknown; h5?: boolean; pc?: boolean }>,
+	async load() {
+		const entries = orderBy(
+			module.list
+				.filter(item => item.enable !== false && !!item.toolbar)
+				.map(item => item.toolbar),
+			'order'
+		);
+		const toolbarEntries = entries.filter(
+			(item): item is { order?: number; pc?: boolean; h5?: boolean; component: any } =>
+				Boolean(item?.component)
+		);
+		this.list = await Promise.all(
+			toolbarEntries.map(async (item, index) => {
+				const loaded = await (isFunction(item.component)
+					? item.component()
+					: item.component);
+				return {
+					...item,
+					name: `toolbar-${item.order || index}`,
+					component: markRaw(loaded.default || loaded)
+				};
+			})
+		);
+	}
+});
+const hostToolbarComponents = computed(() =>
+	hostToolbar.list.filter(item => (browser.isMini ? item.h5 !== false : item.pc !== false))
+);
+
+function updateDisplayPreference<K extends keyof PnwWorkbenchDisplayPreferences>(
+	key: K,
+	value: PnwWorkbenchDisplayPreferences[K]
+) {
+	displayPreferences.value = { ...displayPreferences.value, [key]: value };
+}
+
+function updateLayoutVisibility(visibility: PnwViewBlockVisibility) {
+	updateDisplayPreference('layoutState', {
+		...displayPreferences.value.layoutState,
+		visibility
+	});
+}
+
+function updateWorkbenchColorScheme(colorScheme: PnwColorScheme) {
+	updateFromWorkbench(colorScheme);
+}
+
+function updateSystemColorScheme(event: MediaQueryListEvent) {
+	systemPrefersDark.value = event.matches;
+}
+
+function updateExpandedNavigationNodeIds(nodeIds: readonly string[]) {
+	groupedNavigation.setExpandedNodeIds(navigationBranchIds.value, nodeIds);
+}
+
+function selectNavigationRoot(nodeId: string) {
+	if (navigationNodes.value.some(node => node.id === nodeId)) {
+		// 这里只切换 Ribbon 的大分组筛选，不猜测默认路由；活动 View 仍由 Router 决定。
+		browsedNavigationRootId.value = nodeId;
+	}
+}
+
+function activateNavigationNode(nodeId: string) {
+	const item = pahFindNavigationItemByNodeId(moduleGroups.value, nodeId);
+	if (item) {
+		browsedNavigationRootId.value = '';
+		void router.push(item.path);
+	}
 }
 
 function goHome() {
 	void router.push('/');
 }
 
-function setNavigationStyle(style: PahNavigationStyle) {
-	navigationStyle.value = style;
-	storage.set(PAH_NAVIGATION_STYLE_KEY, style);
-	record(`切换宿主导航：${pahNavigationStyleLabel(style)}`);
+function goNavigationManagement() {
+	void router.push('/pah/navigation');
 }
 
-function allNavigationNodeIds() {
-	return moduleGroups.value.flatMap(group => [
-		group.id,
-		...group.modules.map(module => module.id)
-	]);
+function resetDisplayPreferences() {
+	const resetPreferences = pahNormalizeWorkbenchPreferences(
+		undefined,
+		import.meta.env.VITE_PAH_NAVIGATION_STYLE
+	).displayPreferences;
+	displayPreferences.value = {
+		...resetPreferences,
+		colorScheme: workbenchColorScheme.value
+	};
+	groupedNavigation.expandAll(navigationBranchIds.value);
 }
 
-function expandAllNavigation() {
-	groupedNavigation.expandAll(allNavigationNodeIds());
+function handleDisplaySettingsAction(actionId: string) {
+	if (actionId === 'pah.open-navigation-management') goNavigationManagement();
+	else if (actionId === 'pah.reset-display-preferences') resetDisplayPreferences();
 }
 
-function persistWorkbenchPreferences() {
-	storage.set(PAH_WORKBENCH_PREFERENCES_KEY, {
-		version: 1,
-		ribbonLayout: ribbonLayout.value,
-		primaryOpen: primaryOpen.value,
-		propertiesOpen: propertiesOpen.value,
-		logOpen: logOpen.value
-	});
-}
-
-function toggleRibbonLayout(event: Event) {
-	ribbonLayout.value = (event.target as HTMLInputElement).checked ? 'inline' : 'stacked';
-}
-
-function resetHostPreferences() {
-	const defaults = PAH_DEFAULT_WORKBENCH_PREFERENCES;
-	ribbonLayout.value = defaults.ribbonLayout;
-	primaryOpen.value = defaults.primaryOpen;
-	propertiesOpen.value = defaults.propertiesOpen;
-	logOpen.value = defaults.logOpen;
-	groupedNavigation.expandAll(allNavigationNodeIds());
-	setNavigationStyle(pahNormalizeNavigationStyle(import.meta.env.VITE_PAH_NAVIGATION_STYLE));
-	record('恢复宿主默认布局');
-}
-
-function findRibbonItem(pageId: string): PahRibbonItem | undefined {
-	return ribbonTabs.value
-		.flatMap(tab => tab.groups)
-		.flatMap(group => group.items)
-		.find(item => item.pageId === pageId);
-}
-
-function moduleItems(module: PahRibbonTab): PahRibbonItem[] {
-	return module.groups.flatMap(group => group.items);
-}
-
-function ribbonGroupItems(group: PahRibbonGroup) {
-	return group.items.map(item => ({
-		pageId: item.pageId,
-		label: item.label,
-		icon: Grid,
-		active: route.path === item.path,
-		disabled: false,
-		title: item.label
-	}));
-}
-
-function openRibbonPage(pageId: string) {
-	const item = findRibbonItem(pageId);
-	if (!item) return;
-	record(`打开 ${item.label} · ${item.path}`);
-	void router.push(item.path);
+async function loadNavigationGroups() {
+	try {
+		navigationResponse.value = await service.request({
+			url: '/admin/pah/navigation/read',
+			method: 'GET'
+		});
+	} catch {
+		// Host 分组服务不可用时保持内置规则，不能阻塞已有权限菜单导航。
+		navigationResponse.value = null;
+	}
 }
 
 function selectProcessTab(tabId: string) {
@@ -436,680 +464,287 @@ function selectProcessTab(tabId: string) {
 	if (item) void router.push(item.fullPath);
 }
 
+function navigateToProcessFallback() {
+	if (process.list.some(item => item.active)) return;
+	const next = last(process.list);
+	void router.push(next?.fullPath || '/');
+}
+
 function closeProcessTab(tabId: string) {
 	const index = process.list.findIndex(entry => entry.path === tabId);
 	if (index < 0) return;
-	const wasActive = process.list[index].active;
-	const title = process.list[index].meta?.label || process.list[index].path;
 	process.remove(index);
-	record(`关闭 ${title}`);
-
-	if (wasActive) {
-		const next = process.list[Math.max(0, index - 1)] || process.list[0];
-		void router.push(next?.fullPath || '/');
-	}
+	navigateToProcessFallback();
 }
 
 function closeAllProcessTabs() {
 	process.clear();
-	record('关闭全部工作台页签');
-	void router.push('/');
+	navigateToProcessFallback();
 }
 
+function refreshActiveProcessTab() {
+	if (activeProcessTabId.value) mitt.emit('view.refresh');
+}
+
+function closeOtherProcessTabs() {
+	const remaining = pahProcessEntriesAfterCloseOthers(process.list);
+	if (!remaining) return;
+	process.set(remaining);
+	void router.push(remaining[0].fullPath);
+}
+
+watch(navigationBranchIds, branchIds => groupedNavigation.ensureGroups(branchIds), {
+	immediate: true
+});
+
+let unregisterCoolNavigationIcons: () => void = () => undefined;
 watch(
-	moduleGroups,
-	groups => {
-		groupedNavigation.ensureGroups(allNavigationNodeIds());
-		if (!groups.some(group => group.id === activeRibbonTab.value)) {
-			activeRibbonTab.value = groups[0]?.id || '';
-		}
+	coolNavigationIconNames,
+	iconNames => {
+		unregisterCoolNavigationIcons();
+		unregisterCoolNavigationIcons = pahRegisterCoolNavigationIcons(iconNames);
 	},
 	{ immediate: true }
 );
+
+onBeforeUnmount(() => {
+	unregisterCoolNavigationIcons();
+	unsubscribeWorkbenchOutput();
+});
 
 watch(
 	() => route.fullPath,
-	path => {
-		const routeGroup = moduleGroups.value.find(group =>
-			group.modules.some(module =>
-				module.groups.some(ribbonGroup =>
-					ribbonGroup.items.some(item => item.path === route.path)
-				)
-			)
-		);
-		if (routeGroup) activeRibbonTab.value = routeGroup.id;
-		record(`导航 ${path}`);
-	},
-	{ immediate: true }
+	() => {
+		// Router/Process/KeepAlive 是活动 View 唯一真源；新的路由导航结束 Ribbon 浏览态。
+		browsedNavigationRootId.value = '';
+	}
 );
 
-watch([ribbonLayout, primaryOpen, propertiesOpen, logOpen], persistWorkbenchPreferences);
+watch(
+	displayPreferences,
+	preferences => {
+		storage.set(PAH_WORKBENCH_PREFERENCES_KEY, {
+			version: 3,
+			displayPreferences: preferences
+		});
+	},
+	{ deep: true, immediate: true }
+);
+
+onMounted(() => {
+	systemThemeMedia.addEventListener('change', updateSystemColorScheme);
+	void hostToolbar.load();
+	void loadNavigationGroups();
+});
+
+onBeforeUnmount(() => systemThemeMedia.removeEventListener('change', updateSystemColorScheme));
 </script>
 
 <style lang="scss" scoped>
 .pah-workbench-shell {
-	--border: var(--el-border-color, #e2e8f0);
-	--border-strong: var(--el-border-color-dark, #cbd5e1);
-	--text: var(--el-text-color-primary, #0f172a);
-	--muted: var(--el-text-color-secondary, #64748b);
-	--page-bg: var(--el-bg-color, #fff);
-	--shell-bg: var(--el-fill-color-light, #f1f5f9);
-	--ribbon-group-divider: var(--el-border-color-light, #e2e8f0);
-	--ribbon-btn-hover: var(--el-fill-color, #f5f7fa);
-	display: flex;
-	flex-direction: column;
-	height: 100%;
+	--pnw-activity-tree-width: 280px;
 	width: 100%;
+	height: 100%;
+	min-width: 0;
+	min-height: 0;
 	overflow: hidden;
-	background: var(--shell-bg);
 }
 
-.pah-host-header {
-	display: flex;
-	flex: 0 0 46px;
-	align-items: stretch;
-	min-width: 0;
-	padding: 0 8px;
-	background: linear-gradient(180deg, var(--page-bg) 0%, var(--shell-bg) 100%);
-	border-bottom: 1px solid var(--border-strong);
-	box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
+:deep(.pnw-workbench-layout[data-pnw-color-scheme='light']) {
+	--pnw-ribbon-tool-muted: #475569;
+}
+
+:deep(.pnw-workbench-layout[data-pnw-color-scheme='dark']) {
+	--pnw-ribbon-tool-muted: #cbd5e1;
 }
 
 .pah-brand {
 	display: flex;
-	flex: 0 0 auto;
 	align-items: center;
 	gap: 9px;
-	max-width: 220px;
-	padding: 4px 12px 4px 4px;
+	min-width: 188px;
+	height: 100%;
+	padding: 0 12px 0 8px;
 	border: 0;
 	background: transparent;
-	color: var(--text);
+	color: inherit;
+	font: inherit;
 	text-align: left;
 	cursor: pointer;
 
-	img {
-		width: 34px;
-		height: 34px;
-		filter: drop-shadow(0 3px 5px rgb(255 91 33 / 24%));
-		transition: transform 180ms ease;
+	&__mark {
+		--pnw-phoenix-wing-mark-size: 32px;
+		filter: drop-shadow(0 3px 5px rgb(37 99 235 / 22%));
 	}
 
-	&:hover img {
-		transform: translateY(-1px) scale(1.04);
+	> span {
+		display: grid;
+		min-width: 0;
+		gap: 2px;
 	}
-}
 
-.pah-brand-copy {
-	display: flex;
-	flex-direction: column;
-	min-width: 0;
-	line-height: 1.15;
+	strong,
+	small {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
 
 	strong {
 		font-size: 13px;
-		letter-spacing: 0.01em;
-		white-space: nowrap;
 	}
 
 	small {
-		overflow: hidden;
-		margin-top: 2px;
-		color: var(--muted);
-		font-size: 10px;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-}
-
-.pah-header-tabs {
-	display: flex;
-	flex: 0 1 auto;
-	align-items: center;
-	min-width: 120px;
-	max-width: 42vw;
-	padding: 6px 8px;
-	border-left: 1px solid var(--border);
-	border-right: 1px solid var(--border);
-
-	:deep(.pnw-ribbon-tab-bar) {
-		width: 100%;
-	}
-}
-
-.pah-header-context {
-	display: flex;
-	flex: 0 1 180px;
-	flex-direction: column;
-	justify-content: center;
-	min-width: 100px;
-	padding: 0 14px;
-	border-left: 1px solid var(--border);
-	border-right: 1px solid var(--border);
-
-	span {
-		color: var(--muted);
+		color: var(--pnw-workbench-muted, #64748b);
 		font-size: 9px;
-		letter-spacing: 0.08em;
 	}
 
-	strong {
-		overflow: hidden;
-		font-size: 12px;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+	&:focus-visible {
+		outline: 2px solid var(--pnw-focus-ring, #3b82f6);
+		outline-offset: -2px;
 	}
 }
 
 .pah-workbench-topbar {
-	flex: 1;
-	min-width: 0;
+	height: 100%;
+	min-width: 120px;
 	overflow: hidden;
 
 	:deep(.app-topbar) {
-		height: 45px;
+		height: 100%;
 		padding: 0 6px;
 		border: 0;
 		background: transparent;
 	}
 
-	:deep(.app-topbar > .cl-comm__icon) {
-		display: none;
-	}
-
+	:deep(.app-topbar > .cl-comm__icon),
 	:deep(.route-nav),
 	:deep(.a-menu) {
 		display: none;
 	}
 }
 
-.pah-settings-button {
-	display: grid;
-	place-items: center;
-	align-self: center;
-	width: 34px;
-	height: 34px;
-	margin-left: 4px;
-	border: 1px solid transparent;
-	border-radius: 8px;
-	background: transparent;
-	color: var(--muted);
-	cursor: pointer;
-
-	&:hover,
-	&:focus-visible {
-		border-color: var(--border);
-		background: var(--page-bg);
-		color: var(--el-color-primary);
-	}
-}
-
-:global(.pah-settings-panel) {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
-
-:global(.pah-settings-panel > strong) {
-	font-size: 13px;
-}
-
-:global(.pah-settings-panel > p) {
-	margin: -2px 0 4px;
-	color: var(--el-text-color-secondary);
-	font-size: 11px;
-}
-
-:global(.pah-settings-panel > button) {
+.pah-footer-context {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	width: 100%;
-	padding: 10px;
-	border: 1px solid var(--el-border-color);
-	border-radius: 8px;
-	background: var(--el-bg-color);
-	color: var(--el-text-color-primary);
-	text-align: left;
-	cursor: pointer;
-}
-
-:global(.pah-settings-panel > button.active) {
-	border-color: var(--el-color-primary);
-	background: var(--el-color-primary-light-9);
-	color: var(--el-color-primary);
-}
-
-:global(.pah-settings-panel > button span) {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-}
-
-:global(.pah-settings-panel > button small) {
-	color: var(--el-text-color-secondary);
-}
-
-:global(.pah-settings-layout) {
-	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	gap: 8px;
-	margin-top: 4px;
-	padding-top: 12px;
-	border-top: 1px solid var(--el-border-color-lighter);
-}
-
-:global(.pah-settings-layout > strong) {
-	grid-column: 1 / -1;
-	font-size: 11px;
-}
-
-:global(.pah-settings-layout label) {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	color: var(--el-text-color-regular);
-	font-size: 11px;
-	cursor: pointer;
-}
-
-:global(.pah-settings-layout input) {
-	accent-color: var(--el-color-primary);
-}
-
-:global(.pah-settings-panel > button.pah-settings-reset) {
-	justify-content: center;
-	padding: 7px;
-	border-style: dashed;
-	color: var(--el-text-color-secondary);
-	font-size: 11px;
-	text-align: center;
-}
-
-.pah-ribbon-group {
-	display: flex;
-	flex: 0 0 auto;
-	flex-direction: column;
+	gap: 12px;
 	min-width: 0;
-	border-right: 1px solid var(--ribbon-group-divider);
+	overflow: hidden;
+	font-size: 11px;
 
-	:deep(.pnw-ribbon-group) {
-		flex: 1;
-		border-right: 0;
+	> span {
+		flex: 0 0 auto;
 	}
-}
 
-.pah-ribbon-group-label {
-	padding: 1px 8px 3px;
-	overflow: hidden;
-	color: var(--muted);
-	font-size: 10px;
-	line-height: 14px;
-	text-align: center;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.pah-workbench-body {
-	display: flex;
-	flex: 1;
-	min-height: 0;
-	overflow: hidden;
-}
-
-.pah-grouped-sidebar {
-	display: block;
-	flex: 0 0 270px;
-	min-width: 0;
-	background: var(--page-bg);
-	border-right: 1px solid var(--border-strong);
-}
-
-.pah-group-pages {
-	flex: 1;
-	min-width: 0;
-	padding: 12px 10px;
-	overflow-y: auto;
-
-	&__title {
+	nav {
 		display: flex;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: 8px;
-		padding: 0 4px 12px;
-		border-bottom: 1px solid var(--border);
-
-		div {
-			display: flex;
-			flex-direction: column;
-			gap: 2px;
-			min-width: 0;
-		}
-
-		small {
-			color: var(--muted);
-			font-size: 9px;
-			letter-spacing: 0.1em;
-		}
-
-		strong {
-			overflow: hidden;
-			font-size: 16px;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-
-		button {
-			flex: 0 0 auto;
-			padding: 3px 5px;
-			border: 0;
-			background: transparent;
-			color: var(--el-color-primary);
-			font-size: 10px;
-			cursor: pointer;
-		}
-	}
-}
-
-.pah-navigation-tree {
-	padding-top: 8px;
-}
-
-.pah-navigation-tree__root {
-	padding: 3px 0;
-}
-
-.pah-navigation-tree__root-toggle {
-	display: flex;
-	align-items: center;
-	gap: 7px;
-	width: 100%;
-	padding: 9px 7px;
-	border: 0;
-	border-radius: 7px;
-	background: transparent;
-	color: var(--text);
-	font-size: 13px;
-	text-align: left;
-	cursor: pointer;
-
-	.el-icon {
-		flex: 0 0 auto;
-		color: var(--muted);
-		font-size: 11px;
-		transition: transform 140ms ease;
-
-		&.open {
-			transform: rotate(90deg);
-		}
-	}
-
-	strong {
-		flex: 1;
-		font-weight: 700;
-	}
-
-	small {
-		color: var(--muted);
-		font-size: 9px;
-	}
-
-	&.active,
-	&:hover {
-		background: var(--el-color-primary-light-9);
-		color: var(--el-color-primary);
-	}
-}
-
-.pah-navigation-tree__root-children {
-	margin-left: 12px;
-	padding-left: 9px;
-	border-left: 1px solid var(--border-strong);
-}
-
-.pah-navigation-tree__module {
-	padding: 3px 0;
-}
-
-.pah-navigation-tree__module-toggle {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	width: 100%;
-	padding: 7px 6px;
-	border: 0;
-	border-radius: 6px;
-	background: transparent;
-	color: var(--text);
-	font-size: 11px;
-	text-align: left;
-	cursor: pointer;
-
-	.el-icon {
-		flex: 0 0 auto;
-		color: var(--muted);
-		font-size: 10px;
-		transition: transform 140ms ease;
-
-		&.open {
-			transform: rotate(90deg);
-		}
-	}
-
-	strong {
-		flex: 1;
+		align-items: center;
+		gap: 5px;
+		min-width: 0;
 		overflow: hidden;
-		font-weight: 650;
+		padding-left: 12px;
+		border-left: 1px solid var(--pnw-workbench-border, #dbe3ed);
+	}
+
+	nav span {
+		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 
-	small {
-		color: var(--muted);
-		font-size: 9px;
-	}
-
-	&.active,
-	&:hover {
-		background: var(--el-fill-color-light);
-		color: var(--el-color-primary);
+	nav b {
+		font-weight: 400;
+		opacity: 0.55;
 	}
 }
 
-.pah-navigation-tree__children {
-	position: relative;
-	margin-left: 11px;
-	padding-left: 12px;
-	border-left: 1px solid var(--border);
-
-	button {
-		position: relative;
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		width: 100%;
-		margin: 2px 0;
-		padding: 8px 7px;
-		border: 0;
-		border-radius: 6px;
-		background: transparent;
-		color: var(--text);
-		font-size: 12px;
-		text-align: left;
-		cursor: pointer;
-
-		&.active,
-		&:hover {
-			background: var(--el-color-primary-light-9);
-			color: var(--el-color-primary);
-		}
-	}
-}
-
-.pah-tree-joint {
-	position: absolute;
-	left: -12px;
-	width: 9px;
-	height: 1px;
-	background: var(--border);
-}
-
-.pah-workbench-main {
-	display: flex;
-	flex: 1;
-	flex-direction: column;
-	min-width: 0;
-	min-height: 0;
-}
-
-.pah-workbench-view {
-	display: flex;
-	flex: 1;
-	min-height: 0;
-	overflow: hidden;
-}
-
-.pah-workbench-view :deep(.app-views) {
-	margin-top: 10px;
-}
-
-.pah-side-panel {
-	flex: 0 0 220px;
-	padding: 12px;
-	overflow: auto;
-	background: var(--page-bg);
-	border-color: var(--border);
-	border-style: solid;
-	border-width: 0;
-
-	h3 {
-		margin: 0 0 12px;
-		font-size: 13px;
-	}
-}
-
-.pah-primary {
-	border-right-width: 1px;
-
-	button {
-		display: block;
-		width: 100%;
-		margin-bottom: 4px;
-		padding: 7px 8px;
-		border: 0;
-		border-radius: 4px;
-		background: transparent;
-		color: var(--muted);
-		text-align: left;
-		cursor: pointer;
-
-		&.active,
-		&:hover {
-			background: var(--ribbon-btn-hover);
-			color: var(--text);
-		}
-	}
-}
-
-.pah-properties {
-	border-left-width: 1px;
-
-	dl {
-		margin: 0;
-	}
-
-	dt {
-		margin-top: 10px;
-		color: var(--muted);
-		font-size: 11px;
-	}
-
-	dd {
-		margin: 3px 0 0;
-		font-size: 12px;
-		word-break: break-all;
-	}
-}
-
-.pah-log-panel {
-	height: 150px;
-	min-height: 0;
-	background: var(--page-bg);
-}
-
-.pah-log-panel :deep(.pnw-log-panel) {
+:deep(.pnw-workbench-editor > .app-views) {
+	width: 100%;
 	height: 100%;
+	min-height: 0;
+	margin: 0;
+	overflow: auto;
+	overscroll-behavior: contain;
+	border-radius: 0;
 }
 
-.pah-workbench-footer {
+:global(.pah-display-settings-action) {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	height: 28px;
-	padding: 0 10px;
-	border-top: 1px solid var(--border);
-	background: var(--page-bg);
-	color: var(--muted);
-	font-size: 11px;
-
-	.pah-footer-context {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		min-width: 0;
-		overflow: hidden;
-
-		> span {
-			flex: 0 0 auto;
-		}
-
-		nav {
-			display: flex;
-			align-items: center;
-			gap: 5px;
-			min-width: 0;
-			overflow: hidden;
-			padding-left: 12px;
-			border-left: 1px solid var(--border);
-			color: var(--text);
-		}
-
-		nav span {
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-
-		nav b {
-			color: var(--muted);
-			font-weight: 400;
-		}
-	}
-
-	button {
-		margin-left: 4px;
-		padding: 2px 7px;
-		border: 1px solid var(--border);
-		border-radius: 4px;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
-	}
+	width: 100%;
+	min-height: 30px;
+	padding: 6px 10px;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
 }
 
-@media only screen and (max-width: 900px) {
-	.pah-brand-copy,
-	.pah-header-context,
-	.pah-header-tabs {
-		display: none;
-	}
+:global(.pah-display-settings-action:hover),
+:global(.pah-display-settings-action:focus-visible) {
+	background: var(--pnw-control-hover-bg, rgb(59 130 246 / 9%));
+	outline: 0;
+}
 
-	.pah-side-panel {
-		display: none;
-	}
+:global(.pah-display-settings-action--reset) {
+	color: var(--pnw-workbench-muted, #64748b);
+}
 
-	.pah-grouped-sidebar {
-		flex-basis: 230px;
+:global(.pah-display-settings-tools) {
+	position: relative;
+	display: grid;
+	gap: 6px;
+	padding: 8px 10px;
+	border-top: 1px solid var(--pnw-workbench-border, #dbe3ed);
+}
+
+:global(.pah-display-settings-tools > strong) {
+	display: flex;
+	align-items: center;
+	min-height: 26px;
+	padding-right: 100px;
+	font-size: 11px;
+}
+
+:global(.pah-display-settings-tools > div) {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 4px;
+}
+
+:global(.pah-display-settings-tools .ai-coding-toolbar) {
+	position: absolute;
+	top: 8px;
+	right: 10px;
+}
+
+:global(.pah-display-settings-tools button.gitee-link) {
+	box-sizing: border-box;
+	flex: 0 0 26px;
+	width: 26px !important;
+	min-width: 26px;
+	max-width: 26px;
+	height: 26px;
+	min-height: 26px;
+	max-height: 26px;
+	padding: 0 !important;
+}
+
+:global(.pah-display-settings-tools .ml-\[10px\]) {
+	margin-left: 0;
+}
+
+@media only screen and (max-width: 700px) {
+	.pah-brand {
+		min-width: auto;
+		padding-right: 6px;
+
+		> span {
+			display: none;
+		}
 	}
 }
 </style>

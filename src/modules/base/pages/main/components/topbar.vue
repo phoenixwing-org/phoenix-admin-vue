@@ -12,7 +12,7 @@
 		<div class="flex1"></div>
 
 		<!-- 工具栏 -->
-		<ul class="app-topbar__tools">
+		<ul v-if="!pahMode" class="app-topbar__tools">
 			<li v-for="(item, index) in toolbarComponents" :key="index">
 				<component :is="item.component" />
 			</li>
@@ -70,6 +70,10 @@ import { ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import RouteNav from './route-nav.vue';
 import AMenu from './amenu.vue';
+
+defineProps<{
+	pahMode?: boolean;
+}>();
 
 const { router, service, browser } = useCool();
 const { user, app } = useBase();

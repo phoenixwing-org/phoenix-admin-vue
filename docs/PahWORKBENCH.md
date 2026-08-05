@@ -26,19 +26,19 @@ Workbench 不创建第二套路由或页签 store：
 - 一级目录直属页面 → `常用` Group，每 5 项稳定切分。
 - 更深目录的页面收敛到其二级 Group，每组仍不超过 5 项。
 - 权限节点、隐藏菜单、空 Group 与空 Tab 不进入 Ribbon。
-- Wing 0.5.1 的 Group 组件提供结构和无障碍名称，Host 额外呈现可见组名。
+- Wing 0.6.0 的 Group 组件提供结构和无障碍名称，Host 额外呈现可见组名。
 
 首期不新增数据库分组表。只有出现跨模块持久化布局、用户定制或独立生命周期需求时，才评审 `pah_` sidecar 表。
 
 ## 面板
 
-- Primary：当前显示 Ribbon Tab 导航，后续接模块 outline contribution。
-- Main：原 RouterView/KeepAlive 内容。
-- Properties：当前显示活动页面只读信息，后续接页面属性 contribution。
-- Log：使用 Wing `PnwShellLogPanel`，当前记录壳导航事件。
-- Footer：显示壳模式并控制 Primary、Properties、Log 显隐。
+- Primary / Secondary：只接收活动 View 显式登记的内容，并交给 Wing 容器呈现；没有内容时不显示。
+- Main：继续承载原 RouterView、Process 与 KeepAlive。
+- Bottom：由 Host 工作台固定贡献，是布局能力，不允许 View 注入或覆盖。
+- Footer：按当前能力显示 Primary、Bottom、Secondary 三个布局开关；不可用区域保持禁用。
+- `PnwWorkbenchDisplayPreferences` 统一描述导航、Ribbon、标签位置、面板显隐与尺寸，Admin 负责持久化。
 
-Open Issue 与 Function 尚未接入；本壳只建立 Host 契约和可回退呈现。
+产品业务插件保持独立仓库；本壳只建立 Host 契约和可回退呈现。
 
 ## H2 原型验收
 
@@ -46,7 +46,7 @@ Open Issue 与 Function 尚未接入；本壳只建立 Host 契约和可回退�
 
 - `PahRibbonMenuAdapter` 与 `PahShellMode` 共 5 项单元测试通过。
 - `vue-tsc --build --force` 通过。
-- Vite 生产构建通过，构建结果包含 Phoenix Wing 0.5.1 的 JS 与 CSS。
+- Vite 生产构建通过，构建结果包含 Phoenix Wing 0.6.0 的 JS 与 CSS。
 - 静态产物包含 `THIRD-PARTY-NOTICES.md`、`licenses/MIT.txt` 与
   `licenses/Apache-2.0.txt`。
 

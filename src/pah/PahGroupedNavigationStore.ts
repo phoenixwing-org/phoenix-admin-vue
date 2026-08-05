@@ -3,7 +3,9 @@ import { ref } from 'vue';
 import { storage } from '/@/cool/utils';
 import {
 	PAH_GROUPED_NAVIGATION_KEY,
-	pahNormalizeGroupedNavigationSnapshot
+	pahExpandedNavigationNodeIds,
+	pahNormalizeGroupedNavigationSnapshot,
+	pahSetExpandedNavigationNodeIds
 } from './PahGroupedNavigationState';
 
 export const usePahGroupedNavigationStore = defineStore('pahGroupedNavigation', () => {
@@ -55,12 +57,23 @@ export const usePahGroupedNavigationStore = defineStore('pahGroupedNavigation', 
 		persist();
 	}
 
+	function expandedNodeIds(groupIds: readonly string[]) {
+		return pahExpandedNavigationNodeIds(snapshot.value, groupIds);
+	}
+
+	function setExpandedNodeIds(groupIds: readonly string[], nodeIds: readonly string[]) {
+		snapshot.value = pahSetExpandedNavigationNodeIds(snapshot.value, groupIds, nodeIds);
+		persist();
+	}
+
 	return {
 		snapshot,
 		ensureGroups,
 		isExpanded,
 		setExpanded,
 		toggle,
-		expandAll
+		expandAll,
+		expandedNodeIds,
+		setExpandedNodeIds
 	};
 });

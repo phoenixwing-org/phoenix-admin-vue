@@ -11,12 +11,18 @@ import { isArray } from 'lodash-es';
 import { useBase } from '/$/base';
 import { Loading } from '../utils';
 import { config, isDev } from '/@/config';
+import {
+	coolFindNotFoundRoute,
+	coolIsCatchAllRoute,
+	coolResolveDynamicRouteWithRefresh
+} from './resolve';
+import { coolWrapRouteViewLoader } from './view';
 
 // 基本路径
 const baseUrl = import.meta.env.BASE_URL;
 
 // 扫描文件
-const files = import.meta.glob(['/src/modules/*/{views,pages}/**/*', '!**/components']);
+const files = import.meta.glob(['/src/modules/*/{views,pages}/**/*.vue', '!**/components']);
 
 // 默认路由
 const routes: RouteRecordRaw[] = [
@@ -97,7 +103,8 @@ router.append = function (routeData) {
 					route.component = () => import('/$/base/views/frame.vue');
 				} else {
 					// 从文件系统中动态导入组件
-					route.component = files['/src/' + viewPath.replace('cool/', '')];
+					const loader = files['/src/' + viewPath.replace('cool/', '')];
+					route.component = loader ? coolWrapRouteViewLoader(loader) : undefined;
 				}
 			} else if (!route.redirect) {
 				// 如果没有组件路径且没有重定向，默认重定向到 404
@@ -151,10 +158,12 @@ router.find = function (path: string) {
 
 	// 构建路由列表，包括已注册的路由、菜单配置和模块自定义路由
 	const routeList: any[] = [
-		...registeredRoutes.map(route => ({
-			...route,
-			isReg: true
-		})),
+		...registeredRoutes
+			.filter(route => !coolIsCatchAllRoute(route))
+			.map(route => ({
+				...route,
+				isReg: true
+			})),
 		...menu.routes,
 		...module.list.flatMap(module => (module.views || []).concat(module.pages || []))
 	];
@@ -189,6 +198,12 @@ router.find = function (path: string) {
 		return false;
 	});
 
+	// catch-all 不得冒充业务贡献；但显式 /404 要直接渲染兜底页，不能再次重定向自身。
+	if (!matchedRoute) {
+		matchedRoute = coolFindNotFoundRoute(path, registeredRoutes);
+		isRegistered = !!matchedRoute;
+	}
+
 	return {
 		route: matchedRoute,
 		isReg: isRegistered
@@ -201,10 +216,15 @@ router.beforeEach(async (to, from, next) => {
 	await Loading.wait();
 
 	// 获取用户和进程数据
-	const { user, process } = useBase();
+	const { user, process, menu } = useBase();
 
 	// 查找路由信息
-	const { isReg, route } = router.find(to.path);
+	const { isReg, route } = user.token
+		? await coolResolveDynamicRouteWithRefresh(
+				() => router.find(to.path),
+				() => menu.get()
+			)
+		: router.find(to.path);
 
 	// 如果路由不存在
 	if (!route) {

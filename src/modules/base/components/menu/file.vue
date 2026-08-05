@@ -55,7 +55,7 @@ const { refs, setRefs } = useCool();
 
 // 扫描文件
 function findFiles() {
-	const files = import.meta.glob(['/src/modules/*/{views,pages}/**/*', '!**/components']);
+	const files = import.meta.glob(['/src/modules/*/{views,pages}/**/*.vue', '!**/components']);
 	const list: string[] = [];
 
 	for (const i in files) {

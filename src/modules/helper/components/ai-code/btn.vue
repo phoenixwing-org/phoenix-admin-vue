@@ -1,5 +1,5 @@
 <template>
-	<div class="cl-comm__icon" @click="toCode">
+	<div class="cl-comm__icon ai-coding-toolbar" @click="toCode">
 		<div class="t1">{{ $t('AI极速编码') }}</div>
 		<div class="t2">Start</div>
 	</div>

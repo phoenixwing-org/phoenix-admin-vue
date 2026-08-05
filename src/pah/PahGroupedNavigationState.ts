@@ -21,3 +21,21 @@ export function pahNormalizeGroupedNavigationSnapshot(
 
 	return { version: 1, expanded };
 }
+
+export function pahExpandedNavigationNodeIds(
+	snapshot: PahGroupedNavigationSnapshot,
+	nodeIds: readonly string[]
+): string[] {
+	return nodeIds.filter(nodeId => snapshot.expanded[nodeId] ?? true);
+}
+
+export function pahSetExpandedNavigationNodeIds(
+	snapshot: PahGroupedNavigationSnapshot,
+	nodeIds: readonly string[],
+	expandedNodeIds: readonly string[]
+): PahGroupedNavigationSnapshot {
+	const expanded = { ...snapshot.expanded };
+	const selected = new Set(expandedNodeIds);
+	nodeIds.forEach(nodeId => (expanded[nodeId] = selected.has(nodeId)));
+	return { version: 1, expanded };
+}
