@@ -12,12 +12,17 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { proxy } from './src/config/proxy';
 import { cool } from '@cool-vue/vite-plugin';
 import { pahLocalWingAliases } from './scripts/pah-wing-mode.mjs';
+import {
+	pahCreateHostPathContext,
+	pahHostDependencyId
+} from './scripts/pah-host-runtime-dependencies';
 
 function toPath(dir: string) {
 	return fileURLToPath(new URL(dir, import.meta.url));
 }
 
 const adminRoot = toPath('./');
+const adminPathContext = pahCreateHostPathContext({ hostRoot: adminRoot });
 const adminManifest = JSON.parse(fs.readFileSync(toPath('./package.json'), 'utf8')) as {
 	dependencies?: Record<string, string>;
 };
@@ -39,7 +44,7 @@ function pahHostRuntimeDependencies(): Plugin {
 		name: 'pah-host-runtime-dependencies',
 		enforce: 'pre',
 		async resolveId(source, importer) {
-			if (!importer || importer.startsWith(adminRoot)) return null;
+			if (!importer || adminPathContext.isHostImporter(importer)) return null;
 
 			const dependency = hostRuntimeDependencies.find(
 				([packageName]) => source === packageName || source.startsWith(`${packageName}/`)
@@ -47,9 +52,13 @@ function pahHostRuntimeDependencies(): Plugin {
 			if (!dependency) return null;
 
 			const [packageName, dependencyRoot] = dependency;
-			return this.resolve(`${dependencyRoot}${source.slice(packageName.length)}`, importer, {
-				skipSelf: true
-			});
+			return this.resolve(
+				pahHostDependencyId(dependencyRoot, packageName, source),
+				importer,
+				{
+					skipSelf: true
+				}
+			);
 		}
 	};
 }

@@ -1,6 +1,6 @@
 {
 	"name": "phoenix-admin-vue",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"packageManager": "pnpm@10.15.1",
 	"description": "Phoenix Admin Host frontend maintained from Cool Admin Vue 8.x",
 	"license": "MIT",
@@ -17,6 +17,7 @@
 		"build-static": "vite build --mode static",
 		"build-demo": "vite build --mode demo",
 		"preview": "vite preview",
+		"diagnose:cool-eps": "node scripts/cool-eps-diagnostics.mjs",
 		"test": "vitest run src/pah src/modules/dict/utils src/cool/service",
 		"test:wing-local": "node scripts/run-with-phoenix-wing.mjs -- pnpm exec vitest run src/pah",
 		"wing:local:check": "node scripts/run-with-phoenix-wing.mjs --check",
