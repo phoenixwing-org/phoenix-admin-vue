@@ -15,7 +15,7 @@ export default (): ModuleConfig => {
 				'/base/comm/upload',
 				'/base/comm/uploadMode'
 			],
-			token: ['/login', '/401', '/403', '/404', '/500', '/502']
+			token: ['/login', '/oauth/callback', '/401', '/403', '/404', '/500', '/502']
 		},
 		components: Object.values(import.meta.glob('./components/**/*.{vue,tsx}')),
 		views: [
@@ -31,6 +31,13 @@ export default (): ModuleConfig => {
 			{
 				path: '/login',
 				component: () => import('./pages/login/index.vue')
+			},
+			{
+				path: '/oauth/callback',
+				meta: {
+					process: false
+				},
+				component: () => import('./pages/login/oauth-callback.vue')
 			},
 			...['401', '403', '404', '500', '502'].map(code => {
 				return {

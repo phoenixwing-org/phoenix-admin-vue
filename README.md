@@ -28,7 +28,7 @@ Bottom 是工作台实例级的全局“输出”窗口，使用 Wing 的 `PnwOu
 
 | 项目              | 地址/版本                                             |
 | ----------------- | ----------------------------------------------------- |
-| Phoenix 发行版    | `0.2.0`                                               |
+| Phoenix 发行版    | `0.2.1`                                               |
 | Phoenix Wing      | Registry `phoenix-wing@0.6.2`                         |
 | Phoenix 仓库      | <https://gitee.com/phoenixwing/phoenix-admin-vue>     |
 | Cool Admin 上游   | <https://gitee.com/cool-team-official/cool-admin-vue> |
@@ -63,6 +63,17 @@ pnpm type-check
 pnpm test
 pnpm build
 ```
+
+标准 `pnpm dev` 启动时，Cool EPS 会先读取 `build/cool/eps.json`，再访问 Node Host
+刷新接口描述。后端尚未启动时，上游插件会打印红色 `[cool-eps]` 信息，但存在本地缓存时
+Vite 仍可正常启动；可先运行以下诊断区分“缓存降级”和真正缺少 API/缓存：
+
+```shell
+pnpm diagnose:cool-eps
+```
+
+`classification=non-blocking-cache-fallback` 表示前端可使用本地缓存继续启动；
+`incomplete-without-api-or-cache` 表示应先启动 Node Host，再重新启动前端以生成 EPS。
 
 ## 命名与许可
 
