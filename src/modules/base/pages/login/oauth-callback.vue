@@ -6,7 +6,7 @@
 			<template v-if="state.kind === 'processing'">
 				<h1>正在完成飞书登录</h1>
 				<p>正在兑换一次性登录票据，请稍候。</p>
-				<el-icon class="is-loading" :size="28"><Loading /></el-icon>
+				<el-icon class="is-loading" :size="28"><loading /></el-icon>
 			</template>
 			<template v-else-if="state.kind === 'pending'">
 				<h1>等待管理员审查</h1>
