@@ -97,6 +97,21 @@
 					</el-form>
 				</div>
 
+				<div v-if="feishuMethod" class="pah-external-login">
+					<div class="pah-login-divider"><span>或</span></div>
+					<el-button
+						class="pah-feishu-login"
+						:loading="feishuSaving"
+						:disabled="saving"
+						@click="toFeishuLogin"
+					>
+						{{ feishuMethod.buttonText || '使用飞书登录' }}
+					</el-button>
+				</div>
+				<p v-else-if="policyNotice" class="pah-login-notice" role="status">
+					{{ policyNotice }}
+				</p>
+
 				<div class="pah-fork-note">
 					<span>MIT LICENSE</span>
 					<a href="https://gitee.com/phoenixwing/phoenix-admin-vue" target="_blank">
@@ -113,20 +128,33 @@ defineOptions({
 	name: 'login'
 });
 
-import { reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useCool } from '/@/cool';
 import { useBase } from '/$/base';
 import { storage } from '/@/cool/utils';
 import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
+import { pahIdentityApi, type PahLoginPolicy } from '/@/pah/PahIdentityApi';
+import { pahIsAllowedAuthorizationUrl, pahNormalizeIdentityReturnTo } from '/@/pah/PahIdentityFlow';
 import PicCaptcha from './components/pic-captcha.vue';
 
 const { refs, setRefs, router, service } = useCool();
 const { user, app } = useBase();
 const { t } = useI18n();
+const route = useRoute();
 
 // 状态
 const saving = ref(false);
+const feishuSaving = ref(false);
+const loginPolicy = ref<PahLoginPolicy>();
+const policyNotice = ref('');
+const feishuMethod = computed(() => {
+	if (!loginPolicy.value?.enabledMethods.includes('feishu')) return undefined;
+	return loginPolicy.value.methods.find(
+		method => method.id === 'feishu' && method.enabled && method.ready
+	);
+});
 
 // 表单数据
 const form = reactive({
@@ -140,6 +168,39 @@ const form = reactive({
 if (import.meta.env.MODE == 'demo') {
 	form.username = 'admin';
 	form.password = '123456';
+}
+
+onMounted(loadLoginPolicy);
+
+async function loadLoginPolicy() {
+	try {
+		loginPolicy.value = await pahIdentityApi.loginPolicy();
+		policyNotice.value = '';
+	} catch {
+		policyNotice.value = '其他登录方式暂时不可用，您仍可使用账号密码登录。';
+	}
+}
+
+async function toFeishuLogin() {
+	if (!feishuMethod.value || feishuSaving.value) return;
+	feishuSaving.value = true;
+	try {
+		const requestedReturnTo = Array.isArray(route.query.returnTo)
+			? route.query.returnTo[0]
+			: route.query.returnTo || route.query.redirect;
+		const returnTo = pahNormalizeIdentityReturnTo(requestedReturnTo);
+		const result = await pahIdentityApi.startFeishu(returnTo);
+		if (!pahIsAllowedAuthorizationUrl(result.authorizationUrl)) {
+			throw new Error('飞书授权地址不可信，请联系管理员');
+		}
+		window.location.assign(result.authorizationUrl);
+	} catch (error) {
+		ElMessageBox.alert((error as Error).message || '飞书登录暂时不可用', {
+			title: t('提示'),
+			type: 'error'
+		});
+		feishuSaving.value = false;
+	}
 }
 
 // 登录
@@ -507,6 +568,42 @@ async function toLogin() {
 		font-weight: 650;
 		letter-spacing: 0.08em;
 	}
+}
+
+.pah-external-login {
+	margin-top: 20px;
+}
+
+.pah-login-divider {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 16px;
+	color: #94a3b8;
+	font-size: 11px;
+
+	&::before,
+	&::after {
+		flex: 1;
+		height: 1px;
+		background: #e2e8f0;
+		content: '';
+	}
+}
+
+.pah-feishu-login {
+	width: 100%;
+	height: 46px;
+	border-color: #d7dee8;
+	border-radius: 9px;
+	font-weight: 600;
+}
+
+.pah-login-notice {
+	margin: 18px 0 0;
+	color: #64748b;
+	font-size: 12px;
+	line-height: 1.6;
 }
 
 .pah-fork-note {
