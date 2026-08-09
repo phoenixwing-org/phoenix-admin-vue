@@ -7,10 +7,10 @@ Phoenix Admin Host 的前端宿主。仓库以 Cool Admin Vue `8.x` 为固定基
 ## 当前阶段
 
 - `classic`：保留上游侧栏、顶栏、路由、页签与 KeepAlive，作为兼容和回退基线。
-- `workbench`：已使用 Phoenix Wing 0.6.0 组合 Ribbon、共享页签状态、Primary、Secondary、Bottom 与 Footer。
+- `workbench`：已使用 Registry `phoenix-wing@0.6.2` 组合 Ribbon、共享页签状态、Primary、Secondary、Bottom 与 Footer。
 - `hybrid`：系统管理页使用经典壳，带 `route.meta.pahShell = 'workbench'` 的业务路由使用工作台壳。
-- 已增加通用 Pah 业务插件管理页，可登记任意独立插件提供的 manifest，并验证安装、启停和默认保留数据的卸载流程。
-- 业务插件与 Host 分 Git 开发；本仓库不归档产品源码或候选 manifest，也不实现在线上传或运行时热加载。
+- 已增加通用 Phoenix 业务插件安装向导，可校验 `.phoenix.cool` 制品，并按受控重启、dry-run、可信备份、安装、启停和保留数据卸载的顺序完成生命周期操作。
+- 业务插件与 Host 分 Git 开发；本仓库不归档产品源码或候选 manifest。当前激活方式仍为受控构建与重启，不承诺运行时热加载。
 
 Ribbon 菜单映射优先复用现有菜单树：Cool 一级菜单作为“模块”，模块内部目录映射 Ribbon Group，直属叶子菜单按稳定顺序自动分组，每组默认不超过 5 项。Phoenix 宿主再通过编译期适配层把模块组合为 2–3 个“大组”；当前默认是“系统与用户”“数据与扩展”“开发与示例”。未配置的新模块安全归入“其他模块”，首期不新增菜单分组表。
 
@@ -28,8 +28,8 @@ Bottom 是工作台实例级的全局“输出”窗口，使用 Wing 的 `PnwOu
 
 | 项目              | 地址/版本                                             |
 | ----------------- | ----------------------------------------------------- |
-| Phoenix 发行版    | `0.1.0`                                               |
-| Phoenix Wing      | Registry `phoenix-wing@0.6.0`                         |
+| Phoenix 发行版    | `0.2.1`                                               |
+| Phoenix Wing      | Registry `phoenix-wing@0.6.2`                         |
 | Phoenix 仓库      | <https://gitee.com/phoenixwing/phoenix-admin-vue>     |
 | Cool Admin 上游   | <https://gitee.com/cool-team-official/cool-admin-vue> |
 | Cool 兼容固定基线 | `8.x` / `a2d4ee9bbfd6bfce880382f0bf6f8dd8f3397a2d`    |
@@ -55,7 +55,7 @@ pnpm dev
 默认开发地址为 <http://localhost:9000>，开发代理连接 Phoenix Admin Node
 <http://localhost:8101>。构建与检查：
 
-业务插件原型页为 <http://localhost:9000/pah/plugins>，操作边界见
+Phoenix 业务插件管理页为 <http://localhost:9000/phoenix/plugins>，操作边界见
 [PahPLUGIN.md](docs/PahPLUGIN.md)。
 
 ```shell
@@ -63,6 +63,17 @@ pnpm type-check
 pnpm test
 pnpm build
 ```
+
+标准 `pnpm dev` 启动时，Cool EPS 会先读取 `build/cool/eps.json`，再访问 Node Host
+刷新接口描述。后端尚未启动时，上游插件会打印红色 `[cool-eps]` 信息，但存在本地缓存时
+Vite 仍可正常启动；可先运行以下诊断区分“缓存降级”和真正缺少 API/缓存：
+
+```shell
+pnpm diagnose:cool-eps
+```
+
+`classification=non-blocking-cache-fallback` 表示前端可使用本地缓存继续启动；
+`incomplete-without-api-or-cache` 表示应先启动 Node Host，再重新启动前端以生成 EPS。
 
 ## 命名与许可
 
