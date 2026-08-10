@@ -278,6 +278,8 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { marked } from 'marked';
 import { useI18n } from 'vue-i18n';
 import { usePlugin } from '../hooks';
+import PahPluginManagementPrimary from '/@/pah/PahPluginManagementPrimary.vue';
+import { usePahViewContributions } from '/@/pah/PahViewContributions';
 
 interface Plugin {
 	name?: string;
@@ -300,6 +302,13 @@ const { router, service, refs, setRefs, mitt } = useCool();
 const helper = module.get('helper');
 const { t } = useI18n();
 const { install } = usePlugin();
+
+usePahViewContributions('/helper/plugins', {
+	primary: {
+		component: markRaw(PahPluginManagementPrimary),
+		props: { active: 'cool' }
+	}
+});
 
 // 选项卡
 const tab = reactive({
