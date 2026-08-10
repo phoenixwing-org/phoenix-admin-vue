@@ -48,7 +48,6 @@ describe('Phoenix 插件包安装入口', () => {
 		expect(source).toContain("url: '/admin/phoenix/plugin/local-controlled-uninstall'");
 		expect(source).toContain("url: '/admin/phoenix/plugin/local-package-discard'");
 		expect(source).toContain('src="/pah-phoenixwing-mark.svg"');
-		expect(source).toContain('formatInstallationDate(installation)');
 		expect(source).toContain("url: '/admin/phoenix/plugin/dictionary-plan'");
 		expect(source).toContain('dictionaryFingerprint: dictionaryPlan?.fingerprint');
 		expect(source).toContain('dictionaryConfirmed: true');
@@ -57,6 +56,28 @@ describe('Phoenix 插件包安装入口', () => {
 		expect(source).toContain("['disabled', 'uninstalled'].includes(item.state)");
 		expect(source).toContain('process.list.filter');
 		expect(source).toContain('await menu.get()');
+	});
+
+	it('插件卡片在标签后显示名称，并把日期放到操作行右侧', () => {
+		expect(source).toContain('<strong class="plugin-name">{{ installation.name }}</strong>');
+		expect(source).not.toContain('class="module-id"');
+		expect(source).not.toContain('class="publisher-date"');
+		expect(source).toContain('class="card-action-buttons"');
+		expect(source).toContain('class="installation-date"');
+		expect(source).toContain('formatInstallationDate(installation)');
+		expect(source).toContain('min-height: 176px;');
+	});
+
+	it('点击卡片把只读属性投影到 Primary，操作按钮不冒泡', () => {
+		expect(source).toContain('@click="openPluginDetails(installation)"');
+		expect(source).toContain('@keydown.enter="openPluginDetails(installation)"');
+		expect(source).toContain('<footer class="card-actions" @click.stop>');
+		expect(source).toContain("'is-selected': detailsModuleId === installation.moduleId");
+		expect(source).toContain(':aria-pressed="detailsModuleId === installation.moduleId"');
+		expect(source).toContain('props: primaryProps');
+		expect(source).toContain('detailsModuleId.value = installation.moduleId');
+		expect(source).not.toContain('detailsDialogVisible');
+		expect(source).not.toContain('plugin-details-dialog');
 	});
 
 	it('安装过程写入全局 Output，并只暴露 /phoenix/plugins 页面', () => {
@@ -69,10 +90,21 @@ describe('Phoenix 插件包安装入口', () => {
 
 	it('Cool 与 Phoenix 插件页共享通用 Primary 切换入口', () => {
 		expect(coolSource).toContain("usePahViewContributions('/helper/plugins'");
+		expect(coolSource).toContain('PnwPageLayout');
+		expect(coolSource).toContain('title="Cool 插件"');
+		expect(coolSource).toContain(':body-inset="false"');
+		expect(coolSource).not.toContain('class="plugins__header"');
 		expect(source).toContain("usePahViewContributions('/phoenix/plugins'");
+		expect(source).toContain('<pnw-page-layout');
+		expect(source).toContain('title="Phoenix 插件"');
+		expect(source).not.toContain('class="hero"');
 		expect(primarySource).toContain("open('/helper/plugins')");
 		expect(primarySource).toContain("open('/phoenix/plugins')");
 		expect(primarySource).toContain('aria-current');
+		expect(primarySource).toContain('PnwPrimarySection');
+		expect(primarySource).toContain('title="插件管理"');
+		expect(primarySource).toContain('title="插件属性"');
+		expect(primarySource).not.toContain('Cool 原生插件与 Phoenix 业务插件使用不同安装契约');
 		expect(primarySource).not.toContain('open-issue');
 	});
 });

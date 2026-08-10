@@ -1,18 +1,20 @@
 <template>
-	<div class="dictionary-maintenance">
-		<header class="page-header">
-			<div>
-				<p class="eyebrow">PAH · COOL DICTIONARY</p>
-				<h1>字典维护</h1>
-				<p>按插件 manifest 补全缺失字典及治理元数据；不会删除或覆盖管理员自定义项。</p>
-			</div>
+	<pnw-page-layout
+		class="dictionary-maintenance"
+		title="字典维护"
+		eyebrow="PAH · COOL DICTIONARY"
+		description="按插件 manifest 补全缺失字典及治理元数据；不会删除或覆盖管理员自定义项。"
+		:body-inset="true"
+		:body-scroll="true"
+	>
+		<template #actions>
 			<div class="header-actions">
 				<el-button @click="openDictionaryCrud">编辑字典</el-button>
 				<el-button :loading="loading" @click="refreshAll({ emitOutput: true })"
 					>刷新</el-button
 				>
 			</div>
-		</header>
+		</template>
 
 		<el-alert
 			title="本页只执行数据 reconcile，不执行 ALTER TABLE"
@@ -21,33 +23,6 @@
 			show-icon
 			:closable="false"
 		/>
-
-		<section class="panel selector-panel">
-			<div>
-				<label>业务插件</label>
-				<el-select
-					v-model="selectedModuleId"
-					filterable
-					placeholder="选择声明了字典的已启用插件"
-					@change="refreshPlan({ emitOutput: true })"
-				>
-					<el-option
-						v-for="installation in dictionaryInstallations"
-						:key="installation.moduleId"
-						:label="`${installation.name} · ${installation.version}`"
-						:value="installation.moduleId"
-					/>
-				</el-select>
-			</div>
-			<el-button
-				type="primary"
-				:disabled="!selectedModuleId"
-				:loading="planLoading"
-				@click="refreshPlan({ emitOutput: true })"
-			>
-				生成 dry-run
-			</el-button>
-		</section>
 
 		<section v-if="plan" class="panel">
 			<div class="section-heading">
@@ -126,7 +101,7 @@
 			</el-table>
 		</section>
 
-		<section class="panel">
+		<section v-if="plan" class="panel">
 			<div class="section-heading">
 				<div>
 					<p class="eyebrow">LEDGER</p>
@@ -147,17 +122,20 @@
 				<el-table-column prop="error" label="错误" min-width="220" show-overflow-tooltip />
 			</el-table>
 		</section>
-	</div>
+	</pnw-page-layout>
 </template>
 
 <script lang="ts" setup>
 defineOptions({ name: 'pah-dictionary-maintenance' });
 
-import { computed, onMounted, ref } from 'vue';
+import { computed, markRaw, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { PnwPageLayout } from 'phoenix-wing';
 import { useCool } from '/@/cool';
+import PahDictionaryMaintenancePrimary from '/@/pah/PahDictionaryMaintenancePrimary.vue';
 import { usePahWorkbenchOutput } from '/@/pah/PahWorkbenchOutput';
+import { usePahViewContributions } from '/@/pah/PahViewContributions';
 
 type ReconcileAction = 'create' | 'update' | 'preserve';
 
@@ -237,6 +215,26 @@ const planRows = computed(() =>
 		}))
 	)
 );
+const primaryProps = computed(() => ({
+	pluginOptions: dictionaryInstallations.value.map(installation => ({
+		label: `${installation.name} · ${installation.version}`,
+		value: installation.moduleId
+	})),
+	selectedModuleId: selectedModuleId.value,
+	planSummary: plan.value
+		? { totalChanges: totalChanges.value, conflicts: plan.value.conflicts.length }
+		: null,
+	planLoading: planLoading.value,
+	onSelect: selectDictionaryModule,
+	onLoadPlan: () => refreshPlan({ emitOutput: true })
+}));
+
+usePahViewContributions('/pah/dictionary-maintenance', {
+	primary: {
+		component: markRaw(PahDictionaryMaintenancePrimary),
+		props: primaryProps
+	}
+});
 
 function appendOutput(message: string) {
 	workbenchOutput?.appendLine(`[字典维护] ${message}`);
@@ -276,8 +274,15 @@ async function loadInstallations() {
 		data: {}
 	});
 	if (!dictionaryInstallations.value.some(item => item.moduleId === selectedModuleId.value)) {
-		selectedModuleId.value = dictionaryInstallations.value[0]?.moduleId || '';
+		selectDictionaryModule(dictionaryInstallations.value[0]?.moduleId || '');
 	}
+}
+
+function selectDictionaryModule(moduleId: string) {
+	if (moduleId === selectedModuleId.value) return;
+	selectedModuleId.value = moduleId;
+	plan.value = undefined;
+	records.value = [];
 }
 
 async function refreshPlan({ emitOutput = false }: { emitOutput?: boolean } = {}) {
@@ -320,7 +325,7 @@ async function refreshAll({ emitOutput = false }: { emitOutput?: boolean } = {})
 	loading.value = true;
 	try {
 		await loadInstallations();
-		await refreshPlan();
+		if (plan.value && selectedModuleId.value) await refreshPlan();
 		if (emitOutput) {
 			appendOutput(
 				`状态已刷新：${dictionaryInstallations.value.length} 个插件可执行字典补全。`
@@ -382,19 +387,13 @@ onMounted(refreshAll);
 
 <style lang="scss" scoped>
 .dictionary-maintenance {
-	box-sizing: border-box;
 	height: 100%;
 	min-height: 0;
-	padding: 24px;
-	overflow-x: hidden;
-	overflow-y: auto;
 	color: var(--el-text-color-primary);
-	background: var(--el-bg-color-page);
+	--pnw-page-bg: var(--el-bg-color-page);
 }
 
-.page-header,
 .section-heading,
-.selector-panel,
 .header-actions {
 	display: flex;
 	align-items: center;
@@ -402,18 +401,8 @@ onMounted(refreshAll);
 	gap: 16px;
 }
 
-.page-header {
-	margin-bottom: 18px;
-}
-
-.page-header h1,
 .section-heading h2 {
 	margin: 4px 0;
-}
-
-.page-header p:not(.eyebrow) {
-	margin: 0;
-	color: var(--el-text-color-regular);
 }
 
 .eyebrow {
@@ -430,13 +419,6 @@ onMounted(refreshAll);
 	border: 1px solid var(--el-border-color-light);
 	border-radius: 12px;
 	background: var(--el-bg-color);
-}
-
-.selector-panel > div:first-child {
-	display: grid;
-	grid-template-columns: auto minmax(260px, 480px);
-	align-items: center;
-	gap: 12px;
 }
 
 .totals {
@@ -479,17 +461,15 @@ onMounted(refreshAll);
 
 @media (max-width: 900px) {
 	.dictionary-maintenance {
-		padding: 14px;
+		--pnw-page-main-block-padding: 10px;
 	}
 
-	.page-header,
-	.selector-panel {
+	.section-heading {
 		align-items: stretch;
 		flex-direction: column;
 	}
 
-	.header-actions,
-	.selector-panel > div:first-child {
+	.header-actions {
 		width: 100%;
 	}
 

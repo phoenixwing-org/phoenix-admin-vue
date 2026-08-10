@@ -1,11 +1,11 @@
 <template>
-	<div class="pah-plugin-page">
-		<header class="hero">
-			<div>
-				<p class="eyebrow">PHOENIX ADMIN HOST</p>
-				<h1>Phoenix 插件</h1>
-				<p class="summary">选择插件包，完成一次点检并安装；停用和卸载作为独立管理操作。</p>
-			</div>
+	<pnw-page-layout
+		class="pah-plugin-page"
+		title="Phoenix 插件"
+		:body-inset="true"
+		:body-scroll="true"
+	>
+		<template #actions>
 			<div class="hero-actions">
 				<el-button @click="router.push('/pah/identity')">外部身份审查</el-button>
 				<el-button :loading="loading" @click="refresh">刷新</el-button>
@@ -13,7 +13,7 @@
 					添加 .phoenix.cool
 				</el-button>
 			</div>
-		</header>
+		</template>
 
 		<input
 			ref="packageInput"
@@ -47,25 +47,27 @@
 		</section>
 
 		<section class="plugin-grid" v-loading="loading">
-			<article v-for="installation in list" :key="installation.id" class="plugin-card">
+			<article
+				v-for="installation in list"
+				:key="installation.id"
+				class="plugin-card"
+				:class="{ 'is-selected': detailsModuleId === installation.moduleId }"
+				tabindex="0"
+				:aria-label="`查看 ${installation.name} 插件属性`"
+				:aria-pressed="detailsModuleId === installation.moduleId"
+				@click="openPluginDetails(installation)"
+				@keydown.enter="openPluginDetails(installation)"
+				@keydown.space.prevent="openPluginDetails(installation)"
+			>
 				<header class="card-header">
-					<img
-						class="plugin-mark"
-						src="/pah-phoenixwing-mark.svg"
-						alt="Phoenix"
-					/>
+					<img class="plugin-mark" src="/pah-phoenixwing-mark.svg" alt="Phoenix" />
 					<div class="card-identity">
 						<div class="card-badges">
 							<el-tag type="primary" effect="dark" size="small">Phoenix</el-tag>
 							<el-tag effect="plain" size="small">v{{ installation.version }}</el-tag>
 							<el-tag type="success" effect="plain" size="small">业务插件</el-tag>
+							<strong class="plugin-name">{{ installation.name }}</strong>
 						</div>
-						<h2>{{ installation.name }}</h2>
-						<p class="module-id">{{ installation.moduleId }}</p>
-						<p class="publisher-date">
-							{{ installation.publisher || installation.manifest.publisher || 'Phoenix' }} ·
-							{{ formatInstallationDate(installation) }}
-						</p>
 					</div>
 					<span class="state" :data-state="installation.state">
 						{{ stateLabel(installation.state) }}
@@ -93,60 +95,65 @@
 					代码贡献已注销，业务数据保持不变。
 				</p>
 
-				<footer class="card-actions">
-					<el-button
-						v-if="installation.state === 'verified'"
-						type="primary"
-						@click="openInstallDialog(installation)"
-					>
-						安装
-					</el-button>
-					<el-button
-						v-else-if="installation.state === 'installed'"
-						type="success"
-						@click="openInstallDialog(installation)"
-					>
-						启用
-					</el-button>
-					<el-button
-						v-else-if="installation.state === 'enabled'"
-						:loading="acting"
-						@click="runAction('disable', installation)"
-					>
-						停用
-					</el-button>
-					<el-button
-						v-else-if="installation.state === 'disabled'"
-						type="success"
-						:loading="acting"
-						@click="enableManagedPlugin(installation)"
-					>
-						启用
-					</el-button>
-					<el-button
-						v-else-if="installation.state === 'uninstalled'"
-						@click="choosePackage"
-					>
-						重新选择插件包
-					</el-button>
-					<el-button
-						v-if="installation.state === 'verified'"
-						plain
-						:loading="discardLoadingModuleId === installation.moduleId"
-						@click="discardSelectedPackage(installation)"
-					>
-						移除已选包
-					</el-button>
+				<footer class="card-actions" @click.stop>
+					<div class="card-action-buttons">
+						<el-button
+							v-if="installation.state === 'verified'"
+							type="primary"
+							@click="openInstallDialog(installation)"
+						>
+							安装
+						</el-button>
+						<el-button
+							v-else-if="installation.state === 'installed'"
+							type="success"
+							@click="openInstallDialog(installation)"
+						>
+							启用
+						</el-button>
+						<el-button
+							v-else-if="installation.state === 'enabled'"
+							:loading="acting"
+							@click="runAction('disable', installation)"
+						>
+							停用
+						</el-button>
+						<el-button
+							v-else-if="installation.state === 'disabled'"
+							type="success"
+							:loading="acting"
+							@click="enableManagedPlugin(installation)"
+						>
+							启用
+						</el-button>
+						<el-button
+							v-else-if="installation.state === 'uninstalled'"
+							@click="choosePackage"
+						>
+							重新选择插件包
+						</el-button>
+						<el-button
+							v-if="installation.state === 'verified'"
+							plain
+							:loading="discardLoadingModuleId === installation.moduleId"
+							@click="discardSelectedPackage(installation)"
+						>
+							移除已选包
+						</el-button>
 
-					<el-button
-						v-if="['installed', 'disabled'].includes(installation.state)"
-						type="danger"
-						plain
-						:loading="uninstallLoadingModuleId === installation.moduleId"
-						@click="controlledUninstall(installation)"
-					>
-						卸载
-					</el-button>
+						<el-button
+							v-if="['installed', 'disabled'].includes(installation.state)"
+							type="danger"
+							plain
+							:loading="uninstallLoadingModuleId === installation.moduleId"
+							@click="controlledUninstall(installation)"
+						>
+							卸载
+						</el-button>
+					</div>
+					<time class="installation-date">
+						{{ formatInstallationDate(installation) }}
+					</time>
 				</footer>
 			</article>
 		</section>
@@ -238,7 +245,7 @@
 				</el-button>
 			</template>
 		</el-dialog>
-	</div>
+	</pnw-page-layout>
 </template>
 
 <script lang="ts" setup>
@@ -246,6 +253,7 @@ defineOptions({ name: 'phoenix-business-plugins' });
 
 import { computed, markRaw, onMounted, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { PnwPageLayout } from 'phoenix-wing';
 import { useCool } from '/@/cool';
 import { useBase } from '/$/base';
 import type { PahMigrationDryRunPlan, PahPluginManifest } from '../manifest/PahPluginManifest';
@@ -312,12 +320,6 @@ const { service, route, router } = useCool();
 const { menu, process } = useBase();
 const workbenchOutput = usePahWorkbenchOutput();
 
-usePahViewContributions('/phoenix/plugins', {
-	primary: {
-		component: markRaw(PahPluginManagementPrimary),
-		props: { active: 'phoenix' }
-	}
-});
 const list = ref<Installation[]>([]);
 const loading = ref(false);
 const acting = ref(false);
@@ -336,6 +338,7 @@ const packageState = ref<'idle' | 'selected' | 'working' | 'success' | 'error'>(
 const packageStatusDetail = ref('尚未选择插件包');
 const installDialogVisible = ref(false);
 const activeModuleId = ref('');
+const detailsModuleId = ref('');
 const installAcknowledged = ref(false);
 const packageStatusTitle = computed(
 	() =>
@@ -349,6 +352,9 @@ const packageStatusTitle = computed(
 );
 const activeInstallation = computed(
 	() => list.value.find(item => item.moduleId === activeModuleId.value) || null
+);
+const detailsInstallation = computed(
+	() => list.value.find(item => item.moduleId === detailsModuleId.value) || null
 );
 const installBusy = computed(
 	() =>
@@ -389,6 +395,38 @@ function stateLabel(state: string) {
 	return stateLabels[state] || state;
 }
 
+const primaryProps = computed(() => {
+	const installation = detailsInstallation.value;
+	return {
+		active: 'phoenix' as const,
+		details: installation
+			? {
+					name: installation.name,
+					moduleId: installation.moduleId,
+					version: installation.version,
+					state: installation.state,
+					stateLabel: stateLabel(installation.state),
+					publisher:
+						installation.publisher || installation.manifest.publisher || 'Phoenix',
+					updatedAt: formatInstallationDate(installation),
+					activationMode: '受控重启',
+					dataPolicy: installation.dataRetained ? '保留' : '按清单策略',
+					navigationModules: installation.manifest.navigation.modules.length,
+					migrations: installation.manifest.migrations.length,
+					tables: installation.manifest.dataOwnership.tables.length,
+					hostReuse: installation.manifest.hostReuse.map(item => reuseLabel[item] || item)
+				}
+			: null
+	};
+});
+
+usePahViewContributions('/phoenix/plugins', {
+	primary: {
+		component: markRaw(PahPluginManagementPrimary),
+		props: primaryProps
+	}
+});
+
 function output(message: string) {
 	console.info(`[phoenix-plugin] ${message}`);
 	workbenchOutput?.appendLine(`[Phoenix 插件] ${message}`);
@@ -400,8 +438,7 @@ function formatPlanExpiry(value?: string) {
 }
 
 function formatInstallationDate(installation: Installation) {
-	const value =
-		installation.updateTime || installation.stateChangedAt || installation.createTime;
+	const value = installation.updateTime || installation.stateChangedAt || installation.createTime;
 	if (!value) return '日期未知';
 	const date = new Date(value);
 	if (Number.isNaN(date.getTime())) return '日期未知';
@@ -421,10 +458,7 @@ function packageProcessingErrorMessage(error: any) {
 	return message;
 }
 
-async function synchronizeHostAfterPluginStateChange(
-	installation: Installation,
-	enabled: boolean
-) {
+async function synchronizeHostAfterPluginStateChange(installation: Installation, enabled: boolean) {
 	if (!enabled) {
 		prunePluginRoutesAndTabs(installation);
 	}
@@ -433,7 +467,9 @@ async function synchronizeHostAfterPluginStateChange(
 		await menu.get();
 		output(`${installation.moduleId} 的菜单、权限与动态路由状态已同步`);
 	} catch (error: any) {
-		output(`${installation.moduleId} 状态已更新，但导航刷新失败：${error.message || '未知错误'}`);
+		output(
+			`${installation.moduleId} 状态已更新，但导航刷新失败：${error.message || '未知错误'}`
+		);
 		ElMessage.warning('插件状态已更新；导航刷新失败，请刷新页面');
 	}
 
@@ -447,9 +483,7 @@ function prunePluginRoutesAndTabs(installation: Installation) {
 		.getRoutes()
 		.filter(
 			item =>
-				item.meta?.dynamic &&
-				pahPathBelongsToPlugin(item.path, installation) &&
-				item.name
+				item.meta?.dynamic && pahPathBelongsToPlugin(item.path, installation) && item.name
 		)
 		.map(item => String(item.name));
 	for (const routeName of staleRouteNames) router.removeRoute(routeName);
@@ -461,6 +495,10 @@ function openInstallDialog(installation: Installation) {
 	activeModuleId.value = installation.moduleId;
 	installAcknowledged.value = false;
 	installDialogVisible.value = true;
+}
+
+function openPluginDetails(installation: Installation) {
+	detailsModuleId.value = installation.moduleId;
 }
 
 function installProgress(installation: Installation) {
@@ -563,6 +601,9 @@ async function refresh() {
 			method: 'POST',
 			data: {}
 		});
+		if (!list.value.some(item => item.moduleId === detailsModuleId.value)) {
+			detailsModuleId.value = list.value[0]?.moduleId || '';
+		}
 		for (const installation of list.value.filter(item =>
 			['disabled', 'uninstalled'].includes(item.state)
 		)) {
@@ -860,12 +901,10 @@ onMounted(refresh);
 
 <style lang="scss" scoped>
 .pah-plugin-page {
-	box-sizing: border-box;
-	min-height: 100%;
-	padding: 28px;
-	overflow: auto;
+	height: 100%;
+	min-height: 0;
 	color: var(--el-text-color-primary);
-	background:
+	--pnw-page-bg:
 		radial-gradient(
 			circle at 90% 0%,
 			color-mix(in srgb, var(--el-color-primary) 12%, transparent),
@@ -874,34 +913,9 @@ onMounted(refresh);
 		var(--el-bg-color-page);
 }
 
-.hero {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 20px;
-}
-
-.hero h1 {
-	margin: 4px 0 8px;
-	font-size: 30px;
-}
-
 .hero-actions {
 	display: flex;
 	gap: 8px;
-}
-
-.eyebrow {
-	margin: 0;
-	color: var(--el-text-color-secondary);
-	font-size: 12px;
-	font-weight: 700;
-	letter-spacing: 0.14em;
-}
-
-.summary {
-	margin: 0;
-	color: var(--el-text-color-regular);
 }
 
 .package-input {
@@ -968,13 +982,29 @@ onMounted(refresh);
 .plugin-card {
 	display: flex;
 	min-width: 0;
-	min-height: 220px;
+	min-height: 176px;
 	padding: 16px;
 	border: 1px solid var(--el-border-color-light);
 	border-radius: 14px;
 	flex-direction: column;
 	background: color-mix(in srgb, var(--el-bg-color) 94%, transparent);
 	box-shadow: var(--el-box-shadow-light);
+	cursor: pointer;
+	transition:
+		border-color 120ms ease,
+		box-shadow 120ms ease;
+}
+
+.plugin-card:hover,
+.plugin-card:focus-visible {
+	border-color: var(--el-color-primary-light-5);
+	box-shadow: var(--el-box-shadow);
+	outline: none;
+}
+
+.plugin-card.is-selected {
+	border-color: var(--el-color-primary-light-3);
+	box-shadow: 0 0 0 1px var(--el-color-primary-light-5);
 }
 
 .card-header {
@@ -1006,44 +1036,46 @@ onMounted(refresh);
 	border-radius: 6px;
 }
 
-.plugin-card h2 {
-	margin: 9px 0 0;
-	font-size: 20px;
-}
-
-.module-id,
-.publisher-date {
-	margin: 4px 0 0;
+.plugin-name {
+	min-width: 0;
 	overflow: hidden;
-	color: var(--el-text-color-secondary);
-	font-size: 12px;
+	font-size: 15px;
+	line-height: 24px;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-}
-
-.publisher-date {
-	margin-top: 8px;
-	overflow: visible;
-	text-overflow: clip;
-	white-space: normal;
 }
 
 .card-facts {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px 14px;
-	margin-top: 14px;
+	margin-top: 10px;
 	color: var(--el-text-color-secondary);
 	font-size: 12px;
 }
 
 .card-actions {
 	display: flex;
+	align-items: center;
+	justify-content: space-between;
 	flex-wrap: wrap;
 	gap: 8px;
 	margin-top: auto;
 	padding-top: 14px;
 	border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.card-action-buttons {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.installation-date {
+	color: var(--el-text-color-secondary);
+	font-size: 12px;
+	white-space: nowrap;
 }
 
 .install-summary {
@@ -1094,7 +1126,7 @@ onMounted(refresh);
 	align-items: center;
 	flex-wrap: wrap;
 	gap: 6px;
-	margin-top: 14px;
+	margin-top: 9px;
 }
 
 .reuse :deep(.el-tag) {
@@ -1145,12 +1177,7 @@ onMounted(refresh);
 
 @media (max-width: 800px) {
 	.pah-plugin-page {
-		padding: 18px;
-	}
-
-	.hero {
-		align-items: flex-start;
-		flex-direction: column;
+		--pnw-page-main-block-padding: 10px;
 	}
 
 	.hero-actions {

@@ -11,6 +11,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite --host",
+		"dev:local": "node scripts/run-with-phoenix-wing.mjs -- pnpm exec vite --host 127.0.0.1 --strictPort",
 		"dev:wing-local": "node scripts/run-with-phoenix-wing.mjs -- pnpm exec vite --host 127.0.0.1 --strictPort",
 		"build": "vite build",
 		"build:wing-local": "node scripts/run-with-phoenix-wing.mjs -- pnpm exec vite build",

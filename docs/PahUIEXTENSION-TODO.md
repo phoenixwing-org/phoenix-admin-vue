@@ -1,5 +1,8 @@
 # Phoenix Admin UI 扩展 TODO
 
+站点级扩展的正式名称、类型键、管理员规则与干净环境验收见
+[《Phoenix 品牌与启动页扩展》](Phoenix品牌与启动页扩展.md)。
+
 ## 目标
 
 建立一次性、版本化的 Pah UI 扩展接缝，使可信 Phoenix 插件可以贡献：
@@ -57,7 +60,10 @@ uiContributions: {
   login?: {
     id: string,
     mode: 'host-auth-shell',
-    entry: 'vue/ui/login-shell.ts'
+    entry?: 'vue/ui/login-shell.ts',
+    title?: string,
+    subtitle?: string,
+    background?: 'assets/login-background.webp'
   },
   home?: {
     id: string,
@@ -68,8 +74,11 @@ uiContributions: {
     appName?: string,
     logo?: 'assets/logo.svg',
     logoDark?: 'assets/logo-dark.svg',
+    compactLogo?: 'assets/logo-compact.svg',
+    compactLogoDark?: 'assets/logo-compact-dark.svg',
     favicon?: 'assets/favicon.svg',
-    titleTemplate?: string
+    titleTemplate?: string,
+    showFrameworkBranding?: boolean
   }
 }
 ```
@@ -88,6 +97,21 @@ uiContributions: {
 
 登录扩展 v1 只负责布局和品牌呈现，必须嵌入 Host 认证面板，不得重新实现凭据提交、
 验证码、Token 存储或 OAuth callback。
+
+### 白标呈现规则
+
+管理员启用品牌贡献后，以下用户可见位置必须使用同一个已解析的站点 profile：
+
+- `/login` 的 Logo、站点名称、标题、副标题和背景；
+- Pah Workbench 左上角品牌按钮及折叠态 compact Logo；
+- Cool 兼容布局左侧栏顶部 Logo 和应用名称；
+- 浏览器 title 和 favicon；
+- 登录成功后的默认首页。
+
+`showFrameworkBranding=false` 时，上述业务界面不得再显示 Phoenix Admin、PhoenixWing 或
+默认凤凰图标。框架版本、许可证、制品发布者和诊断元数据仍保留真实值，不能伪装为用户
+自研框架。未选择 profile、profile 损坏或安全模式开启时，整组槽位回退 Phoenix 默认，
+禁止出现一半用户品牌、一半框架品牌的混合状态。
 
 ## 构建与启用
 
@@ -149,3 +173,61 @@ iframe、Module Federation、多租户品牌、SSR、同槽位多插件或在线
 - 新旧版本并存，切换失败可回滚；
 - 覆盖 history/hash、桌面/移动端、SVG/XSS、路径逃逸、链接挂载和超大包；
 - 通过 `pnpm test`、`pnpm type-check`、`pnpm build` 及框架升级契约测试。
+
+## 2026-08-10 下午实施计划（0.2.3 候选）
+
+本阶段解决“管理员可定义登录页、登录后的启动页和进入主页后的左上角品牌 Logo”。三者
+共享一个版本化站点 profile，但登录认证表单、验证码、OAuth callback 和 Token 流程仍由
+Host 持有，插件只能包裹和呈现 Host 认证面板。
+
+### A. 冻结最小契约与回退规则
+
+1. 在 manifest fixture 中增加 `uiContributions.contractVersion = 1`，首批启用
+   `login`、`home.routeId` 和 `brand`；登录贡献先支持结构化文案/背景，确有布局需求时才加载
+   受控 `host-auth-shell` 入口。
+2. `home.routeId` 必须引用同一插件已声明的路由；选择首页不授予新权限。
+3. 统一回退顺序：管理员选择 → 当前用户有权限 → Phoenix 默认首页 → 第一个有权限页面。
+4. Logo 只接受包内 SVG；安装时清理 script、事件属性、`foreignObject` 和外部引用，运行时
+   只使用 Host 生成的本地资源 URL。
+5. API、registry 或资源失败时逐槽回退默认，不得阻断 admin 密码登录或把 `/` 导向 404。
+6. `showFrameworkBranding=false` 只影响用户界面，不删除许可证、诊断版本或插件发布者信息。
+
+### B. Host 端接缝
+
+1. 实现 `PahUiExtensionRegistry`，只读取受控构建生成的静态 registry，不在浏览器扫描目录。
+2. 实现 `PahLoginOutlet`，稳定承载 Host 认证面板，并把结构化登录文案、背景和 Logo 投影到
+   profile；插件异常时原地回退默认登录页。
+3. 实现 `PahHomeResolver`，接管登录成功、访问 `/`、点击工作台品牌按钮三条旅程。
+4. 实现 `PahBrandManager`，同时驱动 Pah Workbench 品牌位和 Cool 兼容布局左上角 Logo；
+   Logo、应用名、title、favicon 均有 Phoenix 默认值。
+5. 先补纯函数和路由回归，再接组件；覆盖无权限、插件停用、制品损坏和刷新冷启动。
+
+### C. 管理员配置界面
+
+1. 在 `/phoenix/plugins` 的通用 Primary 增加“界面扩展”区，不写 Open Issue 等产品映射。
+2. 登录外观、首页和品牌分别单选：Phoenix 默认，或某个已安装、已验证、已启用插件的
+   贡献；提供“隐藏框架标识”预览项。
+3. 保存前展示目标路由、Logo 预览、版本和 checksum；切换需确认，操作写入审计。
+4. 停用、卸载或切换版本前先原子解绑相关槽位，再撤销插件贡献。
+
+### D. 安装载体决策
+
+- 首选：把自定义首页和品牌做成可信的 `.phoenix.cool` “站点外观插件”，仍由 Phoenix
+  安装器校验、构建、重启和启用；它不直接修改 Phoenix/Cool 源码，框架升级不会覆盖。
+- `/helper/plugins` 只保留 Primary 切换入口。Cool 原生 `.cool` 安装器当前不理解 Phoenix
+  manifest、checksum、权限路由和回滚契约，因此不能直接承担这类跨前后端扩展安装。
+- 后续如需在 Cool 商店展示，可做一个只负责发现/跳转的桥接卡片，最终安装仍交给
+  `/phoenix/plugins`；不得由桥接卡片执行 npm 命令或写 Host 源码。
+
+### E. 下午验收顺序
+
+1. 契约 fixture、SVG 安全和首页解析单测；
+2. 无扩展基线：admin 登录后 `/` 正常、默认登录页和 Logo 不变；
+3. 安装示例站点外观插件，选择自定义登录外观、首页和明暗 Logo，重启后保持；
+4. `showFrameworkBranding=false` 下登录页、两种左上角品牌位、title/favicon 不出现默认标识；
+5. 无权限用户回退、插件停用/卸载自动恢复默认；
+6. 1440/720、light/dark、刷新/返回/冷深链、console 以及 `pnpm type-check/build`。
+
+0.2.3 可以先交付结构化白标登录页；不能因时间不足把认证面板复制进插件、允许任意
+HTML/CSS，或用 localStorage 代替 Host 配置。只有第二个真实布局消费者证明结构化 profile
+不足时，才启用 manifest 中可选的 `host-auth-shell` 组件入口。

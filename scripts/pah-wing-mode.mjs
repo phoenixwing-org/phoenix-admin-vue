@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-export const PAH_LOCAL_WING_VERSION = '0.6.3';
-export const PAH_LOCAL_WING_COMMIT = '4aa2a439bce89ca2827d991c650393eae54d85ac';
+export const PAH_LOCAL_WING_VERSION = '0.6.4';
+export const PAH_LOCAL_WING_COMMIT = '9ded35f41ec5dfe0d72bfa766107b70913dcfa01';
 
 function pahGitOutput(worktreeRoot, args) {
 	return execFileSync('git', args, {
@@ -13,7 +13,12 @@ function pahGitOutput(worktreeRoot, args) {
 }
 
 export function pahResolveLocalWing(worktreeRoot, env = process.env) {
-	const canonicalAdminRoot = pahGitOutput(worktreeRoot, ['rev-parse', '--show-toplevel']);
+	const checkoutRoot = pahGitOutput(worktreeRoot, ['rev-parse', '--show-toplevel']);
+	const commonGitDirectory = path.resolve(
+		checkoutRoot,
+		pahGitOutput(worktreeRoot, ['rev-parse', '--git-common-dir'])
+	);
+	const canonicalAdminRoot = path.dirname(commonGitDirectory);
 	const wingRoot = path.resolve(
 		env.PHOENIX_WING_ROOT || path.join(canonicalAdminRoot, '..', 'phoenix-wing')
 	);
@@ -45,6 +50,7 @@ export function pahResolveLocalWing(worktreeRoot, env = process.env) {
 
 	return {
 		worktreeRoot,
+		checkoutRoot,
 		canonicalAdminRoot,
 		root: wingRoot,
 		version: manifest.version,
