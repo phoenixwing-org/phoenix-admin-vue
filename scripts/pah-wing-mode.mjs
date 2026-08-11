@@ -3,7 +3,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
 export const PAH_LOCAL_WING_VERSION = '0.6.4';
-export const PAH_LOCAL_WING_COMMIT = '9ded35f41ec5dfe0d72bfa766107b70913dcfa01';
+export const PAH_LOCAL_WING_COMMIT = 'e26f3c5e4a55f1f0aede70b49f1abe7f62ac1573';
 
 function pahGitOutput(worktreeRoot, args) {
 	return execFileSync('git', args, {

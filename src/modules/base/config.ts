@@ -1,8 +1,9 @@
 import { type ModuleConfig } from '/@/cool';
 import { useStore } from './store';
-import { config } from '/@/config';
 import { t } from '/@/plugins/i18n';
 import './static/css/index.scss';
+import { usePahPublicLoginBrandStore } from '/@/pah/PahPublicLoginBrandStore';
+import { pahPublicLoginTitle } from '/@/pah/PahPublicLoginBranding';
 
 export default (): ModuleConfig => {
 	return {
@@ -50,25 +51,30 @@ export default (): ModuleConfig => {
 			})
 		],
 		install() {
+			const branding = usePahPublicLoginBrandStore().current;
 			// 设置标题
-			document.title = config.app.name;
+			document.title = pahPublicLoginTitle(branding);
 
 			// 设置加载文案
 			const loading = document.querySelector('#Loading');
 
 			if (loading) {
+				const logo = loading.querySelector<HTMLImageElement>('.preload__logo');
 				const name = loading.querySelector('.preload__name');
 				const title = loading.querySelector('.preload__title');
 				const subTitle = loading.querySelector('.preload__sub-title');
 
+				if (logo) {
+					logo.src = branding.assets.logoDark.url;
+				}
 				if (name) {
-					name.innerHTML = config.app.name;
+					name.textContent = branding.appName;
 				}
 				if (title) {
-					title.innerHTML = t('正在加载资源...');
+					title.textContent = branding.login.prompt;
 				}
 				if (subTitle) {
-					subTitle.innerHTML = t('初次加载资源可能需要较多时间，请耐心等待');
+					subTitle.textContent = '';
 				}
 			}
 		},

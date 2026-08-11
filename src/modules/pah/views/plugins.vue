@@ -7,6 +7,13 @@
 	>
 		<template #actions>
 			<div class="hero-actions">
+				<el-button
+					v-if="brandingStatus?.mode === 'plugin'"
+					:loading="brandingLoadingModuleId === 'host-default'"
+					@click="resetPublicLoginBranding"
+				>
+					恢复默认登录品牌
+				</el-button>
 				<el-button @click="router.push('/pah/identity')">外部身份审查</el-button>
 				<el-button :loading="loading" @click="refresh">刷新</el-button>
 				<el-button type="primary" :loading="acting" @click="choosePackage">
@@ -65,7 +72,13 @@
 						<div class="card-badges">
 							<el-tag type="primary" effect="dark" size="small">Phoenix</el-tag>
 							<el-tag effect="plain" size="small">v{{ installation.version }}</el-tag>
-							<el-tag type="success" effect="plain" size="small">业务插件</el-tag>
+							<el-tag type="success" effect="plain" size="small">
+								{{
+									installation.manifest.pluginType === 'phoenix.admin.branding'
+										? '品牌插件'
+										: '业务插件'
+								}}
+							</el-tag>
 							<strong class="plugin-name">{{ installation.name }}</strong>
 						</div>
 					</div>
@@ -82,6 +95,14 @@
 
 				<div class="reuse">
 					<el-tag
+						v-if="isActivePublicLoginBranding(installation)"
+						type="success"
+						effect="dark"
+						size="small"
+					>
+						当前登录品牌
+					</el-tag>
+					<el-tag
 						v-for="item in installation.manifest.hostReuse"
 						:key="item"
 						effect="plain"
@@ -97,6 +118,19 @@
 
 				<footer class="card-actions" @click.stop>
 					<div class="card-action-buttons">
+						<el-button
+							v-if="
+								installation.state === 'enabled' &&
+								installation.manifest.pluginType === 'phoenix.admin.branding' &&
+								!isActivePublicLoginBranding(installation)
+							"
+							type="primary"
+							plain
+							:loading="brandingLoadingModuleId === installation.moduleId"
+							@click="selectPublicLoginBranding(installation)"
+						>
+							设为登录品牌
+						</el-button>
 						<el-button
 							v-if="installation.state === 'verified'"
 							type="primary"
@@ -192,13 +226,6 @@
 					<div class="plan-facts">
 						<span>事务：必须</span>
 						<span>
-							备份：{{
-								migrationPlans[activeInstallation.moduleId]?.backupRequired
-									? 'Host 自动备份并恢复点检'
-									: '无待执行 DDL，本次无需'
-							}}
-						</span>
-						<span>
 							有效期至：{{
 								formatPlanExpiry(
 									migrationPlans[activeInstallation.moduleId]?.expiresAt
@@ -222,13 +249,6 @@
 						</li>
 					</ul>
 				</div>
-
-				<el-checkbox
-					v-if="migrationPlans[activeInstallation.moduleId]?.backupRequired"
-					v-model="installAcknowledged"
-				>
-					我已确认本次会修改数据库；Host 将自动创建备份并完成恢复点检
-				</el-checkbox>
 			</template>
 
 			<template #footer>
@@ -289,14 +309,6 @@ interface Installation {
 	stateChangedAt?: string;
 }
 
-interface LocalBackup {
-	backupId: string;
-	sha256: string;
-	size: number;
-	createdAt: string;
-	restoreVerifiedAt: string;
-}
-
 interface DictionaryPlan {
 	fingerprint: string;
 	conflicts: string[];
@@ -316,6 +328,16 @@ interface LocalRuntimeStatus {
 	pendingMigrations: number;
 }
 
+interface PublicLoginBrandingStatus {
+	revision: string;
+	mode: 'host-default' | 'plugin';
+	plugin: null | {
+		moduleId: string;
+		version: string;
+		packageSha256: string;
+	};
+}
+
 const { service, route, router } = useCool();
 const { menu, process } = useBase();
 const workbenchOutput = usePahWorkbenchOutput();
@@ -329,6 +351,8 @@ const installLoadingModuleId = ref('');
 const uninstallLoadingModuleId = ref('');
 const discardLoadingModuleId = ref('');
 const dictionaryPlanLoadingModuleId = ref('');
+const brandingLoadingModuleId = ref('');
+const brandingStatus = ref<PublicLoginBrandingStatus>();
 const runtimeStatuses = ref<Record<string, LocalRuntimeStatus | undefined>>({});
 const migrationPlans = ref<Record<string, PahMigrationDryRunPlan | undefined>>({});
 const dictionaryPlans = ref<Record<string, DictionaryPlan | undefined>>({});
@@ -339,7 +363,6 @@ const packageStatusDetail = ref('尚未选择插件包');
 const installDialogVisible = ref(false);
 const activeModuleId = ref('');
 const detailsModuleId = ref('');
-const installAcknowledged = ref(false);
 const packageStatusTitle = computed(
 	() =>
 		({
@@ -393,6 +416,10 @@ const stateLabels: Record<string, string> = {
 
 function stateLabel(state: string) {
 	return stateLabels[state] || state;
+}
+
+function isActivePublicLoginBranding(installation: Installation) {
+	return brandingStatus.value?.plugin?.moduleId === installation.moduleId;
 }
 
 const primaryProps = computed(() => {
@@ -493,7 +520,6 @@ function prunePluginRoutesAndTabs(installation: Installation) {
 
 function openInstallDialog(installation: Installation) {
 	activeModuleId.value = installation.moduleId;
-	installAcknowledged.value = false;
 	installDialogVisible.value = true;
 }
 
@@ -525,7 +551,7 @@ function installDescription(installation: Installation) {
 		return '若本次加入了新的 Node payload，请先在 API Terminal 重启服务，再点“检查并继续”。';
 	}
 	if (installation.state === 'verified') {
-		return 'Host 会生成一次性 dry-run；有待执行 DDL 时自动创建备份并完成恢复点检，然后以事务安装。';
+		return 'Host 会生成一次性 dry-run，校验待执行 DDL 后以事务安装并记录迁移台账。';
 	}
 	if (['installed', 'disabled'].includes(installation.state)) {
 		return '启用会物化插件声明的菜单、权限和字典贡献。';
@@ -609,10 +635,62 @@ async function refresh() {
 		)) {
 			prunePluginRoutesAndTabs(installation);
 		}
+		try {
+			await refreshPublicLoginBrandingStatus();
+		} catch (error: any) {
+			brandingStatus.value = undefined;
+			output(`登录品牌状态暂不可用：${error.message || '未知错误'}`);
+		}
 	} catch (error: any) {
 		ElMessage.error(error.message || '插件列表加载失败');
 	} finally {
 		loading.value = false;
+	}
+}
+
+async function refreshPublicLoginBrandingStatus() {
+	brandingStatus.value = (await service.request({
+		url: '/admin/phoenix/plugin/public-login-branding/status',
+		method: 'GET'
+	})) as PublicLoginBrandingStatus;
+}
+
+async function selectPublicLoginBranding(installation: Installation) {
+	if (!brandingStatus.value) await refreshPublicLoginBrandingStatus();
+	brandingLoadingModuleId.value = installation.moduleId;
+	try {
+		brandingStatus.value = (await service.request({
+			url: '/admin/phoenix/plugin/public-login-branding/select',
+			method: 'POST',
+			data: {
+				moduleId: installation.moduleId,
+				expectedRevision: brandingStatus.value?.revision
+			}
+		})) as PublicLoginBrandingStatus;
+		output(`${installation.moduleId} 已设为公开登录品牌；新登录页将直接使用该快照`);
+		ElMessage.success('登录品牌已切换；重新打开登录页即可查看');
+	} catch (error: any) {
+		ElMessage.error(error.message || '登录品牌切换失败');
+	} finally {
+		brandingLoadingModuleId.value = '';
+	}
+}
+
+async function resetPublicLoginBranding() {
+	if (!brandingStatus.value) await refreshPublicLoginBrandingStatus();
+	brandingLoadingModuleId.value = 'host-default';
+	try {
+		brandingStatus.value = (await service.request({
+			url: '/admin/phoenix/plugin/public-login-branding/reset',
+			method: 'POST',
+			data: { expectedRevision: brandingStatus.value?.revision }
+		})) as PublicLoginBrandingStatus;
+		output('已恢复 Host 默认公开登录品牌');
+		ElMessage.success('已恢复默认登录品牌；重新打开登录页即可查看');
+	} catch (error: any) {
+		ElMessage.error(error.message || '默认登录品牌恢复失败');
+	} finally {
+		brandingLoadingModuleId.value = '';
 	}
 }
 
@@ -661,7 +739,15 @@ async function validateSelectedPackage() {
 			fileCount: number;
 			packageSha256: string;
 			restartRequired: boolean;
+			validationChecks?: Array<{
+				id: string;
+				label: string;
+				detail: string;
+			}>;
 		};
+		for (const check of result.validationChecks || []) {
+			output(`校验通过 · ${check.label}：${check.detail}`);
+		}
 		packageState.value = 'success';
 		runtimeStatuses.value = {
 			...runtimeStatuses.value,
@@ -733,12 +819,8 @@ async function controlledInstall(installation: Installation) {
 			method: 'POST',
 			data: { moduleId: installation.moduleId },
 			timeout: 300000
-		})) as { appliedMigrations: number; backupId?: string };
-		output(
-			`${installation.moduleId} 受控安装完成：应用 ${result.appliedMigrations} 条迁移${
-				result.backupId ? `，备份 ${result.backupId}` : '，本次无需备份'
-			}`
-		);
+		})) as { appliedMigrations: number };
+		output(`${installation.moduleId} 受控安装完成：应用 ${result.appliedMigrations} 条迁移`);
 		ElMessage.success('受控安装完成；现在可以启用插件');
 		await refresh();
 		return true;
@@ -806,10 +888,6 @@ async function continueInstallation(installation: Installation) {
 	const plan =
 		migrationPlans.value[installation.moduleId] || (await loadMigrationPlan(installation));
 	if (!plan) return;
-	if (plan.backupRequired && !installAcknowledged.value) {
-		ElMessage.warning('请先确认数据库变更与自动备份');
-		return;
-	}
 	if (!(await controlledInstall(installation))) return;
 
 	const installed = list.value.find(item => item.moduleId === installation.moduleId);
@@ -821,7 +899,7 @@ async function continueInstallation(installation: Installation) {
 async function controlledUninstall(installation: Installation) {
 	try {
 		await ElMessageBox.confirm(
-			`仅注销 ${installation.name} 的代码、路由和任务贡献；${installation.manifest.dataOwnership.tables.length} 张业务表将保留。requiresBackup 时应先在受控流程完成可信备份；本页生成的只是卸载关联号。是否继续？`,
+			`仅注销 ${installation.name} 的代码、路由和任务贡献；${installation.manifest.dataOwnership.tables.length} 张业务表将保留。是否继续？`,
 			'安全卸载',
 			{ type: 'warning', confirmButtonText: '保留数据并卸载' }
 		);
@@ -831,13 +909,13 @@ async function controlledUninstall(installation: Installation) {
 
 	uninstallLoadingModuleId.value = installation.moduleId;
 	try {
-		const result = (await service.request({
+		await service.request({
 			url: '/admin/phoenix/plugin/local-controlled-uninstall',
 			method: 'POST',
 			data: { moduleId: installation.moduleId },
 			timeout: 300000
-		})) as { backup: LocalBackup };
-		output(`${installation.moduleId} 已备份并卸载：${result.backup.backupId}`);
+		});
+		output(`${installation.moduleId} 已卸载，业务数据保持不变`);
 		ElMessage.success('已卸载，业务数据保持不变');
 		await synchronizeHostAfterPluginStateChange(installation, false);
 		await refresh();

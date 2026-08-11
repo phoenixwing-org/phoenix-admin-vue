@@ -16,6 +16,7 @@ import {
 	pahCreateHostPathContext,
 	pahHostDependencyId
 } from './scripts/pah-host-runtime-dependencies';
+import { migrateLegacyPublicLoginBrandingEpsCache } from './scripts/cool-eps-cache-compat.mjs';
 
 function toPath(dir: string) {
 	return fileURLToPath(new URL(dir, import.meta.url));
@@ -67,6 +68,15 @@ function pahHostRuntimeDependencies(): Plugin {
 export default ({ mode }: ConfigEnv): UserConfig => {
 	const isDev = mode === 'development';
 	const localWingAliases = pahLocalWingAliases();
+	const epsCacheMigration = migrateLegacyPublicLoginBrandingEpsCache(
+		path.join(adminRoot, 'build', 'cool', 'eps.json')
+	);
+
+	if (epsCacheMigration.migrated > 0) {
+		console.info(
+			`[cool-eps] migrated ${epsCacheMigration.migrated} legacy public login branding route`
+		);
+	}
 
 	return {
 		plugins: [

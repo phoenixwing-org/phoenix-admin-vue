@@ -64,6 +64,7 @@ export interface PahMigrationDryRunPlan {
 
 export interface PahPluginManifest {
 	formatVersion: typeof PAH_PLUGIN_FORMAT_VERSION;
+	pluginType?: 'phoenix.admin.branding';
 	moduleId: string;
 	name: string;
 	version: string;

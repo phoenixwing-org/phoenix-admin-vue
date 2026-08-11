@@ -1,5 +1,6 @@
 Phoenix Admin Vue
-Copyright (c) PhoenixWing contributors
+Copyright 2024–2026 PhoenixWing contributors
+Copyright © 2024–2026 凤凰之翼（PhoenixWing）贡献者。
 
 This repository is a PhoenixWing-maintained fork of Cool Admin Vue.
 It is not an official Cool Admin distribution.
@@ -7,6 +8,9 @@ It is not an official Cool Admin distribution.
 The original Cool Admin copyright and MIT license notice are preserved in
 LICENSE and in the Git history. Phoenix changes in this repository are also
 distributed under the MIT License.
+
+Upstream Cool Admin copyright preserved in LICENSE:
+Copyright (c) [2025] [厦门闪酷科技开发有限公司]
 
 Fixed upstream baseline:
 cool-team-official/cool-admin-vue 8.x

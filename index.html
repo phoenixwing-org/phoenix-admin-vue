@@ -10,7 +10,65 @@
 			content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=0"
 		/>
 		<title></title>
-		<link rel="icon" href="/pah-phoenixwing-mark.svg" type="image/svg+xml" />
+		<link id="pah-public-login-favicon" rel="icon" />
+		<script src="%VITE_PAH_PUBLIC_API_BASE%/admin/base/open/public-login-branding"></script>
+		<script>
+			(() => {
+				if (
+					!Object.prototype.hasOwnProperty.call(window, '__PAH_PUBLIC_LOGIN_BRANDING__')
+				) {
+					const mark = Object.freeze({
+						url: '/pah-phoenixwing-mark.svg',
+						sha256: 'a92883affe621c0d02c3e59ca2a5a01c8e1e1fee0bec77501104691bd154288b',
+						mime: 'image/svg+xml',
+						size: 1569
+					});
+					const snapshot = Object.freeze({
+						schemaVersion: 1,
+						revision:
+							'0000000000000000000000000000000000000000000000000000000000000000',
+						mode: 'host-default',
+						plugin: null,
+						appName: 'Phoenix Admin',
+						titleTemplate: '%s · Phoenix Admin',
+						favicon: mark,
+						login: Object.freeze({
+							eyebrow: 'PHOENIXWING OPEN SOURCE',
+							title: 'Phoenix Admin Host',
+							subtitle:
+								'面向 Phoenix 业务模块的统一管理工作台。保留成熟权限底座，提供可切换的 Ribbon 与大分组侧栏。',
+							prompt: '登录 Phoenix Admin Host，继续管理您的工作区。',
+							presentation: 'split'
+						}),
+						assets: Object.freeze({
+							logo: mark,
+							logoDark: mark,
+							compactLogo: mark,
+							compactLogoDark: mark
+						})
+					});
+					Object.defineProperty(window, '__PAH_PUBLIC_LOGIN_BRANDING__', {
+						value: snapshot,
+						configurable: false,
+						writable: false
+					});
+				}
+
+				const snapshot = window.__PAH_PUBLIC_LOGIN_BRANDING__;
+				document.title = snapshot.titleTemplate.replace('%s', '登录');
+				const favicon = document.querySelector('#pah-public-login-favicon');
+				favicon.type = snapshot.favicon.mime;
+				favicon.href = snapshot.favicon.url;
+				for (const href of [snapshot.assets.logo, snapshot.assets.logoDark]) {
+					const preload = document.createElement('link');
+					preload.rel = 'preload';
+					preload.as = 'image';
+					preload.href = href.url;
+					preload.type = href.mime;
+					document.head.append(preload);
+				}
+			})();
+		</script>
 		<style>
 			html,
 			body,
@@ -24,6 +82,10 @@
 				font-family:
 					'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
 					'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+			}
+
+			html:not([data-pah-public-login-ready]) body {
+				visibility: hidden;
 			}
 
 			.preload__wrap {
@@ -64,6 +126,13 @@
 				font-weight: bold;
 				margin-bottom: 30px;
 				min-height: 50px;
+			}
+
+			.preload__logo {
+				width: 76px;
+				height: 76px;
+				margin-bottom: 24px;
+				object-fit: contain;
 			}
 
 			.preload__title {
@@ -165,6 +234,7 @@
 	<body>
 		<div class="preload__wrap" id="Loading">
 			<div class="preload__container">
+				<img class="preload__logo" alt="" />
 				<div class="preload__name"></div>
 				<div class="preload__loading"></div>
 				<div class="preload__title"></div>
@@ -173,6 +243,48 @@
 		</div>
 
 		<div id="app"></div>
+		<script>
+			(() => {
+				const snapshot = window.__PAH_PUBLIC_LOGIN_BRANDING__;
+				const loading = document.querySelector('#Loading');
+				loading.querySelector('.preload__logo').src = snapshot.assets.logoDark.url;
+				loading.querySelector('.preload__name').textContent = snapshot.appName;
+				loading.querySelector('.preload__title').textContent = snapshot.login.prompt;
+				loading.querySelector('.preload__sub-title').textContent = '';
+				document.documentElement.dataset.pahPublicLoginBrandingMode = snapshot.mode;
+				document.documentElement.dataset.pahPublicLoginBrandingRevision = snapshot.revision;
+				document.documentElement.dataset.pahPublicLoginReady = 'true';
+			})();
+		</script>
+		<script>
+			(() => {
+				const reauthUrl = new URL(window.location.href);
+				if (
+					reauthUrl.pathname !== '/login' ||
+					reauthUrl.searchParams.get('reauth') !== '1'
+				) {
+					return;
+				}
+
+				const authKeys = [
+					'token',
+					'token_deadtime',
+					'refreshToken',
+					'refreshToken_deadtime',
+					'userInfo'
+				];
+				for (const storage of [window.localStorage, window.sessionStorage]) {
+					for (const key of authKeys) storage.removeItem(key);
+				}
+
+				reauthUrl.searchParams.delete('reauth');
+				window.history.replaceState(
+					window.history.state,
+					'',
+					`${reauthUrl.pathname}${reauthUrl.search}${reauthUrl.hash}`
+				);
+			})();
+		</script>
 		<script type="module" src="/src/main.ts"></script>
 	</body>
 </html>

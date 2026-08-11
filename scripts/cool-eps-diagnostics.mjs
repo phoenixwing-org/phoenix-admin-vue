@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { coolEpsCountLegacyPublicLoginBrandingRoutes } from './cool-eps-cache-compat.mjs';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDirectory, '..');
@@ -28,9 +29,16 @@ export function coolEpsClassify({ endpointsReady, cacheEntries }) {
 export function coolEpsReadCache(cachePath) {
 	try {
 		const value = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
-		return { present: true, entries: Array.isArray(value) ? value.length : 0 };
-	} catch {
-		return { present: false, entries: 0 };
+		return {
+			present: true,
+			entries: Array.isArray(value) ? value.length : 0,
+			legacyPublicLoginBrandingRoutes: coolEpsCountLegacyPublicLoginBrandingRoutes(value)
+		};
+	} catch (error) {
+		if (error?.code === 'ENOENT') {
+			return { present: false, entries: 0, legacyPublicLoginBrandingRoutes: 0 };
+		}
+		throw error;
 	}
 }
 
@@ -84,7 +92,7 @@ export async function diagnoseCoolEps(options = {}) {
 function printResult(result) {
 	console.log(`[cool-eps:diagnose] target=${result.target}`);
 	console.log(
-		`[cool-eps:diagnose] cache=${result.cache.present ? 'present' : 'missing'} entries=${result.cache.entries}`
+		`[cool-eps:diagnose] cache=${result.cache.present ? 'present' : 'missing'} entries=${result.cache.entries} legacyPublicLoginBrandingRoutes=${result.cache.legacyPublicLoginBrandingRoutes}`
 	);
 	console.log(
 		`[cool-eps:diagnose] eps=${result.eps.status || 'unreachable'} dictionary=${result.dictionary.status || 'unreachable'}`

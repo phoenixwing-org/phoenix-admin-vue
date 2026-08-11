@@ -223,7 +223,8 @@ Host 持有，插件只能包裹和呈现 Host 认证面板。
 
 1. 契约 fixture、SVG 安全和首页解析单测；
 2. 无扩展基线：admin 登录后 `/` 正常、默认登录页和 Logo 不变；
-3. 安装示例站点外观插件，选择自定义登录外观、首页和明暗 Logo，重启后保持；
+3. 安装一个符合 `phoenix.admin.branding` 契约的受控制品，选择自定义登录外观、首页和
+   明暗 Logo，重启后保持；
 4. `showFrameworkBranding=false` 下登录页、两种左上角品牌位、title/favicon 不出现默认标识；
 5. 无权限用户回退、插件停用/卸载自动恢复默认；
 6. 1440/720、light/dark、刷新/返回/冷深链、console 以及 `pnpm type-check/build`。

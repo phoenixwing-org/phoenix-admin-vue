@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
-  <title id="title">Acme</title>
-  <rect width="64" height="64" rx="14" fill="#3468df"/>
-  <path d="M15 47 32 13l17 34H38L32 35l-6 12H15Z" fill="#fff"/>
-  <circle cx="47" cy="17" r="6" fill="#55d6be"/>
-</svg>
-

@@ -18,6 +18,8 @@ describe('Phoenix 插件包安装入口', () => {
 		expect(source).toContain("file.name.endsWith('.phoenix.cool')");
 		expect(source).toContain("url: '/admin/phoenix/plugin/package'");
 		expect(source).toContain("data.append('files', file)");
+		expect(source).toContain('result.validationChecks || []');
+		expect(source).toContain('校验通过 · ${check.label}：${check.detail}');
 		expect(source).toContain('旧插件后缀不兼容');
 		expect(source).not.toContain('/admin/pah/plugin');
 	});
@@ -38,7 +40,8 @@ describe('Phoenix 插件包安装入口', () => {
 		}
 		expect(source).toContain('class="plugin-grid"');
 		expect(source).toContain('class="plugin-card"');
-		expect(source).toContain('Host 将自动创建备份并完成恢复点检');
+		expect(source).not.toContain('自动备份');
+		expect(source).not.toContain('备份证明');
 		expect(source).toContain('无需额外 pnpm 安装');
 		expect(source).toContain('请先确认 API Terminal 已 ready');
 		expect(source).not.toContain('第九步：停用');
