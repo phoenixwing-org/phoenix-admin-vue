@@ -61,6 +61,28 @@ describe('Phoenix 插件包安装入口', () => {
 		expect(source).toContain('await menu.get()');
 	});
 
+	it('消费受控卸载结果并明确展示 payload 清理与重启要求', () => {
+		const uninstallSource = source.slice(
+			source.indexOf('async function controlledUninstall'),
+			source.indexOf('async function discardSelectedPackage')
+		);
+		expect(source).toContain('interface ControlledUninstallResult');
+		expect(uninstallSource).toContain('result.installation');
+		expect(uninstallSource).toContain('result.removedPayloads');
+		expect(uninstallSource).toContain('result.cleanupPendingPayloads');
+		expect(uninstallSource).toContain('result.restartRequired');
+		expect(uninstallSource).toContain('已从运行目录移除：${removedDetail}');
+		expect(uninstallSource).toContain('外围回收目录待清理：${cleanupPendingDetail}');
+		expect(uninstallSource).toContain('duration: 0');
+		expect(uninstallSource).toContain('受控重启 API/Web');
+		expect(uninstallSource).toContain('重新打开登录页验证登录首帧');
+		expect(uninstallSource).not.toContain('backup');
+		expect(uninstallSource).not.toContain('restart(');
+		expect(source).toContain("uninstall-result[data-restart-required='true']");
+		expect(source).toContain("uninstall-result[data-cleanup-pending='true']");
+		expect(source).toContain('无 Node/Vue payload 残留');
+	});
+
 	it('插件卡片在标签后显示名称，并把日期放到操作行右侧', () => {
 		expect(source).toContain('<strong class="plugin-name">{{ installation.name }}</strong>');
 		expect(source).not.toContain('class="module-id"');

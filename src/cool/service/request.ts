@@ -7,6 +7,8 @@ import { storage } from '/@/cool/utils';
 import { useBase } from '/$/base';
 import { router } from '../router';
 import { config, isDev } from '/@/config';
+import { sanitizeRequestLogData } from './request-log';
+import { createTokenRefreshQueue } from './token-refresh-queue';
 
 // 创建 axios 实例
 const request = axios.create({
@@ -19,8 +21,8 @@ NProgress.configure({
 	showSpinner: true // 显示加载指示器
 });
 
-// 请求队列，用于存储待处理的请求
-let queue: Array<(token: string) => void> = [];
+// 请求队列，用于协调 token 刷新期间的并发请求
+const refreshQueue = createTokenRefreshQueue<any>();
 
 // 标识是否正在刷新 token
 let isRefreshing = false;
@@ -44,7 +46,7 @@ request.interceptors.request.use(
 		if (isDev) {
 			console.group(req.url);
 			console.log('method:', req.method);
-			console.table('data:', req.method == 'get' ? req.params : req.data);
+			console.log('data:', sanitizeRequestLogData(req.method == 'get' ? req.params : req.data));
 			console.groupEnd();
 		}
 
@@ -75,30 +77,34 @@ request.interceptors.request.use(
 				if (storage.isExpired('refreshToken')) {
 					ElMessage.error('登录状态已失效，请重新登录');
 					user.logout();
+					return Promise.reject(new Error('refresh token expired'));
 				} else {
 					// 如果不在刷新中，则刷新 token
 					if (!isRefreshing) {
 						isRefreshing = true;
+						if (isDev) console.info('[Admin 会话] access token 已过期，开始刷新');
 
 						user.refreshToken()
 							.then(token => {
-								queue.forEach(cb => cb(token)); // 处理队列中的请求
-								queue = [];
-								isRefreshing = false;
+								refreshQueue.resolve(token);
+								if (isDev) console.info('[Admin 会话] token 刷新完成，恢复等待请求');
 							})
-							.catch(() => {
+							.catch(error => {
+								refreshQueue.reject(error);
+								if (isDev) console.warn('[Admin 会话] token 刷新失败，已取消等待请求');
 								user.logout();
+							})
+							.finally(() => {
+								isRefreshing = false;
 							});
 					}
 
-					// 返回一个新的 Promise，等待 token 刷新完成
-					return new Promise(resolve => {
-						queue.push(token => {
-							if (req.headers) {
-								req.headers['Authorization'] = token; // 重新设置 token
-							}
-							resolve(req);
-						});
+					// 等待 token 刷新完成；失败时必须 reject，不能永久悬挂。
+					return refreshQueue.wait(token => {
+						if (req.headers) {
+							req.headers['Authorization'] = token; // 重新设置 token
+						}
+						return req;
 					});
 				}
 			}

@@ -7,9 +7,11 @@ const reviewSource = read('../modules/pah/views/identity.vue');
 
 describe('Admin 飞书身份 UI 静态边界', () => {
 	it('保留密码登录为默认流程，并仅由 login-policy 开启飞书入口', () => {
-		expect(loginSource).toContain('service.base.open.login(form)');
+		expect(loginSource).toContain('createPasswordLoginPayload(form, captchaRequired.value)');
 		expect(loginSource).toContain('pahIdentityApi.loginPolicy()');
 		expect(loginSource).toContain("method.id === 'feishu' && method.enabled && method.ready");
+		expect(loginSource).toContain('loginPolicy.value?.captchaRequired !== false');
+		expect(loginSource).toContain('v-if="captchaRequired"');
 	});
 
 	it('callback 在 ticket 兑换前清除浏览器与 Router query', () => {

@@ -93,10 +93,9 @@ export default (): ModuleConfig => {
 			}
 
 			await hasToken(async () => {
-				// 获取用户信息
-				user.get();
-				// 获取菜单权限
-				await menu.get();
+				if (import.meta.env.DEV) console.info('[Admin 启动] 加载用户与菜单');
+				await Promise.all([user.get(), menu.get()]);
+				if (import.meta.env.DEV) console.info('[Admin 启动] 用户与菜单加载完成');
 			});
 
 			return {

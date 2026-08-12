@@ -26,7 +26,7 @@ describe('Public Login Branding 首帧装配', () => {
 		expect(login).toContain('{{ branding.login.title }}');
 		expect(login).toContain('{{ branding.login.prompt }}');
 		expect(login).toContain('branding.assets.logoDark.url');
-		expect(login).toContain('service.base.open.login(form)');
+		expect(login).toContain('.login(createPasswordLoginPayload(form, captchaRequired.value))');
 		expect(login).toContain('pahIdentityApi.loginPolicy()');
 	});
 

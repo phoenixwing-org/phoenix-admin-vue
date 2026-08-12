@@ -6,11 +6,7 @@
 			{ 'is-plugin-brand': !brandStore.isHostDefault }
 		]"
 	>
-		<section
-			class="pah-login-hero"
-			:aria-label="branding.login.title"
-			:style="heroStyle"
-		>
+		<section class="pah-login-hero" :aria-label="branding.login.title" :style="heroStyle">
 			<div class="pah-aurora pah-aurora--warm"></div>
 			<div class="pah-aurora pah-aurora--cool"></div>
 			<div class="pah-grid"></div>
@@ -75,7 +71,7 @@
 							/>
 						</el-form-item>
 
-						<el-form-item :label="$t('验证码')">
+						<el-form-item v-if="captchaRequired" :label="$t('验证码')">
 							<el-input
 								v-model="form.verifyCode"
 								:placeholder="$t('验证码')"
@@ -146,6 +142,7 @@ import { pahIdentityApi, type PahLoginPolicy } from '/@/pah/PahIdentityApi';
 import { pahIsAllowedAuthorizationUrl, pahNormalizeIdentityReturnTo } from '/@/pah/PahIdentityFlow';
 import PicCaptcha from './components/pic-captcha.vue';
 import { usePahPublicLoginBrandStore } from '/@/pah/PahPublicLoginBrandStore';
+import { createPasswordLoginPayload } from './password-login-payload';
 
 const { refs, setRefs, router, service } = useCool();
 const { user, app } = useBase();
@@ -173,6 +170,7 @@ const feishuMethod = computed(() => {
 		method => method.id === 'feishu' && method.enabled && method.ready
 	);
 });
+const captchaRequired = computed(() => loginPolicy.value?.captchaRequired !== false);
 
 // 表单数据
 const form = reactive({
@@ -231,7 +229,7 @@ async function toLogin() {
 		return ElMessage.error(t('密码不能为空'));
 	}
 
-	if (!form.verifyCode) {
+	if (captchaRequired.value && !form.verifyCode) {
 		return ElMessage.error(t('图片验证码不能为空'));
 	}
 
@@ -239,7 +237,9 @@ async function toLogin() {
 
 	try {
 		// 登录
-		await service.base.open.login(form).then(user.setToken);
+		await service.base.open
+			.login(createPasswordLoginPayload(form, captchaRequired.value))
+			.then(user.setToken);
 
 		// token 事件
 		await Promise.all(app.events.hasToken.map(e => e()));
@@ -251,7 +251,7 @@ async function toLogin() {
 		router.push('/');
 	} catch (err) {
 		// 刷新验证码
-		refs.picCaptcha.refresh();
+		refs.picCaptcha?.refresh?.();
 
 		// 提示错误
 		ElMessageBox.alert((err as Error).message, {

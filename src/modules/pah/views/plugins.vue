@@ -115,6 +115,43 @@
 				<p v-if="installation.state === 'uninstalled'" class="retained">
 					代码贡献已注销，业务数据保持不变。
 				</p>
+				<div
+					v-if="uninstallResults[installation.moduleId]"
+					class="uninstall-result"
+					:data-restart-required="
+						uninstallResults[installation.moduleId]?.restartRequired
+					"
+					:data-cleanup-pending="
+						Boolean(
+							uninstallResults[installation.moduleId]?.cleanupPendingPayloads.length
+						)
+					"
+					role="status"
+				>
+					<strong>
+						运行 payload 已移除：{{
+							removedPayloadSummary(
+								uninstallResults[installation.moduleId]?.removedPayloads || []
+							)
+						}}
+					</strong>
+					<span
+						v-if="
+							uninstallResults[installation.moduleId]?.cleanupPendingPayloads.length
+						"
+					>
+						外围回收目录待清理：{{
+							removedPayloadSummary(
+								uninstallResults[installation.moduleId]?.cleanupPendingPayloads ||
+									[]
+							)
+						}}。
+					</span>
+					<span v-if="uninstallResults[installation.moduleId]?.restartRequired">
+						请先受控重启 API/Web，再重新打开登录页验证登录首帧。
+					</span>
+					<span v-else>当前运行时无需重启。</span>
+				</div>
 
 				<footer class="card-actions" @click.stop>
 					<div class="card-action-buttons">
@@ -338,6 +375,18 @@ interface PublicLoginBrandingStatus {
 	};
 }
 
+interface ControlledUninstallResult {
+	installation: Installation;
+	removedPayloads: Array<'node' | 'vue'>;
+	cleanupPendingPayloads: Array<'node' | 'vue'>;
+	restartRequired: boolean;
+}
+
+type UninstallResult = Pick<
+	ControlledUninstallResult,
+	'removedPayloads' | 'cleanupPendingPayloads' | 'restartRequired'
+>;
+
 const { service, route, router } = useCool();
 const { menu, process } = useBase();
 const workbenchOutput = usePahWorkbenchOutput();
@@ -356,6 +405,7 @@ const brandingStatus = ref<PublicLoginBrandingStatus>();
 const runtimeStatuses = ref<Record<string, LocalRuntimeStatus | undefined>>({});
 const migrationPlans = ref<Record<string, PahMigrationDryRunPlan | undefined>>({});
 const dictionaryPlans = ref<Record<string, DictionaryPlan | undefined>>({});
+const uninstallResults = ref<Record<string, UninstallResult | undefined>>({});
 const packageInput = ref<HTMLInputElement>();
 const selectedPackage = ref<File>();
 const packageState = ref<'idle' | 'selected' | 'working' | 'success' | 'error'>('idle');
@@ -416,6 +466,12 @@ const stateLabels: Record<string, string> = {
 
 function stateLabel(state: string) {
 	return stateLabels[state] || state;
+}
+
+function removedPayloadSummary(payloads: Array<'node' | 'vue'>) {
+	if (!payloads.length) return '无 Node/Vue payload 残留';
+	const labels = { node: 'Node payload', vue: 'Vue payload' } as const;
+	return payloads.map(payload => labels[payload]).join('、');
 }
 
 function isActivePublicLoginBranding(installation: Installation) {
@@ -909,15 +965,49 @@ async function controlledUninstall(installation: Installation) {
 
 	uninstallLoadingModuleId.value = installation.moduleId;
 	try {
-		await service.request({
+		const result = (await service.request({
 			url: '/admin/phoenix/plugin/local-controlled-uninstall',
 			method: 'POST',
 			data: { moduleId: installation.moduleId },
 			timeout: 300000
-		});
-		output(`${installation.moduleId} 已卸载，业务数据保持不变`);
-		ElMessage.success('已卸载，业务数据保持不变');
-		await synchronizeHostAfterPluginStateChange(installation, false);
+		})) as ControlledUninstallResult;
+		uninstallResults.value = {
+			...uninstallResults.value,
+			[installation.moduleId]: {
+				removedPayloads: result.removedPayloads,
+				cleanupPendingPayloads: result.cleanupPendingPayloads,
+				restartRequired: result.restartRequired
+			}
+		};
+		list.value = list.value.map(item =>
+			item.moduleId === result.installation.moduleId ? result.installation : item
+		);
+		const removedDetail = removedPayloadSummary(result.removedPayloads);
+		output(
+			`${installation.moduleId} 已卸载，业务数据保持不变；已从运行目录移除：${removedDetail}`
+		);
+		const warnings: string[] = [];
+		if (result.cleanupPendingPayloads.length) {
+			const cleanupPendingDetail = removedPayloadSummary(result.cleanupPendingPayloads);
+			const cleanupMessage = `外围回收目录待清理：${cleanupPendingDetail}`;
+			warnings.push(cleanupMessage);
+			output(`${installation.moduleId} ${cleanupMessage}`);
+		}
+		if (result.restartRequired) {
+			const restartMessage = '请先受控重启 API/Web，再重新打开登录页验证登录首帧';
+			warnings.push(restartMessage);
+			output(`${installation.moduleId} ${restartMessage}`);
+		}
+		if (warnings.length) {
+			ElMessage.warning({
+				message: `卸载已完成；${warnings.join('；')}`,
+				duration: 0,
+				showClose: true
+			});
+		} else {
+			ElMessage.success(`已卸载；已从运行目录移除：${removedDetail}；当前无需重启`);
+		}
+		await synchronizeHostAfterPluginStateChange(result.installation, false);
 		await refresh();
 	} catch (error: any) {
 		ElMessage.error(error.message || '卸载失败');
@@ -1249,6 +1339,25 @@ onMounted(refresh);
 	margin: 14px 0 0;
 	padding: 10px 12px;
 	border-radius: 10px;
+	color: var(--el-color-warning);
+	background: var(--el-color-warning-light-9);
+}
+
+.uninstall-result {
+	display: grid;
+	gap: 4px;
+	margin-top: 8px;
+	padding: 10px 12px;
+	border: 1px solid var(--el-color-success-light-5);
+	border-radius: 10px;
+	color: var(--el-color-success);
+	font-size: 12px;
+	background: var(--el-color-success-light-9);
+}
+
+.uninstall-result[data-restart-required='true'],
+.uninstall-result[data-cleanup-pending='true'] {
+	border-color: var(--el-color-warning-light-5);
 	color: var(--el-color-warning);
 	background: var(--el-color-warning-light-9);
 }

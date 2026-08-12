@@ -2,9 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-export const PAH_LOCAL_WING_VERSION = '0.6.4';
-export const PAH_LOCAL_WING_COMMIT = 'e26f3c5e4a55f1f0aede70b49f1abe7f62ac1573';
-
 function pahGitOutput(worktreeRoot, args) {
 	return execFileSync('git', args, {
 		cwd: worktreeRoot,
@@ -32,21 +29,7 @@ export function pahResolveLocalWing(worktreeRoot, env = process.env) {
 	}
 
 	const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-	if (manifest.name !== 'phoenix-wing') {
-		throw new Error(`PHOENIX_WING_ROOT 不是 phoenix-wing 仓库：${wingRoot}`);
-	}
-	if (manifest.version !== PAH_LOCAL_WING_VERSION) {
-		throw new Error(
-			`Admin 本地联调只接受 Wing ${PAH_LOCAL_WING_VERSION}，实际为 ${manifest.version}`
-		);
-	}
-
 	const commit = pahGitOutput(wingRoot, ['rev-parse', 'HEAD']);
-	if (commit !== PAH_LOCAL_WING_COMMIT) {
-		throw new Error(
-			`Admin 本地联调只接受 Wing 候选 ${PAH_LOCAL_WING_COMMIT}，实际为 ${commit}`
-		);
-	}
 
 	return {
 		worktreeRoot,

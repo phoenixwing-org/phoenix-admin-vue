@@ -118,7 +118,23 @@ export function createModule(app: App) {
 
 			for (let i = 0; i < list.length; i++) {
 				if (list[i].onLoad) {
-					assign(events, await list[i]?.onLoad?.(events));
+					const name = list[i].name;
+					const startedAt = performance.now();
+					if (import.meta.env.DEV) console.info(`[Admin 启动] 模块 ${name} 开始加载`);
+					try {
+						assign(events, await list[i]?.onLoad?.(events));
+						if (import.meta.env.DEV) {
+							console.info(
+								`[Admin 启动] 模块 ${name} 加载完成 (${Math.round(performance.now() - startedAt)}ms)`
+							);
+						}
+					} catch (error) {
+						console.error(
+							`[Admin 启动] 模块 ${name} 加载失败 (${Math.round(performance.now() - startedAt)}ms)`,
+							error
+						);
+						throw error;
+					}
 				}
 			}
 		}

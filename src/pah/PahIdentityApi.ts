@@ -13,6 +13,7 @@ export interface PahLoginMethodStatus {
 export interface PahLoginPolicy {
 	formatVersion: 1;
 	scope: 'admin-console';
+	captchaRequired: boolean;
 	enabledMethods: Array<'password' | 'feishu'>;
 	defaultMethod: 'password';
 	methods: PahLoginMethodStatus[];
