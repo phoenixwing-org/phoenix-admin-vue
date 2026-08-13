@@ -6,6 +6,7 @@ declare global {
 			attemptId: string;
 			stage: string;
 			completed: boolean;
+			timedOut: boolean;
 			timer: number;
 		};
 	}

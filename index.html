@@ -158,6 +158,10 @@
 				display: flex;
 			}
 
+			.preload__wrap.is-timeout .preload__loading {
+				animation: none;
+			}
+
 			.preload__action {
 				padding: 8px 14px;
 				border: 1px solid rgb(255 255 255 / 45%);
@@ -259,7 +263,9 @@
 				<div class="preload__title"></div>
 				<div class="preload__sub-title"></div>
 				<div class="preload__actions">
-					<button class="preload__action" type="button" data-pah-startup-retry>重试</button>
+					<button class="preload__action" type="button" data-pah-startup-retry>
+						重试
+					</button>
 					<button class="preload__action" type="button" data-pah-startup-login>
 						返回登录
 					</button>
@@ -291,6 +297,7 @@
 					attemptId: crypto.randomUUID ? crypto.randomUUID() : `${startedAt}`,
 					stage: '加载前端模块',
 					completed: false,
+					timedOut: false,
 					timer: 0
 				};
 				Object.defineProperty(window, '__PAH_ADMIN_STARTUP__', {
@@ -303,6 +310,9 @@
 					const seconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
 					title.textContent = `${startup.stage} · ${seconds} 秒`;
 					if (seconds >= 12) {
+						startup.timedOut = true;
+						startup.completed = true;
+						window.clearInterval(startup.timer);
 						loading.classList.add('is-timeout');
 						subTitle.textContent = `启动超时 · ${startup.attemptId}`;
 					} else if (seconds >= 8) {

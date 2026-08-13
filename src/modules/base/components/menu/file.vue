@@ -41,6 +41,7 @@ defineOptions({
 import { nextTick, ref, watch } from 'vue';
 import { deepPaths } from '/@/cool/utils';
 import { useCool } from '/@/cool';
+import phoenixPluginRouteFiles from 'virtual:phoenix-admin-plugin-routes';
 
 const props = defineProps({
 	modelValue: {
@@ -55,7 +56,13 @@ const { refs, setRefs } = useCool();
 
 // 扫描文件
 function findFiles() {
-	const files = import.meta.glob(['/src/modules/*/{views,pages}/**/*.vue', '!**/components']);
+	const files = {
+		...import.meta.glob([
+			'/src/modules/{base,demo,dict,helper,pah,recycle,space,task,user}/{views,pages}/**/*.vue',
+			'!**/components'
+		]),
+		...phoenixPluginRouteFiles
+	};
 	const list: string[] = [];
 
 	for (const i in files) {

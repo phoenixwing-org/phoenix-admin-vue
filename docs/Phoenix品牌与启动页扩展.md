@@ -75,6 +75,23 @@ Hub 的 “Phoenix Admin 干净验证”应覆盖：
 - 清理后立即从地址栏移除 `reauth` 参数，再按无登录态的标准 `/login` 流程启动；该入口不调用
   API、不改变服务端会话，也不放宽任何路由或认证规则。
 
+## 浏览器标题同步契约
+
+2026-08-13 点检发现：登录成功进入首页后，浏览器标签仍停留在“登录 · Phoenix Admin”。
+根因是公开品牌快照和 base 模块安装阶段只在登录前写入一次 `document.title`，路由导航完成后
+没有 Host-owned 标题同步。
+
+修复契约：
+
+- `/login` 显示“登录 · `<appName>`”，首页显示“首页 · `<appName>`”；
+- 其他路由使用经过长度、控制字符和标记字符检查的 `route.meta.label`；缺失或异常时只显示
+  `<appName>`，不采用 URL、查询参数或产品代码推导标题；
+- 活动品牌可提供严格校验的 `titleTemplate`，例如 `%s · Acme Workspace`，但登录后的页面名仍由
+  Host 路由决定；Public Login Branding Snapshot 不因此扩张到首页、权限或业务视图；
+- 标题仅在路由确认成功后更新；取消、失败或登录重定向不能留下错误标题。
+
+验收覆盖 Host 默认与 Acme 模板的登录→首页、普通页面切换，以及缺失/异常 label 回退。
+
 ## Host 传输与落盘
 
 - HTML 在 `/src/main.ts` 前同步加载
@@ -90,6 +107,18 @@ Hub 的 “Phoenix Admin 干净验证”应覆盖：
 - 当前快照、不可变 revision 与包收据放在 Node Host-owned
   `.runtime/pah-public-login-branding`，使用临时文件、`fsync` 与原子替换；该目录不是产品源码。
 - 快照选择只存入现有 `base_sys_param`，不新增品牌产品表或 DDL。
+
+## 启动发现与隔离
+
+- Hub 只创建/移除 `src/modules/<moduleId>` 开发 symlink 和本机 Git exclude；不生成插件
+  marker、不初始化插件，也不决定健康状态。
+- Web 启动时由 Host 直接扫描实际模块目录。开发 symlink 必须能反查同一 clean Git 产品仓、
+  精确 HEAD、manifest、Node/Vue 双端入口；普通正式目录在没有启动前可信激活收据时默认隔离。
+- 业务插件 runtime 使用逐插件动态导入；config、install、component 或 onLoad 失败只隔离该插件，
+  纯 Host 继续启动，并向 Web Terminal 和浏览器 console 输出同一 moduleId/state/detail。
+- 品牌插件不执行其全局 `config.ts` runtime；登录前只消费 Node 生成的声明式安全快照，登录后的
+  route view 作为独立动态入口加载。这避免品牌产品用 DOM observer 或任意启动脚本接管认证页。
+- `.runtime/pah-dev-plugins.json` 不是身份真源；若现场遗留，只能视为旧实验文件。
 
 当前实现状态、Host 接缝和分阶段计划见
 [《Phoenix Admin UI 扩展 TODO》](PahUIEXTENSION-TODO.md)。真实品牌插件的 manifest、

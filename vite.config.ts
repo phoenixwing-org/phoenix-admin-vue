@@ -17,6 +17,10 @@ import {
 	pahHostDependencyId
 } from './scripts/pah-host-runtime-dependencies';
 import { migrateLegacyPublicLoginBrandingEpsCache } from './scripts/cool-eps-cache-compat.mjs';
+import {
+	inspectPhoenixWebPlugins,
+	phoenixPluginVirtualModules
+} from './scripts/phoenix-plugin-startup-health.mjs';
 
 function toPath(dir: string) {
 	return fileURLToPath(new URL(dir, import.meta.url));
@@ -71,6 +75,27 @@ export default ({ mode }: ConfigEnv): UserConfig => {
 	const epsCacheMigration = migrateLegacyPublicLoginBrandingEpsCache(
 		path.join(adminRoot, 'build', 'cool', 'eps.json')
 	);
+	const phoenixPlugins = inspectPhoenixWebPlugins({ hostRoot: adminRoot });
+	const phoenixVirtualModules = phoenixPluginVirtualModules(phoenixPlugins);
+	for (const plugin of phoenixPlugins.plugins) {
+		const message = `[phoenix-plugin-health] host=web module=${plugin.moduleId} state=${plugin.state} detail=${plugin.detail}`;
+		if (plugin.state === 'quarantined') console.error(message);
+		else console.info(message);
+	}
+	const phoenixPluginRuntimeId = '\0virtual:phoenix-admin-plugin-runtime';
+	const phoenixPluginRoutesId = '\0virtual:phoenix-admin-plugin-routes';
+	const phoenixPluginHealth = (): Plugin => ({
+		name: 'phoenix-admin-plugin-health',
+		enforce: 'pre',
+		resolveId(id) {
+			if (id === 'virtual:phoenix-admin-plugin-runtime') return phoenixPluginRuntimeId;
+			if (id === 'virtual:phoenix-admin-plugin-routes') return phoenixPluginRoutesId;
+		},
+		load(id) {
+			if (id === phoenixPluginRuntimeId) return phoenixVirtualModules.runtime;
+			if (id === phoenixPluginRoutesId) return phoenixVirtualModules.routes;
+		}
+	});
 
 	if (epsCacheMigration.migrated > 0) {
 		console.info(
@@ -80,6 +105,7 @@ export default ({ mode }: ConfigEnv): UserConfig => {
 
 	return {
 		plugins: [
+			phoenixPluginHealth(),
 			pahHostRuntimeDependencies(),
 			vue(),
 			compression(),

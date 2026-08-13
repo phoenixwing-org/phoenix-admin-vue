@@ -4,61 +4,97 @@ import { filename } from '../utils';
 import { module } from '../module';
 import { hmr } from '../hooks';
 import { config } from '/@/config';
+import phoenixPluginRuntimeLoaders from 'virtual:phoenix-admin-plugin-runtime';
 
 // 扫描文件
-const files = import.meta.glob('/src/{modules,plugins}/*/{config.ts,service/**,directives/**}', {
-	eager: true,
-	import: 'default'
-});
+const files = import.meta.glob(
+	[
+		'/src/modules/{base,demo,dict,helper,pah,recycle,space,task,user}/{config.ts,service/**,directives/**}',
+		'/src/plugins/*/{config.ts,service/**,directives/**}'
+	],
+	{ eager: true, import: 'default' }
+);
+const phoenixPluginModules = new WeakMap<object, string>();
+
+function reportPhoenixPluginFailure(name: string, phase: string, error: unknown) {
+	console.error(
+		`[phoenix-plugin-health] host=web module=${name} state=quarantined phase=${phase} detail=插件已隔离，纯 Host 继续`,
+		error
+	);
+}
 
 // 模块列表
 module.list = hmr.getData('modules', []);
 
 // 解析
-for (const i in files) {
-	// 分割
-	const [, , type, name, action] = i.split('/');
+function parseFiles(input: Record<string, unknown>) {
+	for (const i in input) {
+		// 分割
+		const [, , type, name, action] = i.split('/');
 
-	// 文件名
-	const n = filename(i);
+		// 文件名
+		const n = filename(i);
 
-	// 文件内容
-	const v = files[i];
+		// 文件内容
+		const v = input[i];
 
-	// 模块是否存在
-	const m = module.get(name);
+		// 模块是否存在
+		const m = module.get(name);
 
-	// 数据
-	const d = m || {
-		name,
-		type,
-		value: null,
-		services: [],
-		directives: []
-	};
+		// 数据
+		const d = m || {
+			name,
+			type,
+			value: null,
+			services: [],
+			directives: []
+		};
 
-	// 配置
-	if (action == 'config.ts') {
-		d.value = v;
-	}
-	// 服务
-	else if (action == 'service') {
-		const s = new (v as any)();
+		// 配置
+		if (action == 'config.ts') {
+			d.value = v;
+		}
+		// 服务
+		else if (action == 'service') {
+			const s = new (v as any)();
 
-		if (s) {
-			d.services?.push({
-				path: s.namespace,
-				value: s
-			});
+			if (s) {
+				d.services?.push({
+					path: s.namespace,
+					value: s
+				});
+			}
+		}
+		// 指令
+		else if (action == 'directives') {
+			d.directives?.push({ name: n, value: v as Directive });
+		}
+
+		if (!m) {
+			module.add(d);
 		}
 	}
-	// 指令
-	else if (action == 'directives') {
-		d.directives?.push({ name: n, value: v as Directive });
-	}
+}
 
-	if (!m) {
-		module.add(d);
+parseFiles(files);
+
+export async function loadPhoenixPluginModules() {
+	for (const plugin of phoenixPluginRuntimeLoaders) {
+		const startedAt = performance.now();
+		try {
+			const entries = await plugin.load();
+			parseFiles(Object.fromEntries(entries));
+			const loadedModule = module.get(plugin.moduleId);
+			if (loadedModule) phoenixPluginModules.set(loadedModule, plugin.moduleId);
+			console.info(
+				`[phoenix-plugin-health] host=web module=${plugin.moduleId} state=ready version=${plugin.version} elapsed=${Math.round(performance.now() - startedAt)}ms`
+			);
+		} catch (error) {
+			console.error(
+				`[phoenix-plugin-health] host=web module=${plugin.moduleId} state=quarantined detail=模块运行入口加载失败 elapsed=${Math.round(performance.now() - startedAt)}ms`,
+				error
+			);
+		}
 	}
 }
 
@@ -66,7 +102,15 @@ for (const i in files) {
 export function createModule(app: App) {
 	// 排序
 	module.list.forEach(e => {
-		const d = isFunction(e.value) ? e.value(app) : e.value;
+		let d;
+		try {
+			d = isFunction(e.value) ? e.value(app) : e.value;
+		} catch (error) {
+			if (!phoenixPluginModules.has(e)) throw error;
+			e.enable = false;
+			reportPhoenixPluginFailure(phoenixPluginModules.get(e)!, 'config', error);
+			return;
+		}
 
 		if (d) {
 			assign(e, d);
@@ -80,15 +124,27 @@ export function createModule(app: App) {
 	const list = orderBy(module.list, 'order', 'desc').map(e => {
 		if (e.enable !== false) {
 			// 初始化
-			e.install?.(app, e.options);
+			try {
+				e.install?.(app, e.options);
+			} catch (error) {
+				if (!phoenixPluginModules.has(e)) throw error;
+				e.enable = false;
+				reportPhoenixPluginFailure(phoenixPluginModules.get(e)!, 'install', error);
+				return e;
+			}
 
 			// 注册组件
 			e.components?.forEach(async (c: any) => {
-				const v = await (isFunction(c) ? c() : c);
-				const n = v.default || v;
+				try {
+					const v = await (isFunction(c) ? c() : c);
+					const n = v.default || v;
 
-				if (n.name) {
-					app.component(n.name, n);
+					if (n.name) {
+						app.component(n.name, n);
+					}
+				} catch (error) {
+					if (!phoenixPluginModules.has(e)) throw error;
+					reportPhoenixPluginFailure(phoenixPluginModules.get(e)!, 'component', error);
 				}
 			});
 
@@ -133,7 +189,13 @@ export function createModule(app: App) {
 							`[Admin 启动] 模块 ${name} 加载失败 (${Math.round(performance.now() - startedAt)}ms)`,
 							error
 						);
-						throw error;
+						if (!phoenixPluginModules.has(list[i])) throw error;
+						list[i].enable = false;
+						reportPhoenixPluginFailure(
+							phoenixPluginModules.get(list[i])!,
+							'onLoad',
+							error
+						);
 					}
 				}
 			}

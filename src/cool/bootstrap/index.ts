@@ -1,6 +1,6 @@
 import { createPinia } from 'pinia';
 import { type App } from 'vue';
-import { createModule } from './module';
+import { createModule, loadPhoenixPluginModules } from './module';
 import { router } from '../router';
 import { Loading } from '../utils';
 import { createEps } from './eps';
@@ -16,6 +16,9 @@ export async function bootstrap(app: App) {
 
 	// 路由
 	app.use(router);
+
+	// Phoenix 外部插件逐个隔离加载；单插件失败不能拖垮纯 Host。
+	await loadPhoenixPluginModules();
 
 	// 模块
 	const { eventLoop } = createModule(app);

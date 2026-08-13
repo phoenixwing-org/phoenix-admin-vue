@@ -17,12 +17,21 @@ import {
 	coolResolveDynamicRouteWithRefresh
 } from './resolve';
 import { coolWrapRouteViewLoader } from './view';
+import { usePahPublicLoginBrandStore } from '/@/pah/PahPublicLoginBrandStore';
+import { applyPahRouteDocumentTitle } from '/@/pah/PahRouteDocumentTitle';
+import phoenixPluginRouteFiles from 'virtual:phoenix-admin-plugin-routes';
 
 // 基本路径
 const baseUrl = import.meta.env.BASE_URL;
 
 // 扫描文件
-const files = import.meta.glob(['/src/modules/*/{views,pages}/**/*.vue', '!**/components']);
+const files = {
+	...import.meta.glob([
+		'/src/modules/{base,demo,dict,helper,pah,recycle,space,task,user}/{views,pages}/**/*.vue',
+		'!**/components'
+	]),
+	...phoenixPluginRouteFiles
+};
 
 // 默认路由
 const routes: RouteRecordRaw[] = [
@@ -262,6 +271,13 @@ router.beforeEach(async (to, from, next) => {
 	}
 
 	next(); // 继续导航
+});
+
+// 只在导航确认完成后同步标题，避免登录重定向过程中留下旧页面标题。
+router.afterEach((to, _from, failure) => {
+	if (failure) return;
+	const branding = usePahPublicLoginBrandStore().current;
+	applyPahRouteDocumentTitle(to, branding);
 });
 
 export { router };
