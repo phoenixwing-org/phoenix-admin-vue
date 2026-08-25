@@ -57,8 +57,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       phoenix-wing:
-        specifier: 0.6.4
-        version: 0.6.4(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4))
+        specifier: 0.7.1
+        version: 0.7.1(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4))
       pinia:
         specifier: ^2.3.1
         version: 2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4))
@@ -733,8 +733,8 @@ packages:
     resolution: {integrity: sha512-dfUnCxiN9H4ap84DvD2ubjw+3vUNpstxa0TneY/Paat8a3R4uQZDLSvWjmznAY/DoahqTHl9V46HF/Zs3F29pg==}
     engines: {node: '>= 10.0.0'}
 
-  '@phoenix-wing/code-core@0.6.3':
-    resolution: {integrity: sha512-7B5sWDhx11wDLssTm9QrhR7SdTnJT8R17M0I7jPAX9z8W4ENqE0Go+vSGN1ayxPrjEjFKuLvxWGEeO5v1Oywvg==}
+  '@phoenix-wing/code-core@0.6.4':
+    resolution: {integrity: sha512-JwR5rB9pfY0CdSsDkT1fskiYj6H7WhrIgx3fWDYtv5+1z4VPgfQlpdIPvBL/SDfQMJxuAspnuCVQB6I2Q/pMPA==}
 
   '@phoenix-wing/db-node@0.6.3':
     resolution: {integrity: sha512-wX3IxX1iB4ulVZO1cmh5KZOl64lULTKhWmDieWc3RKGxVbXJPbAn0Yydq/9ZQdDpKuE6UaBrb4d/iTRvxONyYw==}
@@ -2369,8 +2369,8 @@ packages:
   perfect-debounce@1.0.0:
     resolution: {integrity: sha512-xCy9V055GLEqoFaHoC1SoLIaLmWctgCUaBaWxDZ7/Zx4CTyX7cJQLJOok/orfjZAh9kEYpjJa4d0KcJmCbctZA==}
 
-  phoenix-wing@0.6.4:
-    resolution: {integrity: sha512-XonR77TFG0bbkE6Ke2yk/ur6R8RDWOpL/moXbqFLsEj8+Hg0PWh1o+p3IAc8bn3djsY4ML4y/0d/FlO/Iw7M5w==}
+  phoenix-wing@0.7.1:
+    resolution: {integrity: sha512-1SHBYhhqRn7nrFMIe//5aZ5jpN26E6+NBF3o9INyIGcOCTi8EIJ5sJkbA0U+F2Ob1pH9onXW5uOHTH/3g+jxiA==}
     peerDependencies:
       element-plus: ^2.0.0
       pinia: ^2.0.0 || ^3.0.0
@@ -3599,7 +3599,7 @@ snapshots:
       '@parcel/watcher-win32-x64': 2.5.1
     optional: true
 
-  '@phoenix-wing/code-core@0.6.3': {}
+  '@phoenix-wing/code-core@0.6.4': {}
 
   '@phoenix-wing/db-node@0.6.3':
     dependencies:
@@ -5313,9 +5313,9 @@ snapshots:
 
   perfect-debounce@1.0.0: {}
 
-  phoenix-wing@0.6.4(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4)):
+  phoenix-wing@0.7.1(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4)):
     dependencies:
-      '@phoenix-wing/code-core': 0.6.3
+      '@phoenix-wing/code-core': 0.6.4
       '@phoenix-wing/db-node': 0.6.3
     optionalDependencies:
       element-plus: 2.10.2(vue@3.5.18(typescript@5.5.4))
