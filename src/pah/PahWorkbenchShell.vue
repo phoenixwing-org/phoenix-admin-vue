@@ -151,6 +151,10 @@ import {
 	pahRouteTemplatePath
 } from './PahRibbonMenuAdapter';
 import {
+	pahMergeDevelopmentRibbonTabs,
+	pahProjectDevelopmentRibbonContributions
+} from './PahDevelopmentRibbonContributions';
+import {
 	pahBuildModuleGroups,
 	PAH_DEFAULT_MODULE_GROUPS,
 	type PahModuleGroupDefinition
@@ -183,10 +187,7 @@ import {
 } from './PahViewContributions';
 import { pahWorkbenchSideBlocks } from './PahWorkbenchBlocks';
 import PahWorkbenchDefaultBottom from './PahWorkbenchDefaultBottom.vue';
-import {
-	pahCreateWorkbenchOutput,
-	pahProvideWorkbenchOutput
-} from './PahWorkbenchOutput';
+import { pahCreateWorkbenchOutput, pahProvideWorkbenchOutput } from './PahWorkbenchOutput';
 import { usePahWorkbenchThemeBridge } from './PahWorkbenchThemeBridge';
 import { pahWorkbenchLocale } from './PahWorkbenchLocale';
 import { pahProcessEntriesAfterCloseOthers } from './PahWorkbenchProcessActions';
@@ -264,21 +265,35 @@ const navigationTargetKeysByMenuId = computed(() =>
 		(navigationResponse.value?.modules || []).map(item => [item.menuId, item.targetKey])
 	)
 );
+const developmentRibbonProjection = computed(() =>
+	pahProjectDevelopmentRibbonContributions(module.list, import.meta.env.DEV)
+);
 const navigationDefinitions = computed<PahModuleGroupDefinition[]>(() => {
-	if (!navigationResponse.value) return PAH_DEFAULT_MODULE_GROUPS;
-	return navigationResponse.value.groups
-		.filter(group => group.isEnabled)
-		.map(group => ({
-			id: `pah-group-${group.id}`,
-			label: group.label,
-			orderNum: group.orderNum,
-			moduleTargetKeys: navigationResponse
-				.value!.assignments.filter(assignment => assignment.groupId === group.id)
-				.map(assignment => assignment.targetKey)
-		}));
+	const definitions = !navigationResponse.value
+		? PAH_DEFAULT_MODULE_GROUPS
+		: navigationResponse.value.groups
+				.filter(group => group.isEnabled)
+				.map(group => ({
+					id: `pah-group-${group.id}`,
+					label: group.label,
+					orderNum: group.orderNum,
+					moduleTargetKeys: navigationResponse
+						.value!.assignments.filter(assignment => assignment.groupId === group.id)
+						.map(assignment => assignment.targetKey)
+				}));
+	return definitions.map(definition => ({
+		...definition,
+		moduleTargetKeys: [
+			...(definition.moduleTargetKeys || []),
+			...(developmentRibbonProjection.value.targetKeysByGroupLabel[definition.label] || [])
+		]
+	}));
 });
-const ribbonTabs = computed(() =>
+const persistedRibbonTabs = computed(() =>
 	pahBuildRibbonTabs(menu.group, undefined, navigationTargetKeysByMenuId.value)
+);
+const ribbonTabs = computed(() =>
+	pahMergeDevelopmentRibbonTabs(persistedRibbonTabs.value, developmentRibbonProjection.value.tabs)
 );
 const moduleGroups = computed(() =>
 	pahBuildModuleGroups(ribbonTabs.value, navigationDefinitions.value)
