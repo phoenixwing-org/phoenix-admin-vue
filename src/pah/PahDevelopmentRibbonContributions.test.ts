@@ -5,34 +5,34 @@ import {
 } from './PahDevelopmentRibbonContributions';
 import type { PahRibbonTab } from './PahRibbonMenuAdapter';
 
-const xingyuReportModule = {
-	name: 'xingyu-report',
+const examplePluginModule = {
+	name: 'example-plugin',
 	options: {
 		pahDevelopmentRibbon: {
 			schemaVersion: 1,
 			developmentOnly: true,
-			moduleId: 'xingyu-report',
+			moduleId: 'example-plugin',
 			preferredGroupLabel: '业务',
 			modules: [
 				{
-					id: 'xingyu-report-foundation',
-					label: '母版与版式',
+					id: 'example-plugin-foundation',
+					label: '基础资料',
 					icon: 'pnw:folder',
 					groups: [
 						{
 							id: 'foundation-pages',
-							label: '母版与版式',
+							label: '基础资料',
 							items: [
 								{
-									id: 'masters',
-									label: '母版管理',
-									path: '/xingyu-report/masters',
+									id: 'items',
+									label: '业务列表',
+									path: '/example-plugin/items',
 									icon: 'pnw:document'
 								},
 								{
-									id: 'templates',
-									label: '小模板',
-									path: '/xingyu-report/templates',
+									id: 'settings',
+									label: '业务设置',
+									path: '/example-plugin/settings',
 									icon: 'pnw:list'
 								}
 							]
@@ -40,17 +40,17 @@ const xingyuReportModule = {
 					]
 				},
 				{
-					id: 'xingyu-report-tasks',
-					label: '报告任务',
+					id: 'example-plugin-tasks',
+					label: '业务任务',
 					groups: [
 						{
 							id: 'task-pages',
-							label: '报告任务',
+							label: '业务任务',
 							items: [
 								{
-									id: 'report',
-									label: '报告任务',
-									path: '/xingyu-report/report',
+									id: 'tasks',
+									label: '任务列表',
+									path: '/example-plugin/tasks',
 									icon: 'pnw:report'
 								}
 							]
@@ -64,29 +64,29 @@ const xingyuReportModule = {
 
 describe('PahDevelopmentRibbonContributions', () => {
 	it('只在开发态把挂载模块投影到指定 Host Ribbon 分组', () => {
-		const projection = pahProjectDevelopmentRibbonContributions([xingyuReportModule], true);
+		const projection = pahProjectDevelopmentRibbonContributions([examplePluginModule], true);
 		expect(projection.issues).toEqual([]);
-		expect(projection.tabs.map(tab => tab.label)).toEqual(['母版与版式', '报告任务']);
+		expect(projection.tabs.map(tab => tab.label)).toEqual(['基础资料', '业务任务']);
 		expect(
 			projection.tabs
 				.flatMap(tab => tab.groups.flatMap(group => group.items))
 				.map(item => item.path)
-		).toEqual(['/xingyu-report/masters', '/xingyu-report/templates', '/xingyu-report/report']);
+		).toEqual(['/example-plugin/items', '/example-plugin/settings', '/example-plugin/tasks']);
 		expect(projection.targetKeysByGroupLabel).toEqual({
 			业务: [
-				'plugin:xingyu-report:xingyu-report-foundation',
-				'plugin:xingyu-report:xingyu-report-tasks'
+				'plugin:example-plugin:example-plugin-foundation',
+				'plugin:example-plugin:example-plugin-tasks'
 			]
 		});
 	});
 
 	it('正式环境和禁用模块均不暴露开发 Ribbon', () => {
-		expect(pahProjectDevelopmentRibbonContributions([xingyuReportModule], false).tabs).toEqual(
+		expect(pahProjectDevelopmentRibbonContributions([examplePluginModule], false).tabs).toEqual(
 			[]
 		);
 		expect(
 			pahProjectDevelopmentRibbonContributions(
-				[{ ...xingyuReportModule, enable: false }],
+				[{ ...examplePluginModule, enable: false }],
 				true
 			).tabs
 		).toEqual([]);
@@ -94,23 +94,23 @@ describe('PahDevelopmentRibbonContributions', () => {
 
 	it('正式菜单已物化时按 stable target 或 route 去重', () => {
 		const development = pahProjectDevelopmentRibbonContributions(
-			[xingyuReportModule],
+			[examplePluginModule],
 			true
 		).tabs;
 		const persisted: PahRibbonTab[] = [
 			{
 				id: 'pah-tab-42',
-				label: '母版与版式',
-				targetKey: 'plugin:xingyu-report:xingyu-report-foundation',
+				label: '基础资料',
+				targetKey: 'plugin:example-plugin:example-plugin-foundation',
 				groups: [
 					{
 						id: 'pah-tab-42-group-1',
-						label: '母版与版式',
+						label: '基础资料',
 						items: [
 							{
 								pageId: 'pah-menu-43',
-								label: '母版管理',
-								path: '/xingyu-report/masters',
+								label: '业务列表',
+								path: '/example-plugin/items',
 								menuId: 43
 							}
 						]
@@ -119,7 +119,7 @@ describe('PahDevelopmentRibbonContributions', () => {
 			}
 		];
 		expect(pahMergeDevelopmentRibbonTabs(persisted, development).map(tab => tab.label)).toEqual(
-			['母版与版式', '报告任务']
+			['基础资料', '业务任务']
 		);
 	});
 });

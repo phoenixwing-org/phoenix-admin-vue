@@ -43,6 +43,8 @@ Host 仓库不内置任何产品候选 manifest；管理员应从独立业务插
 
 - 插件 payload 的受控构建、外部 supervisor 重启、回滚及未来热插拔边界见
   [PahPLUGIN-RUNTIME-TODO.md](./PahPLUGIN-RUNTIME-TODO.md)。
+- 独立插件仓、开发 Ribbon、Wing View 展示/对话框与未来一键生成器的实施顺序见
+  [Phoenix 插件脚手架计划](./Phoenix插件脚手架计划.md)。
 - 可插拔登录外观、首页和品牌资源的 Host 接缝见
   [PahUIEXTENSION-TODO.md](./PahUIEXTENSION-TODO.md)。
 - 同一插件的新版本不得覆盖运行中的旧 payload；版本化升级卡片、原子切换与回滚流程也在
