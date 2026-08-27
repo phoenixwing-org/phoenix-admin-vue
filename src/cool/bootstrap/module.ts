@@ -9,7 +9,7 @@ import phoenixPluginRuntimeLoaders from 'virtual:phoenix-admin-plugin-runtime';
 // 扫描文件
 const files = import.meta.glob(
 	[
-		'/src/modules/{base,demo,dict,helper,pah,recycle,space,task,user}/{config.ts,service/**,directives/**}',
+		'/src/modules/{base,demo,dict,helper,phoenix,recycle,space,task,user}/{config.ts,service/**,directives/**}',
 		'/src/plugins/*/{config.ts,service/**,directives/**}'
 	],
 	{ eager: true, import: 'default' }

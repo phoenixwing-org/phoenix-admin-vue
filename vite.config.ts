@@ -152,6 +152,10 @@ export default ({ mode }: ConfigEnv): UserConfig => {
 			dedupe: [...pahHostSingletonDependencies],
 			alias: [
 				...localWingAliases,
+				// 已发布插件仍可从 /@/pah 与 /$/pah 导入 Host adapter；
+				// Host 自身的新代码统一落在 Phoenix 物理目录。
+				{ find: '/@/pah', replacement: toPath('./src/phoenix') },
+				{ find: '/$/pah', replacement: toPath('./src/modules/phoenix') },
 				{ find: '/@', replacement: toPath('./src') },
 				{ find: '/$', replacement: toPath('./src/modules') },
 				{ find: '/#', replacement: toPath('./src/plugins') },

@@ -166,7 +166,7 @@ import {
 	PahIdentityApiError,
 	type PahExternalBindRequest,
 	type PahExternalIdentity
-} from '/@/pah/PahIdentityApi';
+} from '/@/phoenix/PahIdentityApi';
 
 type RequestStatus = 'pending' | 'bound' | 'rejected';
 type AdminUser = Eps.BaseSysUserEntity & { id: number; username: string; status: number };

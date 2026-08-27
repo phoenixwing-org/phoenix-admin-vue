@@ -52,7 +52,7 @@ describe('Pah 外部身份 API 契约', () => {
 
 		const calls = transportMock.mock.calls as unknown as Array<[PahIdentityRequest]>;
 		for (const [request] of calls) {
-			expect(request.path).toMatch(/^\/admin\/pah\/identity\//);
+			expect(request.path).toMatch(/^\/admin\/phoenix\/identity\//);
 			expect(request.token).toBe('admin-token');
 		}
 		expect(transportMock).toHaveBeenCalledWith(

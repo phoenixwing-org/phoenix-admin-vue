@@ -1,14 +1,21 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const source = readFileSync(new URL('../modules/pah/views/plugins.vue', import.meta.url), 'utf8');
-const moduleConfig = readFileSync(new URL('../modules/pah/config.ts', import.meta.url), 'utf8');
+const source = readFileSync(
+	new URL('../modules/phoenix/views/plugins.vue', import.meta.url),
+	'utf8'
+);
+const moduleConfig = readFileSync(new URL('../modules/phoenix/config.ts', import.meta.url), 'utf8');
 const coolSource = readFileSync(
 	new URL('../modules/helper/views/plugins.vue', import.meta.url),
 	'utf8'
 );
 const primarySource = readFileSync(
 	new URL('./PahPluginManagementPrimary.vue', import.meta.url),
+	'utf8'
+);
+const navigationSource = readFileSync(
+	new URL('../modules/phoenix/views/navigation.vue', import.meta.url),
 	'utf8'
 );
 
@@ -113,7 +120,7 @@ describe('Phoenix 插件包安装入口', () => {
 		expect(moduleConfig).not.toContain("path: '/pah/plugins'");
 	});
 
-	it('Cool 与 Phoenix 插件页共享通用 Primary 切换入口', () => {
+	it('Cool、Phoenix 插件与分组页共享通用 Primary 切换入口', () => {
 		expect(coolSource).toContain("usePahViewContributions('/helper/plugins'");
 		expect(coolSource).toContain('PnwPageLayout');
 		expect(coolSource).toContain('title="Cool 插件"');
@@ -125,11 +132,17 @@ describe('Phoenix 插件包安装入口', () => {
 		expect(source).not.toContain('class="hero"');
 		expect(primarySource).toContain("open('/helper/plugins')");
 		expect(primarySource).toContain("open('/phoenix/plugins')");
+		expect(primarySource).toContain("open('/phoenix/navigation')");
+		expect(primarySource).toContain('<strong>分组</strong>');
+		expect(primarySource).toContain('导航分组与模块归属');
 		expect(primarySource).toContain('aria-current');
 		expect(primarySource).toContain('PnwPrimarySection');
 		expect(primarySource).toContain('title="插件管理"');
 		expect(primarySource).toContain('title="插件属性"');
 		expect(primarySource).not.toContain('Cool 原生插件与 Phoenix 业务插件使用不同安装契约');
 		expect(primarySource).not.toContain('open-issue');
+		expect(navigationSource).toContain("usePahViewContributions('/phoenix/navigation'");
+		expect(navigationSource).toContain("props: { active: 'groups' }");
+		expect(navigationSource).toContain('<h1>导航分组管理</h1>');
 	});
 });

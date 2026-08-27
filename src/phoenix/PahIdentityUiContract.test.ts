@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 const loginSource = read('../modules/base/pages/login/index.vue');
 const callbackSource = read('../modules/base/pages/login/oauth-callback.vue');
-const reviewSource = read('../modules/pah/views/identity.vue');
+const reviewSource = read('../modules/phoenix/views/identity.vue');
 
 describe('Admin 飞书身份 UI 静态边界', () => {
 	it('保留密码登录为默认流程，并仅由 login-policy 开启飞书入口', () => {

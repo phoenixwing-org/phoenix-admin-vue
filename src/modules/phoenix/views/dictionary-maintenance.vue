@@ -133,9 +133,9 @@ import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { PnwPageLayout } from 'phoenix-wing';
 import { useCool } from '/@/cool';
-import PahDictionaryMaintenancePrimary from '/@/pah/PahDictionaryMaintenancePrimary.vue';
-import { usePahWorkbenchOutput } from '/@/pah/PahWorkbenchOutput';
-import { usePahViewContributions } from '/@/pah/PahViewContributions';
+import PahDictionaryMaintenancePrimary from '/@/phoenix/PahDictionaryMaintenancePrimary.vue';
+import { usePahWorkbenchOutput } from '/@/phoenix/PahWorkbenchOutput';
+import { usePahViewContributions } from '/@/phoenix/PahViewContributions';
 
 type ReconcileAction = 'create' | 'update' | 'preserve';
 
@@ -229,7 +229,7 @@ const primaryProps = computed(() => ({
 	onLoadPlan: () => refreshPlan({ emitOutput: true })
 }));
 
-usePahViewContributions('/pah/dictionary-maintenance', {
+usePahViewContributions('/phoenix/dictionary-maintenance', {
 	primary: {
 		component: markRaw(PahDictionaryMaintenancePrimary),
 		props: primaryProps

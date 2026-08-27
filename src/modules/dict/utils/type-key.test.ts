@@ -4,7 +4,7 @@ import { DICT_TYPE_KEY_MAX_LENGTH, isValidDictTypeKey } from './type-key';
 
 const dictViewSource = readFileSync(new URL('../views/list.vue', import.meta.url), 'utf8');
 const maintenanceViewSource = readFileSync(
-	new URL('../../pah/views/dictionary-maintenance.vue', import.meta.url),
+	new URL('../../phoenix/views/dictionary-maintenance.vue', import.meta.url),
 	'utf8'
 );
 
@@ -52,10 +52,10 @@ describe('Cool 字典 type key', () => {
 		expect(maintenanceViewSource).not.toContain('ALTER TABLE dict_');
 	});
 
-	it('字典维护页在 Workbench Editor 内独立滚动并把操作写入全局 Output', () => {
+	it('字典维护页委托 PageLayout 独立滚动并把操作写入全局 Output', () => {
 		expect(maintenanceViewSource).toContain('height: 100%;');
 		expect(maintenanceViewSource).toContain('min-height: 0;');
-		expect(maintenanceViewSource).toContain('overflow-y: auto;');
+		expect(maintenanceViewSource).toContain(':body-scroll="true"');
 		expect(maintenanceViewSource).toContain('usePahWorkbenchOutput');
 		expect(maintenanceViewSource).toContain(
 			'workbenchOutput?.appendLine(`[字典维护] ${message}`)'

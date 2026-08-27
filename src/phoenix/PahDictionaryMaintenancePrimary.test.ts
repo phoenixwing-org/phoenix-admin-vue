@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const viewSource = readFileSync(
-	new URL('../modules/pah/views/dictionary-maintenance.vue', import.meta.url),
+	new URL('../modules/phoenix/views/dictionary-maintenance.vue', import.meta.url),
 	'utf8'
 );
 const primarySource = readFileSync(
@@ -14,7 +14,7 @@ describe('Pah 字典维护 Primary', () => {
 	it('使用标准 PageLayout 和 Workbench Primary 承载业务插件选择', () => {
 		expect(viewSource).toContain('<pnw-page-layout');
 		expect(viewSource).toContain('title="字典维护"');
-		expect(viewSource).toContain("usePahViewContributions('/pah/dictionary-maintenance'");
+		expect(viewSource).toContain("usePahViewContributions('/phoenix/dictionary-maintenance'");
 		expect(viewSource).not.toContain('class="panel selector-panel"');
 		expect(primarySource).toContain('PnwPrimaryPanel');
 		expect(primarySource).toContain('title="业务插件"');

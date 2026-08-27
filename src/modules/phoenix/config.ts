@@ -6,7 +6,7 @@ export default (): ModuleConfig => {
 		order: 80,
 		views: [
 			{
-				path: '/pah/identity',
+				path: '/phoenix/identity',
 				meta: {
 					label: '外部身份审查',
 					keepAlive: true
@@ -14,9 +14,9 @@ export default (): ModuleConfig => {
 				component: () => import('./views/identity.vue')
 			},
 			{
-				path: '/pah/navigation',
+				path: '/phoenix/navigation',
 				meta: {
-					label: '大分组管理',
+					label: '分组',
 					keepAlive: true
 				},
 				component: () => import('./views/navigation.vue')

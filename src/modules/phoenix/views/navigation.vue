@@ -3,7 +3,7 @@
 		<header class="hero">
 			<div>
 				<p class="eyebrow">PHOENIX ADMIN HOST</p>
-				<h1>大分组管理</h1>
+				<h1>导航分组管理</h1>
 				<p>
 					内置“管理、开发、业务”作为稳定默认值；可建立自定义分组，并将 Host
 					模块或已安装插件移动到任意分组。
@@ -112,9 +112,11 @@
 <script lang="ts" setup>
 defineOptions({ name: 'pah-navigation-groups' });
 
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, markRaw, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useCool } from '/@/cool';
+import PahPluginManagementPrimary from '/@/phoenix/PahPluginManagementPrimary.vue';
+import { usePahViewContributions } from '/@/phoenix/PahViewContributions';
 
 type Group = {
 	id: number;
@@ -140,6 +142,13 @@ const drafts = reactive<Record<number, Pick<Group, 'label' | 'orderNum' | 'isEna
 const createForm = reactive({ label: '', orderNum: 100 });
 const enabledGroups = computed(() => groups.value.filter(group => group.isEnabled));
 
+usePahViewContributions('/phoenix/navigation', {
+	primary: {
+		component: markRaw(PahPluginManagementPrimary),
+		props: { active: 'groups' }
+	}
+});
+
 function draft(group: Group) {
 	if (!drafts[group.id]) {
 		drafts[group.id] = {
@@ -162,7 +171,10 @@ function assignmentFor(targetKey: string) {
 async function load() {
 	loading.value = true;
 	try {
-		const data = await service.request({ url: '/admin/pah/navigation/read', method: 'GET' });
+		const data = await service.request({
+			url: '/admin/phoenix/navigation/read',
+			method: 'GET'
+		});
 		groups.value = data.groups || [];
 		assignments.value = data.assignments || [];
 		modules.value = data.modules || [];
@@ -184,7 +196,7 @@ async function createGroup() {
 	creating.value = true;
 	try {
 		await service.request({
-			url: '/admin/pah/navigation/save-group',
+			url: '/admin/phoenix/navigation/save-group',
 			method: 'POST',
 			data: createForm
 		});
@@ -202,7 +214,7 @@ async function saveGroup(group: Group) {
 	savingId.value = group.id;
 	try {
 		await service.request({
-			url: '/admin/pah/navigation/save-group',
+			url: '/admin/phoenix/navigation/save-group',
 			method: 'POST',
 			data: { id: group.id, ...draft(group) }
 		});
@@ -228,7 +240,7 @@ async function removeGroup(group: Group) {
 	savingId.value = group.id;
 	try {
 		await service.request({
-			url: '/admin/pah/navigation/remove-group',
+			url: '/admin/phoenix/navigation/remove-group',
 			method: 'POST',
 			data: { id: group.id }
 		});
@@ -245,7 +257,7 @@ async function assign(targetKey: string, groupId: number) {
 	assigningTarget.value = targetKey;
 	try {
 		const data = await service.request({
-			url: '/admin/pah/navigation/assign',
+			url: '/admin/phoenix/navigation/assign',
 			method: 'POST',
 			data: { targetKey, groupId }
 		});
@@ -318,11 +330,7 @@ onMounted(load);
 		transparent
 	);
 	box-shadow: 0 12px 36px
-		color-mix(
-			in srgb,
-			var(--pnw-workbench-text, var(--el-text-color-primary)) 6%,
-			transparent
-		);
+		color-mix(in srgb, var(--pnw-workbench-text, var(--el-text-color-primary)) 6%, transparent);
 }
 .notice {
 	display: flex;

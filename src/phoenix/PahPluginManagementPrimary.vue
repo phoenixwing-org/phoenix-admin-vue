@@ -23,10 +23,21 @@
 					<strong>Phoenix 插件</strong>
 					<span>.phoenix.cool 业务插件</span>
 				</button>
+
+				<button
+					type="button"
+					class="plugin-kind"
+					:class="{ active: active === 'groups' }"
+					:aria-current="active === 'groups' ? 'page' : undefined"
+					@click="open('/phoenix/navigation')"
+				>
+					<strong>分组</strong>
+					<span>导航分组与模块归属</span>
+				</button>
 			</nav>
 		</pnw-primary-section>
 
-		<pnw-primary-section title="插件属性" :default-expanded="true">
+		<pnw-primary-section v-if="active !== 'groups'" title="插件属性" :default-expanded="true">
 			<template v-if="details" #suffix>
 				<span class="section-version">v{{ details.version }}</span>
 			</template>
@@ -116,13 +127,13 @@ interface PluginPrimaryDetails {
 }
 
 defineProps<{
-	active: 'cool' | 'phoenix';
+	active: 'cool' | 'phoenix' | 'groups';
 	details?: PluginPrimaryDetails | null;
 }>();
 
 const { router } = useCool();
 
-function open(path: '/helper/plugins' | '/phoenix/plugins') {
+function open(path: '/helper/plugins' | '/phoenix/plugins' | '/phoenix/navigation') {
 	void router.push(path);
 }
 </script>

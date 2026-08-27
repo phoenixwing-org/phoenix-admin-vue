@@ -442,7 +442,7 @@ function goHome() {
 }
 
 function goNavigationManagement() {
-	void router.push('/pah/navigation');
+	void router.push('/phoenix/navigation');
 }
 
 function resetDisplayPreferences() {
@@ -465,7 +465,7 @@ function handleDisplaySettingsAction(actionId: string) {
 async function loadNavigationGroups() {
 	try {
 		navigationResponse.value = await service.request({
-			url: '/admin/pah/navigation/read',
+			url: '/admin/phoenix/navigation/read',
 			method: 'GET'
 		});
 	} catch {

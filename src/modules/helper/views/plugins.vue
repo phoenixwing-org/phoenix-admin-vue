@@ -286,8 +286,8 @@ import { marked } from 'marked';
 import { useI18n } from 'vue-i18n';
 import { PnwPageLayout } from 'phoenix-wing';
 import { usePlugin } from '../hooks';
-import PahPluginManagementPrimary from '/@/pah/PahPluginManagementPrimary.vue';
-import { usePahViewContributions } from '/@/pah/PahViewContributions';
+import PahPluginManagementPrimary from '/@/phoenix/PahPluginManagementPrimary.vue';
+import { usePahViewContributions } from '/@/phoenix/PahViewContributions';
 
 interface Plugin {
 	name?: string;
