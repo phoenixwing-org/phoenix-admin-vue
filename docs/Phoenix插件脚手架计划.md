@@ -2,8 +2,9 @@
 
 ## 状态
 
-**待实施。** 本文只冻结脚手架目标、目录和验收规则；本轮不生成脚手架代码、不新增
-独立插件仓库，也不改变现有插件的运行方式。
+**Host 能力已形成候选，脚手架仍待实施。** Phoenix Admin 已在隔离分支接入 Wing
+View Dialog Host，当前等待 `phoenix-wing@0.7.2` 正式发布和首个业务消费者验收。本轮仍不生成
+脚手架代码、不新增独立插件仓库。
 
 ## 目标
 
@@ -107,18 +108,25 @@ my-business-plugin/
 ### 4. View 对话框
 
 - 普通确认使用 Host 的全局 Choice Dialog；插件不得单独挂载第二个 Choice Dialog Host。
-- 需要编辑器/工具窗的非模态对话框时，插件只提交 `PnwViewDialogRequest`（稳定 requestId、
-  viewId、标题、可序列化 props、尺寸）。
-- Phoenix Admin 将在下一阶段提供单一的 View Dialog Host adapter；模板只调用其公开
-  composable，不复制 `PnwFloatingPanel`、Promise resolver 或 overlay stack。
+- 需要编辑器/工具窗的非模态对话框时，插件在 `config.ts` 的
+  `phoenix.viewDialogRenderers` 声明稳定 `rendererId` 和异步组件 loader；页面只调用
+  `usePhoenixViewDialog().open({ rendererId, instanceKey, title, props, size })`。
+- `viewId`（owner Tab）和 `requestId` 只由 Host 签发，不进入插件 API；组件对象也不进入
+  request 或持久化数据。`props` 必须是有限、可序列化的业务输入。
+- Admin 应用根只创建并 provide 一个 Wing `PnwViewDialogHostController`，模块加载与健康检查
+  完成后才把 renderer 白名单登记到 Wing；单个 renderer 无效时隔离该贡献，不拖垮纯 Host。
+- 模板不得复制 `PnwFloatingPanel`、Promise resolver、overlay stack 或注册表。实现统一使用
+  Wing 的 `PnwViewDialogHost` 与 `pnwCreateViewDialogHost`。
 - Web 回退必须是无蒙层浮窗，保持原 View、Primary 和工作台可操作；桌面平台能力完整时才由
   Host 选择原生非模态窗口。
+- 同一 `ownerTabId + rendererId + instanceKey` 的重复打开只聚焦既有实例，并复用同一结果
+  Promise；owner Tab 销毁时 Host 调用 `closeByView`，一次性结算其全部对话框。
 
 ## Host 先行工作
 
 脚手架实施前，Admin Vue 必须先完成并测试以下通用能力：
 
-1. 在应用根只挂一次 Wing 全局 Host（当前 Choice Dialog；新增 View Dialog Host 后也仅一次）；
+1. 在应用根只挂一次 Wing 全局 Host（Choice Dialog 与 View Dialog 各一个）；
 2. 导出稳定的 Phoenix 插件 View presentation / View dialog adapter，不暴露 Router、Pinia、
    任意 Component 或 Host 内部 overlay stack；
 3. 对每个 Presentation record 做 owner 生命周期对账：owner 关闭时回收或 reattach，陈旧
@@ -126,19 +134,20 @@ my-business-plugin/
 4. 把 Host 的 color scheme、Overlay layer 和焦点恢复交给 Wing，而不是模板手写 z-index；
 5. 为无插件、单插件、插件异常三种情况测试 Host 仍可登录、导航和输出。
 
-在这些能力落地前，模板可以只提供 `PnwViewPresentationPortal` 的最小局部示例；**不得**
-伪造“全局 View 对话框已可用”。
+当前 Host 候选已经完成第 1、2、4 项的聚焦测试、类型检查和生产构建；仍须等待 Wing 正式版本、
+首个消费者及浏览器矩阵完成后才可视为发布能力。模板在此之前**不得**锁未发布 Wing 或伪造
+“全局 View 对话框已正式可用”。
 
 ## 开发技能与文档位置
 
 脚手架完成后采用两层文档，不把规则散落进各业务仓库：
 
-| 位置 | 用途 |
-| --- | --- |
-| `docs/Phoenix插件开发指南.md` | 面向开发者的稳定契约、命令、目录、发布与验收清单。 |
+| 位置                                                   | 用途                                                                   |
+| ------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `docs/Phoenix插件开发指南.md`                          | 面向开发者的稳定契约、命令、目录、发布与验收清单。                     |
 | `.codex/skills/phoenix-admin-business-plugin/SKILL.md` | 面向 Codex 的项目内技能：创建、迁移、审查 Phoenix 业务插件时强制读取。 |
-| `templates/phoenix-admin-business-plugin/` | 仅放可生成的通用源码模板。 |
-| `scripts/create-phoenix-plugin.mjs` | 只负责校验输入、复制模板和初始化独立 Git。 |
+| `templates/phoenix-admin-business-plugin/`             | 仅放可生成的通用源码模板。                                             |
+| `scripts/create-phoenix-plugin.mjs`                    | 只负责校验输入、复制模板和初始化独立 Git。                             |
 
 技能不复制完整 API 手册；它只路由到开发指南、manifest schema 与 Wing 的已发布类型。任何
 新能力先进入 Host 和 Wing 的测试，再进入模板与技能。
@@ -146,7 +155,7 @@ my-business-plugin/
 ## 分阶段实施
 
 1. **Host 能力阶段**：实现全局 View Dialog Host adapter，并补全 presentation 的 Host 生命周期
-   与浏览器测试。
+   与浏览器测试。代码候选已完成；发布与首个消费者验收进行中。
 2. **模板阶段**：建立最小双端模板、manifest fixture、开发 Ribbon 和一页普通 View；先不含
    DDL、字典或登录扩展。
 3. **生成器阶段**：实现 `create:phoenix-plugin`，覆盖新目录、非空目录、非法 moduleId、

@@ -24,8 +24,12 @@ describe('PahWingGlobalHosts', () => {
 			'utf8'
 		);
 
-		expect(appSource.match(/<PahWingGlobalHosts\s*\/>/gu)).toHaveLength(1);
-		expect(hostsSource.match(/<PnwChoiceDialogHost\s*\/>/gu)).toHaveLength(1);
+		expect(appSource.match(/<pah-wing-global-hosts\s/gu)).toHaveLength(1);
+		expect(hostsSource.match(/<pnw-choice-dialog-host\s*\/>/gu)).toHaveLength(1);
+		expect(appSource).toContain('pnwCreateViewDialogHost');
+		expect(appSource).toContain('pnwProvideViewDialogHost');
+		expect(hostsSource.match(/<pnw-view-dialog-host\s/gu)).toHaveLength(1);
+		expect(hostsSource).toContain('pahRegisterViewDialogRenderers');
 	});
 
 	it('解析全局选择请求并结束等待中的 Promise', async () => {
