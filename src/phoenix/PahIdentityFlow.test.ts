@@ -11,13 +11,13 @@ describe('Pah 外部身份 callback 状态机', () => {
 	it('解析 authenticated 并只接受站内 returnTo', () => {
 		expect(
 			pahParseOAuthCallback(
-				'?provider=feishu&status=authenticated&ticket=one-time&returnTo=%2Fpah%2Fidentity'
+				'?provider=feishu&status=authenticated&ticket=one-time&returnTo=%2Fphoenix%2Fidentity'
 			)
 		).toEqual({
 			kind: 'authenticated',
 			provider: 'feishu',
 			ticket: 'one-time',
-			returnTo: '/pah/identity'
+			returnTo: '/phoenix/identity'
 		});
 		expect(pahNormalizeIdentityReturnTo('https://evil.example')).toBe('/');
 		expect(pahNormalizeIdentityReturnTo('//evil.example')).toBe('/');

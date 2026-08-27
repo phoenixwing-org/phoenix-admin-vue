@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const source = readFileSync(new URL('../modules/pah/views/plugins.vue', import.meta.url), 'utf8');
-const moduleConfig = readFileSync(new URL('../modules/pah/config.ts', import.meta.url), 'utf8');
+const source = readFileSync(new URL('../modules/phoenix/views/plugins.vue', import.meta.url), 'utf8');
+const moduleConfig = readFileSync(new URL('../modules/phoenix/config.ts', import.meta.url), 'utf8');
 const coolSource = readFileSync(
 	new URL('../modules/helper/views/plugins.vue', import.meta.url),
 	'utf8'

@@ -17,8 +17,12 @@ import {
 	coolResolveDynamicRouteWithRefresh
 } from './resolve';
 import { coolWrapRouteViewLoader } from './view';
-import { usePahPublicLoginBrandStore } from '/@/pah/PahPublicLoginBrandStore';
-import { applyPahRouteDocumentTitle } from '/@/pah/PahRouteDocumentTitle';
+import { usePahPublicLoginBrandStore } from '/@/phoenix/PahPublicLoginBrandStore';
+import { applyPahRouteDocumentTitle } from '/@/phoenix/PahRouteDocumentTitle';
+import {
+	phoenixCanonicalHostRoute,
+	phoenixCanonicalHostViewPath
+} from '/@/phoenix/PhoenixHostRouteCompat';
 import phoenixPluginRouteFiles from 'virtual:phoenix-admin-plugin-routes';
 
 // 基本路径
@@ -27,7 +31,7 @@ const baseUrl = import.meta.env.BASE_URL;
 // 扫描文件
 const files = {
 	...import.meta.glob([
-		'/src/modules/{base,demo,dict,helper,pah,recycle,space,task,user}/{views,pages}/**/*.vue',
+		'/src/modules/{base,demo,dict,helper,phoenix,recycle,space,task,user}/{views,pages}/**/*.vue',
 		'!**/components'
 	]),
 	...phoenixPluginRouteFiles
@@ -103,7 +107,7 @@ router.append = function (routeData) {
 
 		// 如果没有指定组件路径
 		if (!route.component) {
-			const viewPath = route.viewPath;
+			const viewPath = phoenixCanonicalHostViewPath(route.viewPath);
 
 			if (viewPath) {
 				if (viewPath.startsWith('http')) {
@@ -221,6 +225,12 @@ router.find = function (path: string) {
 
 // 路由守卫
 router.beforeEach(async (to, from, next) => {
+	const canonicalPath = phoenixCanonicalHostRoute(to.path);
+	if (canonicalPath !== to.path) {
+		next({ path: canonicalPath, query: to.query, hash: to.hash, replace: true });
+		return;
+	}
+
 	// 等待应用配置加载完
 	await Loading.wait();
 

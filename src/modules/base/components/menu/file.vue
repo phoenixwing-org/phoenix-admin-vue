@@ -58,7 +58,7 @@ const { refs, setRefs } = useCool();
 function findFiles() {
 	const files = {
 		...import.meta.glob([
-			'/src/modules/{base,demo,dict,helper,pah,recycle,space,task,user}/{views,pages}/**/*.vue',
+			'/src/modules/{base,demo,dict,helper,phoenix,recycle,space,task,user}/{views,pages}/**/*.vue',
 			'!**/components'
 		]),
 		...phoenixPluginRouteFiles

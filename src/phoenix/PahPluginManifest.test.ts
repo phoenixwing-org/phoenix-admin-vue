@@ -3,12 +3,12 @@ import {
 	PAH_PLUGIN_FORMAT_VERSION,
 	type PahPluginManifest,
 	type PahSha256
-} from '/$/pah/manifest/PahPluginManifest';
+} from '/$/phoenix/manifest/PahPluginManifest';
 import {
 	pahAssertDirectInstallAllowed,
 	pahCanDirectInstall,
 	parsePahPluginManifest
-} from '/$/pah/manifest/PahPluginPolicy';
+} from '/$/phoenix/manifest/PahPluginPolicy';
 
 const checksum = `sha256:${'a'.repeat(64)}` as PahSha256;
 

@@ -162,7 +162,7 @@ function assignmentFor(targetKey: string) {
 async function load() {
 	loading.value = true;
 	try {
-		const data = await service.request({ url: '/admin/pah/navigation/read', method: 'GET' });
+		const data = await service.request({ url: '/admin/phoenix/navigation/read', method: 'GET' });
 		groups.value = data.groups || [];
 		assignments.value = data.assignments || [];
 		modules.value = data.modules || [];
@@ -184,7 +184,7 @@ async function createGroup() {
 	creating.value = true;
 	try {
 		await service.request({
-			url: '/admin/pah/navigation/save-group',
+			url: '/admin/phoenix/navigation/save-group',
 			method: 'POST',
 			data: createForm
 		});
@@ -202,7 +202,7 @@ async function saveGroup(group: Group) {
 	savingId.value = group.id;
 	try {
 		await service.request({
-			url: '/admin/pah/navigation/save-group',
+			url: '/admin/phoenix/navigation/save-group',
 			method: 'POST',
 			data: { id: group.id, ...draft(group) }
 		});
@@ -228,7 +228,7 @@ async function removeGroup(group: Group) {
 	savingId.value = group.id;
 	try {
 		await service.request({
-			url: '/admin/pah/navigation/remove-group',
+			url: '/admin/phoenix/navigation/remove-group',
 			method: 'POST',
 			data: { id: group.id }
 		});
@@ -245,7 +245,7 @@ async function assign(targetKey: string, groupId: number) {
 	assigningTarget.value = targetKey;
 	try {
 		const data = await service.request({
-			url: '/admin/pah/navigation/assign',
+			url: '/admin/phoenix/navigation/assign',
 			method: 'POST',
 			data: { targetKey, groupId }
 		});

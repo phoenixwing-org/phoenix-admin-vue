@@ -20,7 +20,9 @@ const HOST_MODULE_IDS = new Set([
 	'demo',
 	'dict',
 	'helper',
+	// `phoenix` is canonical; retain `pah` solely for frozen pre-rename fixtures.
 	'pah',
+	'phoenix',
 	'recycle',
 	'space',
 	'task',

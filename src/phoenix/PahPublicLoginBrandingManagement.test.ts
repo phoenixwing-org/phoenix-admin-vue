@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const source = fs.readFileSync(
-	new URL('../modules/pah/views/plugins.vue', import.meta.url),
+	new URL('../modules/phoenix/views/plugins.vue', import.meta.url),
 	'utf8'
 );
 

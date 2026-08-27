@@ -161,35 +161,35 @@ export function createPahIdentityApi(transport: PahIdentityTransport) {
 			}),
 		listBindRequests: (token: string, status?: 'pending' | 'bound' | 'rejected') =>
 			transport<PahExternalBindRequest[]>({
-				path: '/admin/pah/identity/bind-request/list',
+				path: '/admin/phoenix/identity/bind-request/list',
 				method: 'GET',
 				params: status ? { status } : undefined,
 				token
 			}),
 		bindRequest: (token: string, requestId: number, userId: number) =>
 			transport({
-				path: '/admin/pah/identity/bind-request/bind',
+				path: '/admin/phoenix/identity/bind-request/bind',
 				method: 'POST',
 				data: { requestId, userId },
 				token
 			}),
 		rejectRequest: (token: string, requestId: number, note?: string) =>
 			transport({
-				path: '/admin/pah/identity/bind-request/reject',
+				path: '/admin/phoenix/identity/bind-request/reject',
 				method: 'POST',
 				data: { requestId, note },
 				token
 			}),
 		listExternalIdentities: (token: string, userId?: number) =>
 			transport<PahExternalIdentity[]>({
-				path: '/admin/pah/identity/external-identity/list',
+				path: '/admin/phoenix/identity/external-identity/list',
 				method: 'GET',
 				params: userId === undefined ? undefined : { userId },
 				token
 			}),
 		unlinkIdentity: (token: string, identityId: number) =>
 			transport({
-				path: '/admin/pah/identity/external-identity/unlink',
+				path: '/admin/phoenix/identity/external-identity/unlink',
 				method: 'POST',
 				data: { identityId },
 				token

@@ -30,8 +30,8 @@ import { onMounted, reactive } from 'vue';
 import { Loading } from '@element-plus/icons-vue';
 import { useCool } from '/@/cool';
 import { useBase } from '/$/base';
-import { pahIdentityApi, PahIdentityApiError } from '/@/pah/PahIdentityApi';
-import { pahNormalizeIdentityReturnTo, pahReadAndScrubOAuthCallback } from '/@/pah/PahIdentityFlow';
+import { pahIdentityApi, PahIdentityApiError } from '/@/phoenix/PahIdentityApi';
+import { pahNormalizeIdentityReturnTo, pahReadAndScrubOAuthCallback } from '/@/phoenix/PahIdentityFlow';
 
 type CallbackViewState =
 	| { kind: 'processing' }

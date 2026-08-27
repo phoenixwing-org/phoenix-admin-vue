@@ -14,7 +14,7 @@
 				>
 					恢复默认登录品牌
 				</el-button>
-				<el-button @click="router.push('/pah/identity')">外部身份审查</el-button>
+				<el-button @click="router.push('/phoenix/identity')">外部身份审查</el-button>
 				<el-button :loading="loading" @click="refresh">刷新</el-button>
 				<el-button type="primary" :loading="acting" @click="choosePackage">
 					添加 .phoenix.cool
@@ -314,10 +314,10 @@ import { PnwPageLayout } from 'phoenix-wing';
 import { useCool } from '/@/cool';
 import { useBase } from '/$/base';
 import type { PahMigrationDryRunPlan, PahPluginManifest } from '../manifest/PahPluginManifest';
-import { pahPathBelongsToPlugin } from '/@/pah/PahPluginLifecycleCleanup';
-import { usePahWorkbenchOutput } from '/@/pah/PahWorkbenchOutput';
-import PahPluginManagementPrimary from '/@/pah/PahPluginManagementPrimary.vue';
-import { usePahViewContributions } from '/@/pah/PahViewContributions';
+import { pahPathBelongsToPlugin } from '/@/phoenix/PahPluginLifecycleCleanup';
+import { usePahWorkbenchOutput } from '/@/phoenix/PahWorkbenchOutput';
+import PahPluginManagementPrimary from '/@/phoenix/PahPluginManagementPrimary.vue';
+import { usePahViewContributions } from '/@/phoenix/PahViewContributions';
 
 type LifecycleState =
 	| 'verified'

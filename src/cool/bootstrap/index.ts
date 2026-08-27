@@ -5,7 +5,7 @@ import { router } from '../router';
 import { Loading } from '../utils';
 import { createEps } from './eps';
 import 'virtual:svg-register';
-import { usePahPublicLoginBrandStore } from '/@/pah/PahPublicLoginBrandStore';
+import { usePahPublicLoginBrandStore } from '/@/phoenix/PahPublicLoginBrandStore';
 
 export async function bootstrap(app: App) {
 	// pinia

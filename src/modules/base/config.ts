@@ -2,8 +2,8 @@ import { type ModuleConfig } from '/@/cool';
 import { useStore } from './store';
 import { t } from '/@/plugins/i18n';
 import './static/css/index.scss';
-import { usePahPublicLoginBrandStore } from '/@/pah/PahPublicLoginBrandStore';
-import { pahPublicLoginTitle } from '/@/pah/PahPublicLoginBranding';
+import { usePahPublicLoginBrandStore } from '/@/phoenix/PahPublicLoginBrandStore';
+import { pahPublicLoginTitle } from '/@/phoenix/PahPublicLoginBranding';
 
 export default (): ModuleConfig => {
 	return {

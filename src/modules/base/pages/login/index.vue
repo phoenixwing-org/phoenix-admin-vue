@@ -138,10 +138,10 @@ import { useBase } from '/$/base';
 import { storage } from '/@/cool/utils';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
-import { pahIdentityApi, type PahLoginPolicy } from '/@/pah/PahIdentityApi';
-import { pahIsAllowedAuthorizationUrl, pahNormalizeIdentityReturnTo } from '/@/pah/PahIdentityFlow';
+import { pahIdentityApi, type PahLoginPolicy } from '/@/phoenix/PahIdentityApi';
+import { pahIsAllowedAuthorizationUrl, pahNormalizeIdentityReturnTo } from '/@/phoenix/PahIdentityFlow';
 import PicCaptcha from './components/pic-captcha.vue';
-import { usePahPublicLoginBrandStore } from '/@/pah/PahPublicLoginBrandStore';
+import { usePahPublicLoginBrandStore } from '/@/phoenix/PahPublicLoginBrandStore';
 import { createPasswordLoginPayload } from './password-login-payload';
 
 const { refs, setRefs, router, service } = useCool();

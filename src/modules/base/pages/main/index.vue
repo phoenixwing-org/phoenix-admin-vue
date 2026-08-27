@@ -33,8 +33,8 @@ defineOptions({
 import { computed } from 'vue';
 import { useBase } from '/$/base';
 import { useCool } from '/@/cool';
-import PahWorkbenchShell from '/@/pah/PahWorkbenchShell.vue';
-import { pahNormalizeShellMode, pahResolveShellMode } from '/@/pah/PahShellMode';
+import PahWorkbenchShell from '/@/phoenix/PahWorkbenchShell.vue';
+import { pahNormalizeShellMode, pahResolveShellMode } from '/@/phoenix/PahShellMode';
 import Topbar from './components/topbar.vue';
 import Slider from './components/slider.vue';
 import Process from './components/process.vue';
