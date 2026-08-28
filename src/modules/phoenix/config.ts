@@ -6,6 +6,22 @@ export default (): ModuleConfig => {
 		order: 80,
 		views: [
 			{
+				path: '/phoenix/branding',
+				meta: {
+					label: '工作台品牌',
+					keepAlive: true
+				},
+				component: () => import('./views/branding.vue')
+			},
+			{
+				path: '/phoenix/dictionary-maintenance',
+				meta: {
+					label: '字典维护',
+					keepAlive: true
+				},
+				component: () => import('./views/dictionary-maintenance.vue')
+			},
+			{
 				path: '/phoenix/identity',
 				meta: {
 					label: '外部身份审查',
@@ -28,6 +44,14 @@ export default (): ModuleConfig => {
 					keepAlive: true
 				},
 				component: () => import('./views/plugins.vue')
+			},
+			{
+				path: '/phoenix/maintenance',
+				meta: {
+					label: '系统维护',
+					keepAlive: true
+				},
+				component: () => import('./views/maintenance.vue')
 			}
 		]
 	};

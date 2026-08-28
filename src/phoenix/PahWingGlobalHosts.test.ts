@@ -24,7 +24,7 @@ describe('PahWingGlobalHosts', () => {
 			'utf8'
 		);
 
-		expect(appSource.match(/<pah-wing-global-hosts\s/gu)).toHaveLength(1);
+		expect(appSource.match(/<(?:PahWingGlobalHosts|pah-wing-global-hosts)\s/gu)).toHaveLength(1);
 		expect(hostsSource.match(/<pnw-choice-dialog-host\s*\/>/gu)).toHaveLength(1);
 		expect(appSource).toContain('pnwCreateViewDialogHost');
 		expect(appSource).toContain('pnwProvideViewDialogHost');

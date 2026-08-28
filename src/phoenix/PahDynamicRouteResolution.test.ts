@@ -3,6 +3,8 @@ import type { RouteRecordRaw } from 'vue-router';
 import {
 	coolFindNotFoundRoute,
 	coolIsCatchAllRoute,
+	coolNotFoundLocation,
+	coolReadableNotFoundPath,
 	coolResolveDynamicRouteWithRefresh
 } from '/@/cool/router/resolve';
 
@@ -18,6 +20,17 @@ describe('Pah dynamic route resolution', () => {
 
 		expect(coolFindNotFoundRoute('/missing', [catchAll])).toBeUndefined();
 		expect(coolFindNotFoundRoute('/404', [catchAll])).toBe(catchAll);
+	});
+
+	it('404 只保留净化后的请求 path，不携带 query 或外部 URL', () => {
+		expect(coolNotFoundLocation('/pah/dictionary-maintenance?token=secret')).toEqual({
+			path: '/404',
+			query: { from: '/pah/dictionary-maintenance' },
+			replace: true
+		});
+		expect(coolReadableNotFoundPath(['/missing', '/ignored'])).toBe('/missing');
+		expect(coolReadableNotFoundPath('https://example.com/path')).toBe('');
+		expect(coolReadableNotFoundPath('//example.com/path')).toBe('');
 	});
 
 	it('冷深链只刷新一次权限菜单后重新匹配动态路由', async () => {

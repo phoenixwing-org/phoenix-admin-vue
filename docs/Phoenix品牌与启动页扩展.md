@@ -13,8 +13,8 @@
 该类型是 Phoenix Admin Host 的站点级扩展，不是普通业务插件，也不替换
 Cool/Phoenix 的认证、权限或路由安全逻辑。本轮 Host 公共契约只处理登录前公开品牌壳：
 HTML 解析、初始加载层、登录页、登录 Logo/背景/公开文案、应用名称、浏览器标题与
-favicon。登录后的首页、工作台 Logo 与业务视图仍是普通插件 route/runtime 贡献，不进入
-公开登录快照。
+favicon。v2 另包含登录后工作台左上品牌区所需的公开 Logo、主标题和副标题；登录后的首页、
+导航、权限与业务视图仍是普通插件 route/runtime 贡献，不进入品牌快照。
 
 ## 管理规则
 
@@ -35,6 +35,10 @@ Public Login Branding Snapshot v1 允许贡献：
 - 包内、同源、带 SHA-256/MIME/size 的 Logo、紧凑 Logo、favicon 和可选背景；
 - 应用名称和精确含一个 `%s` 的 title 模板。
 
+v2 在 v1 基础上增加严格白名单的 `workbench` 字段，只承载紧凑 Logo、主标题和
+`web-origin | text` 副标题。Host 在 Vue mount 前读取同一份静态快照；工作台路由切换期间不查询
+数据库。
+
 禁止贡献：
 
 - 用户名、密码、验证码、OAuth callback、Token 存储或权限判断；
@@ -50,8 +54,8 @@ Public Login Branding Snapshot v1 允许贡献：
   背景资源、登录后普通插件路由以及产品侧安全契约测试，供插件开发者参考。
 - Host 不复制该仓源码，也不把它作为 submodule、npm 依赖或运行时真源；安装后的
   manifest 与已校验制品才是插件输入。
-- “Public Login Branding Snapshot”只投影登录前公开品牌壳。示例仓中的登录后首页和
-  工作台贡献仍按普通插件 route/runtime 装配，不进入登录快照。
+- “Public Login Branding Snapshot”只投影公开品牌壳和工作台身份区。示例仓中的登录后首页、
+  导航与业务 UI 仍按普通插件 route/runtime 装配，不进入静态快照。
 
 ## 干净环境验证
 
@@ -91,6 +95,41 @@ Hub 的 “Phoenix Admin 干净验证”应覆盖：
 - 标题仅在路由确认成功后更新；取消、失败或登录重定向不能留下错误标题。
 
 验收覆盖 Host 默认与 Acme 模板的登录→首页、普通页面切换，以及缺失/异常 label 回退。
+
+## 工作台品牌快照 v2
+
+后台 `/phoenix/branding` 提供三项配置：工作台紧凑 Logo、主标题和副标题。数据库保存 Host
+默认源配置与活动插件
+选择；Node 在保存、恢复默认、选择/升级/停用/卸载活动品牌、安全模式与启动对账时，编译并
+原子发布静态派生快照。Vue 已在 mount 前读取品牌 Store，工作台直接消费 Store，不再逐页查库。
+
+`schemaVersion=2` 快照字段为：
+
+```ts
+workbench: {
+  title: string;
+  subtitle: { mode: 'web-origin' | 'text'; text?: string };
+  logo: AssetDescriptor;
+  logoDark: AssetDescriptor;
+}
+```
+
+插件 manifest 的 v2 贡献使用 `logoVariant: 'compact'`，由 Host 从已验证的 compact
+Logo 收据编译为上述两个静态资源描述符。
+
+- 默认 Logo 复用 Host Phoenix compact SVG；主标题为 `Phoenix Admin`。
+- 副标题默认 `web-origin`，浏览器显示当前 `window.location.origin`；也可选择 `text` 并输入
+  严格长度/控制字符校验后的文字。不得把固定开发端口、内部 API 地址或密钥写进公开快照。
+- 活动品牌插件必须整套覆盖 Logo、主标题、副标题，禁止形成“插件 Logo + Host 标题”的半套品牌。
+- 优先级：有效活动品牌插件 → 数据库 Host 默认配置 → 内置 Phoenix Admin 默认。
+- Logo 仍使用包内或 Host 内容寻址资源描述符（SHA-256/MIME/size），禁止数据库 SVG 原文、
+  任意 HTML/CSS/JS、外链 URL 与 MutationObserver 生产投影。
+- v1 插件继续按 appName、compact Logo 与登录副标题兼容投影；新制品应显式声明
+  `contractVersion: 2` 与 `uiContributions.workbench`，避免从登录文案推导工作台信息。
+- Host 默认配置保存在 `base_sys_param`，SVG 仅以内容寻址静态资源落盘，数据库不保存 SVG
+  原文。保存接口使用 revision CAS；配置冲突会要求刷新，不覆盖其他管理员的新值。
+- 后台接口固定为 `/admin/phoenix/plugin/workbench-branding/{status,save,reset}`；只有 Host
+  管理员可调用。上传只接受 1B～256KiB 的无脚本、无事件处理器、无外链 SVG。
 
 ## Host 传输与落盘
 

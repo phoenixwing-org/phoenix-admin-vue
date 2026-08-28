@@ -6,6 +6,7 @@ const html = read('../../index.html');
 const login = read('../modules/base/pages/login/index.vue');
 const bootstrap = read('../cool/bootstrap/index.ts');
 const router = read('../cool/router/index.ts');
+const workbench = read('./PahWorkbenchShell.vue');
 
 describe('Public Login Branding 首帧装配', () => {
 	it('在 Vue module 之前同步加载公开快照并在品牌落盘前隐藏 body', () => {
@@ -35,6 +36,15 @@ describe('Public Login Branding 首帧装配', () => {
 		const modules = bootstrap.indexOf('createModule(app)');
 		expect(initialize).toBeGreaterThan(0);
 		expect(initialize).toBeLessThan(modules);
+	});
+
+	it('工作台左上品牌只消费 mount 前快照投影且不保留硬编码 Phoenix 标记', () => {
+		expect(workbench).toContain(':brand-title="workbenchBrand.title"');
+		expect(workbench).toContain(':brand-subtitle="workbenchBrand.subtitle"');
+		expect(workbench).toContain(':src="workbenchBrandLogo.url"');
+		expect(workbench).toContain('usePahPublicLoginBrandStore()');
+		expect(workbench).not.toContain('brand-title="Phoenix Admin"');
+		expect(workbench).not.toContain('<PnwPhoenixWingMark');
 	});
 
 	it('显式 reauth 在 Vue module 前只清理认证状态，普通登录跳转保持原规则', () => {

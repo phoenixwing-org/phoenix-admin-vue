@@ -7,6 +7,7 @@ import {
 	type RouteRecordRaw
 } from 'vue-router';
 import { type Router, storage, module } from '/@/cool';
+import type { Component } from 'vue';
 import { isArray } from 'lodash-es';
 import { useBase } from '/$/base';
 import { Loading } from '../utils';
@@ -14,16 +15,19 @@ import { config, isDev } from '/@/config';
 import {
 	coolFindNotFoundRoute,
 	coolIsCatchAllRoute,
+	coolNotFoundLocation,
 	coolResolveDynamicRouteWithRefresh
 } from './resolve';
-import { coolWrapRouteViewLoader } from './view';
+import { coolWrapRouteView, coolWrapRouteViewLoader } from './view';
 import { usePahPublicLoginBrandStore } from '/@/phoenix/PahPublicLoginBrandStore';
 import { applyPahRouteDocumentTitle } from '/@/phoenix/PahRouteDocumentTitle';
-import {
-	phoenixCanonicalHostRoute,
-	phoenixCanonicalHostViewPath
-} from '/@/phoenix/PhoenixHostRouteCompat';
+import { phoenixCanonicalHostRoute } from '/@/phoenix/PhoenixHostRouteCompat';
 import phoenixPluginRouteFiles from 'virtual:phoenix-admin-plugin-routes';
+import {
+	pahWrapPhoenixPluginRouteView,
+	pahWrapPhoenixPluginRouteViewLoader
+} from '/@/phoenix/PahPluginViewPresentation';
+import { pahPhoenixPluginRouteModuleId } from '/@/phoenix/PahPluginViewPresentationPolicy';
 
 // 基本路径
 const baseUrl = import.meta.env.BASE_URL;
@@ -105,10 +109,39 @@ router.append = function (routeData) {
 			route.meta = {}; // 初始化 meta 对象
 		}
 
+		const viewPath = route.viewPath;
+		const pluginModuleId =
+			(typeof route.meta.phoenixPluginModuleId === 'string'
+				? route.meta.phoenixPluginModuleId
+				: undefined) ||
+			(viewPath
+				? pahPhoenixPluginRouteModuleId(viewPath, phoenixPluginRouteFiles)
+				: undefined);
+		const pluginViewPath = viewPath || `${pluginModuleId || 'unknown'}:${route.path}`;
+
+		if (pluginModuleId && !route.isPage) {
+			route.meta.phoenixPluginModuleId = pluginModuleId;
+			if (route.component) {
+				const component = route.component;
+				route.component =
+					typeof component === 'function'
+						? pahWrapPhoenixPluginRouteViewLoader(
+								component as () => Promise<unknown>,
+								pluginModuleId,
+								pluginViewPath
+							)
+						: coolWrapRouteView(
+								pahWrapPhoenixPluginRouteView(
+									component as Component,
+									pluginModuleId,
+									pluginViewPath
+								)
+							);
+			}
+		}
+
 		// 如果没有指定组件路径
 		if (!route.component) {
-			const viewPath = phoenixCanonicalHostViewPath(route.viewPath);
-
 			if (viewPath) {
 				if (viewPath.startsWith('http')) {
 					// 如果是外部链接，使用 iframe 组件
@@ -117,7 +150,11 @@ router.append = function (routeData) {
 				} else {
 					// 从文件系统中动态导入组件
 					const loader = files['/src/' + viewPath.replace('cool/', '')];
-					route.component = loader ? coolWrapRouteViewLoader(loader) : undefined;
+					route.component = loader
+						? pluginModuleId
+							? pahWrapPhoenixPluginRouteViewLoader(loader, pluginModuleId, viewPath)
+							: coolWrapRouteViewLoader(loader)
+						: undefined;
 				}
 			} else if (!route.redirect) {
 				// 如果没有组件路径且没有重定向，默认重定向到 404
@@ -247,7 +284,7 @@ router.beforeEach(async (to, from, next) => {
 
 	// 如果路由不存在
 	if (!route) {
-		next(user.token ? '/404' : '/login'); // 根据用户登录状态重定向
+		next(user.token ? coolNotFoundLocation(to.path) : '/login'); // 根据用户登录状态重定向
 		return;
 	}
 

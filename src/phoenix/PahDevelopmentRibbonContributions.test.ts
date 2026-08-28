@@ -78,6 +78,22 @@ describe('PahDevelopmentRibbonContributions', () => {
 				'plugin:example-plugin:example-plugin-tasks'
 			]
 		});
+		expect(projection.modules).toEqual([
+			{
+				targetKey: 'plugin:example-plugin:example-plugin-foundation',
+				moduleId: 'example-plugin',
+				label: '基础资料',
+				preferredGroupLabel: '业务',
+				lifecycle: 'development-mounted'
+			},
+			{
+				targetKey: 'plugin:example-plugin:example-plugin-tasks',
+				moduleId: 'example-plugin',
+				label: '业务任务',
+				preferredGroupLabel: '业务',
+				lifecycle: 'development-mounted'
+			}
+		]);
 	});
 
 	it('正式环境和禁用模块均不暴露开发 Ribbon', () => {

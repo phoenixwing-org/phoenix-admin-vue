@@ -21,13 +21,13 @@
 			:page-icon="workbenchPageIcon"
 			:editor-maximized="app.isFull"
 			:locale="workbenchLocale"
-			:can-refresh-active-tab="Boolean(activeProcessTabId)"
+			:can-refresh-active-tab="Boolean(activeProcessTabId) && !hasFloatingViewPresentation"
 			:can-close-other-tabs="Boolean(activeProcessTabId) && workbenchTabs.length > 1"
 			:can-close-all-tabs="workbenchTabs.length > 0"
-			brand-title="Phoenix Admin"
-			:brand-subtitle="currentTitle"
-			header-aria-label="Phoenix Admin 工作台页眉"
-			activity-aria-label="Phoenix Admin 全局导航"
+			:brand-title="workbenchBrand.title"
+			:brand-subtitle="workbenchBrand.subtitle"
+			:header-aria-label="`${workbenchBrand.title} 工作台页眉`"
+			:activity-aria-label="`${workbenchBrand.title} 全局导航`"
 			tree-header-label="功能目录"
 			@activate="activateNavigationNode"
 			@select-module="selectNavigationRoot"
@@ -53,11 +53,20 @@
 			@display-settings-action="handleDisplaySettingsAction"
 		>
 			<template #brand>
-				<button type="button" class="pah-brand" title="Phoenix Admin 首页" @click="goHome">
-					<PnwPhoenixWingMark class="pah-brand__mark" decorative />
+				<button
+					type="button"
+					class="pah-brand"
+					:title="`${workbenchBrand.title} 首页`"
+					@click="goHome"
+				>
+					<img
+						class="pah-brand__mark"
+						:src="workbenchBrandLogo.url"
+						:alt="`${workbenchBrand.title} Logo`"
+					/>
 					<span>
-						<strong>Phoenix Admin</strong>
-						<small>{{ currentTitle }}</small>
+						<strong>{{ workbenchBrand.title }}</strong>
+						<small>{{ workbenchBrand.subtitle }}</small>
 					</span>
 				</button>
 			</template>
@@ -97,7 +106,10 @@
 
 			<template #footer>
 				<div class="pah-footer-context">
-					<span>Phoenix Admin · {{ presentationLabel }} · {{ configuredMode }}</span>
+					<span
+						>{{ workbenchBrand.title }} · {{ presentationLabel }} ·
+						{{ configuredMode }}</span
+					>
 					<nav v-if="footerBreadcrumb.length" aria-label="当前路径">
 						<template v-for="(item, index) in footerBreadcrumb" :key="item.id">
 							<b v-if="index > 0" aria-hidden="true">/</b>
@@ -130,7 +142,6 @@ import {
 import { storeToRefs } from 'pinia';
 import { isFunction, last, orderBy } from 'lodash-es';
 import {
-	PnwPhoenixWingMark,
 	PnwWorkbenchShell as PnwWorkbenchShellLayout,
 	pnwApplyColorScheme,
 	pnwCreateOutputBuffer,
@@ -181,6 +192,11 @@ import {
 	pahNormalizeWorkbenchPreferences
 } from './PahWorkbenchPreferences';
 import { usePahGroupedNavigationStore } from './PahGroupedNavigationStore';
+import { usePahPublicLoginBrandStore } from './PahPublicLoginBrandStore';
+import {
+	pahResolveWorkbenchBrand,
+	pahWorkbenchBrandLogo as resolveBrandLogo
+} from './PahWorkbenchBrand';
 import {
 	pahViewContributionRegistry,
 	type PahViewBlockComponentContributions
@@ -191,6 +207,10 @@ import { pahCreateWorkbenchOutput, pahProvideWorkbenchOutput } from './PahWorkbe
 import { usePahWorkbenchThemeBridge } from './PahWorkbenchThemeBridge';
 import { pahWorkbenchLocale } from './PahWorkbenchLocale';
 import { pahProcessEntriesAfterCloseOthers } from './PahWorkbenchProcessActions';
+import {
+	pahFocusFloatingViewPresentation,
+	pahHasFloatingViewPresentations
+} from './PahViewPresentationCoordinator';
 
 const props = defineProps<{
 	configuredMode: PahShellMode;
@@ -221,6 +241,7 @@ const themeStore = useTheme();
 const { isDark: coolIsDark } = storeToRefs(themeStore);
 const systemThemeMedia = window.matchMedia('(prefers-color-scheme: dark)');
 const systemPrefersDark = ref(systemThemeMedia.matches);
+const publicLoginBrandStore = usePahPublicLoginBrandStore();
 const preferredColorScheme = computed<PnwColorScheme>({
 	get: () => displayPreferences.value.colorScheme,
 	set: colorScheme => updateDisplayPreference('colorScheme', colorScheme)
@@ -235,13 +256,19 @@ const { colorScheme: workbenchColorScheme, updateFromWorkbench } = usePahWorkben
 		pnwApplyColorScheme(colorScheme);
 	}
 });
+const workbenchBrand = computed(() =>
+	pahResolveWorkbenchBrand(publicLoginBrandStore.current, window.location.origin)
+);
+const workbenchBrandLogo = computed(() =>
+	resolveBrandLogo(workbenchBrand.value, workbenchColorScheme.value)
+);
 const groupedNavigation = usePahGroupedNavigationStore();
 const navigationResponse = ref<NavigationResponse | null>(null);
 const browsedNavigationRootId = ref('');
 const activeBottomTabId = ref('output');
 const workbenchOutputBuffer = pnwCreateOutputBuffer({
 	maxCharacters: 200_000,
-	initialText: '[Runtime] Phoenix Admin 工作台已就绪\n'
+	initialText: `[Runtime] ${workbenchBrand.value.title} 工作台已就绪\n`
 });
 const workbenchOutputSnapshot = shallowRef(workbenchOutputBuffer.getSnapshot());
 const unsubscribeWorkbenchOutput = workbenchOutputBuffer.subscribe(snapshot => {
@@ -340,6 +367,7 @@ const workbenchTabs = computed(() =>
 	}))
 );
 const activeProcessTabId = computed(() => process.list.find(item => item.active)?.path || '');
+const hasFloatingViewPresentation = computed(() => pahHasFloatingViewPresentations());
 const workbenchLocale = computed(() => pahWorkbenchLocale(config.i18n.locale));
 const activeViewId = computed(() => activeProcessTabId.value || route.path);
 const registeredViewBlocks = usePnwRegisteredViewContribution(
@@ -348,11 +376,6 @@ const registeredViewBlocks = usePnwRegisteredViewContribution(
 	EMPTY_VIEW_BLOCKS
 );
 const activeViewBlocks = computed(() => pahWorkbenchSideBlocks(registeredViewBlocks.value));
-const currentTitle = computed(
-	() =>
-		process.list.find(item => item.active)?.meta?.label ||
-		String(route.meta?.label || route.name || 'Host 工作台')
-);
 const footerBreadcrumb = computed(() => pahFindRouteMenuTrail(menu.group, routeTemplatePath.value));
 const presentationLabel = computed(() =>
 	displayPreferences.value.presentation === 'tree' ? '侧面目录树' : '顶部 Ribbon'
@@ -476,7 +499,9 @@ async function loadNavigationGroups() {
 
 function selectProcessTab(tabId: string) {
 	const item = process.list.find(entry => entry.path === tabId);
-	if (item) void router.push(item.fullPath);
+	if (!item) return;
+	if (pahFocusFloatingViewPresentation(item.pahPresentationViewId)) return;
+	void router.push(item.fullPath);
 }
 
 function navigateToProcessFallback() {
@@ -588,7 +613,9 @@ onBeforeUnmount(() => systemThemeMedia.removeEventListener('change', updateSyste
 	cursor: pointer;
 
 	&__mark {
-		--pnw-phoenix-wing-mark-size: 32px;
+		width: 32px;
+		height: 32px;
+		object-fit: contain;
 		filter: drop-shadow(0 3px 5px rgb(37 99 235 / 22%));
 	}
 

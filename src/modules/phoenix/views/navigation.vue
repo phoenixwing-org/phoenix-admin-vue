@@ -1,21 +1,19 @@
 <template>
-	<div class="pah-navigation-page">
-		<header class="hero">
-			<div>
-				<p class="eyebrow">PHOENIX ADMIN HOST</p>
-				<h1>导航分组管理</h1>
-				<p>
-					内置“管理、开发、业务”作为稳定默认值；可建立自定义分组，并将 Host
-					模块或已安装插件移动到任意分组。
-				</p>
-			</div>
+	<pnw-page-layout
+		class="pah-navigation-page"
+		title="导航分组管理"
+		:body-inset="true"
+		:body-scroll="true"
+	>
+		<template #actions>
 			<el-button :loading="loading" @click="load">刷新</el-button>
-		</header>
+		</template>
 
 		<section class="notice">
-			<strong>插件归属可恢复</strong>
+			<strong>导航分组说明</strong>
 			<span
-				>业务插件以稳定模块键绑定。停用、卸载后重新安装时，将自动回到管理员最后配置的分组。</span
+				>内置“管理、开发、业务”作为稳定默认值；Host
+				模块、已安装插件与健康的开发挂载都可移动到任意分组。业务插件以稳定模块键绑定，重新安装时会恢复管理员最后配置的分组。</span
 			>
 		</section>
 
@@ -65,7 +63,7 @@
 					<span>模块为空时不会显示该大分组；未归属模块将自动归入“其他模块”。</span>
 				</div>
 			</div>
-			<el-table :data="modules" stripe>
+			<el-table :data="visibleModules" stripe>
 				<el-table-column prop="label" label="模块" min-width="180">
 					<template #default="{ row }">
 						<strong>{{ row.label }}</strong>
@@ -106,7 +104,7 @@
 				<el-button type="primary" :loading="creating" @click="createGroup">创建</el-button>
 			</template>
 		</el-dialog>
-	</div>
+	</pnw-page-layout>
 </template>
 
 <script lang="ts" setup>
@@ -114,8 +112,10 @@ defineOptions({ name: 'pah-navigation-groups' });
 
 import { computed, markRaw, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { useCool } from '/@/cool';
+import { PnwPageLayout } from 'phoenix-wing';
+import { module, useCool } from '/@/cool';
 import PahPluginManagementPrimary from '/@/phoenix/PahPluginManagementPrimary.vue';
+import { pahProjectDevelopmentRibbonContributions } from '/@/phoenix/PahDevelopmentRibbonContributions';
 import { usePahViewContributions } from '/@/phoenix/PahViewContributions';
 
 type Group = {
@@ -141,6 +141,23 @@ const modules = ref<Module[]>([]);
 const drafts = reactive<Record<number, Pick<Group, 'label' | 'orderNum' | 'isEnabled'>>>({});
 const createForm = reactive({ label: '', orderNum: 100 });
 const enabledGroups = computed(() => groups.value.filter(group => group.isEnabled));
+const developmentModules = computed<Module[]>(() =>
+	pahProjectDevelopmentRibbonContributions(module.list, import.meta.env.DEV).modules.map(
+		(item, index) => ({
+			targetKey: item.targetKey,
+			menuId: -(900_000 + index),
+			label: item.label,
+			source: item.moduleId
+		})
+	)
+);
+const visibleModules = computed(() => {
+	const byTargetKey = new Map(modules.value.map(item => [item.targetKey, item]));
+	for (const item of developmentModules.value) {
+		if (!byTargetKey.has(item.targetKey)) byTargetKey.set(item.targetKey, item);
+	}
+	return Array.from(byTargetKey.values());
+});
 
 usePahViewContributions('/phoenix/navigation', {
 	primary: {
@@ -161,7 +178,8 @@ function draft(group: Group) {
 }
 
 function sourceLabel(source: string) {
-	return source === 'host' ? 'Phoenix Admin Host' : `插件 · ${source}`;
+	if (source === 'host') return 'Phoenix Admin Host';
+	return `插件或开发挂载 · ${source}`;
 }
 
 function assignmentFor(targetKey: string) {
@@ -276,45 +294,17 @@ onMounted(load);
 
 <style lang="scss" scoped>
 .pah-navigation-page {
-	min-height: 100%;
-	box-sizing: border-box;
-	padding: 28px;
-	overflow: auto;
 	color: var(--pnw-workbench-text, var(--el-text-color-primary));
-	background:
-		radial-gradient(
-			circle at 90% 0%,
-			color-mix(
-				in srgb,
-				var(--pnw-control-active-bg, var(--el-color-primary)) 12%,
-				transparent
-			),
-			transparent 32%
-		),
-		var(--pnw-workbench-bg, var(--el-bg-color-page));
 }
-.hero,
 .section-head {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 20px;
 }
-.hero h1,
 .section-head h2 {
 	margin: 4px 0 8px;
 }
-.hero h1 {
-	font-size: 30px;
-}
-.eyebrow {
-	margin: 0;
-	color: var(--pnw-workbench-muted, var(--el-text-color-secondary));
-	font-size: 12px;
-	font-weight: 700;
-	letter-spacing: 0.14em;
-}
-.hero p:last-child,
 .section-head span {
 	margin: 0;
 	color: var(--pnw-workbench-muted, var(--el-text-color-secondary));
@@ -377,7 +367,6 @@ onMounted(load);
 	.group-row {
 		grid-template-columns: 1fr 1fr;
 	}
-	.hero,
 	.section-head {
 		align-items: flex-start;
 		flex-direction: column;

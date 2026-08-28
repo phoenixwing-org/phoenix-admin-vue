@@ -38,8 +38,18 @@ interface PahDevelopmentRibbonDocument {
 
 export interface PahDevelopmentRibbonProjection {
 	tabs: PahRibbonTab[];
+	modules: PahDevelopmentRibbonModuleRegistration[];
 	targetKeysByGroupLabel: Record<string, string[]>;
 	issues: string[];
+}
+
+/** Host 启动时从健康开发挂载投影出的临时模块注册，不代表正式安装记录。 */
+export interface PahDevelopmentRibbonModuleRegistration {
+	targetKey: string;
+	moduleId: string;
+	label: string;
+	preferredGroupLabel: string;
+	lifecycle: 'development-mounted';
 }
 
 const PAH_DEVELOPMENT_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
@@ -149,6 +159,7 @@ export function pahProjectDevelopmentRibbonContributions(
 ): PahDevelopmentRibbonProjection {
 	const projection: PahDevelopmentRibbonProjection = {
 		tabs: [],
+		modules: [],
 		targetKeysByGroupLabel: {},
 		issues: []
 	};
@@ -211,6 +222,13 @@ export function pahProjectDevelopmentRibbonContributions(
 				icon: ribbonModule.icon,
 				targetKey,
 				groups
+			});
+			projection.modules.push({
+				targetKey,
+				moduleId: document.moduleId,
+				label: ribbonModule.label,
+				preferredGroupLabel: document.preferredGroupLabel,
+				lifecycle: 'development-mounted'
 			});
 			(projection.targetKeysByGroupLabel[document.preferredGroupLabel] ||= []).push(
 				targetKey

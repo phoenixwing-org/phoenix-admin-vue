@@ -33,6 +33,18 @@ function sha256(value) {
 	return createHash('sha256').update(value).digest('hex');
 }
 
+function canonicalJson(value) {
+	if (Array.isArray(value)) return `[${value.map(item => canonicalJson(item)).join(',')}]`;
+	if (value && typeof value === 'object') {
+		return `{${Object.entries(value)
+			.filter(([, item]) => item !== undefined)
+			.sort(([left], [right]) => left.localeCompare(right, 'en'))
+			.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
+			.join(',')}}`;
+	}
+	return JSON.stringify(value);
+}
+
 function inside(root, candidate) {
 	const relative = path.relative(root, candidate);
 	return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
@@ -73,6 +85,19 @@ function listFiles(root, relative = '') {
 		else if (current.isFile()) files.push(next);
 	}
 	return files;
+}
+
+function runtimeDigest(moduleRoot) {
+	const files = listFiles(moduleRoot).map(file => {
+		const absolute = path.join(moduleRoot, ...file.split('/'));
+		const current = lstatSync(absolute);
+		return { path: file, size: current.size, sha256: sha256(readFileSync(absolute)) };
+	});
+	return {
+		fileCount: files.length,
+		size: files.reduce((total, item) => total + item.size, 0),
+		sha256: sha256(canonicalJson(files))
+	};
 }
 
 function runtimeFiles(moduleRoot) {
@@ -205,6 +230,74 @@ function inspectDevelopmentPlugin(moduleId, modulePath) {
 	}
 }
 
+function inspectReleasePlugin(hostRoot, moduleId, modulePath) {
+	const failure = detail => ({ moduleId, state: 'quarantined', detail });
+	let receipt;
+	try {
+		receipt = JSON.parse(
+			readFileSync(
+				path.join(
+					hostRoot,
+					'.runtime',
+					'phoenix-plugin-activation',
+					'receipts',
+					`${moduleId}.json`
+				),
+				'utf8'
+			)
+		);
+	} catch {
+		return failure('正式 Web payload 缺少启动前可信 Host 激活收据，默认隔离');
+	}
+	const expected = receipt?.payloads?.vue;
+	if (
+		receipt?.formatVersion !== 1 ||
+		receipt?.moduleId !== moduleId ||
+		typeof receipt?.version !== 'string' ||
+		!receipt.version ||
+		(receipt.pluginType !== null && typeof receipt.pluginType !== 'string') ||
+		!/^[a-f0-9]{64}$/.test(receipt.packageSha256 || '') ||
+		!/^[a-f0-9]{64}$/.test(receipt.manifestSha256 || '') ||
+		!expected ||
+		!Number.isSafeInteger(expected.fileCount) ||
+		expected.fileCount < 1 ||
+		!Number.isSafeInteger(expected.size) ||
+		expected.size < 1 ||
+		!/^[a-f0-9]{64}$/.test(expected.sha256 || '')
+	) {
+		return failure('正式 Web payload 的 Host 激活收据无效');
+	}
+	try {
+		const actual = runtimeDigest(modulePath);
+		if (
+			actual.fileCount !== expected.fileCount ||
+			actual.size !== expected.size ||
+			actual.sha256 !== expected.sha256
+		) {
+			return failure('正式 Web payload 与 Host 激活收据不匹配');
+		}
+	} catch (error) {
+		return failure(
+			`正式 Web payload 无法验证：${error instanceof Error ? error.message : String(error)}`
+		);
+	}
+	if (!existsSync(path.join(modulePath, 'config.ts'))) {
+		return failure('正式 Web payload 缺少 config.ts');
+	}
+	const isBranding = receipt.pluginType === 'phoenix.admin.branding';
+	return {
+		moduleId,
+		state: 'inspected',
+		detail: `Host 激活收据已验证：${receipt.version}`,
+		pluginType: receipt.pluginType || undefined,
+		version: receipt.version,
+		webSource: modulePath,
+		runtimePolicy: isBranding ? 'route-only' : 'module-runtime',
+		runtimeFiles: isBranding ? [] : runtimeFiles(modulePath),
+		routeFiles: routeFiles(modulePath)
+	};
+}
+
 function atomicWrite(file, value) {
 	mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
 	const temporary = `${file}.${process.pid}.tmp`;
@@ -235,11 +328,7 @@ export function inspectPhoenixWebPlugins(options = {}) {
 		}
 		if (current.isSymbolicLink()) plugins.push(inspectDevelopmentPlugin(moduleId, modulePath));
 		else if (current.isDirectory()) {
-			plugins.push({
-				moduleId,
-				state: 'quarantined',
-				detail: '正式 Web payload 缺少启动前可信激活收据，默认隔离'
-			});
+			plugins.push(inspectReleasePlugin(hostRoot, moduleId, modulePath));
 		}
 	}
 	const branding = plugins.filter(

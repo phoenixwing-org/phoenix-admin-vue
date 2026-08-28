@@ -24,7 +24,7 @@
 						size: 1569
 					});
 					const snapshot = Object.freeze({
-						schemaVersion: 1,
+						schemaVersion: 2,
 						revision:
 							'0000000000000000000000000000000000000000000000000000000000000000',
 						mode: 'host-default',
@@ -45,6 +45,12 @@
 							logoDark: mark,
 							compactLogo: mark,
 							compactLogoDark: mark
+						}),
+						workbench: Object.freeze({
+							title: 'Phoenix Admin',
+							subtitle: Object.freeze({ mode: 'web-origin' }),
+							logo: mark,
+							logoDark: mark
 						})
 					});
 					Object.defineProperty(window, '__PAH_PUBLIC_LOGIN_BRANDING__', {

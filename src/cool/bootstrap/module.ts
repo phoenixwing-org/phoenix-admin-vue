@@ -5,6 +5,7 @@ import { module } from '../module';
 import { hmr } from '../hooks';
 import { config } from '/@/config';
 import phoenixPluginRuntimeLoaders from 'virtual:phoenix-admin-plugin-runtime';
+import { pahMarkPhoenixPluginModuleRoutes } from '/@/phoenix/PahPluginViewPresentationPolicy';
 
 // 扫描文件
 const files = import.meta.glob(
@@ -114,6 +115,11 @@ export function createModule(app: App) {
 
 		if (d) {
 			assign(e, d);
+		}
+
+		const phoenixPluginModuleId = phoenixPluginModules.get(e);
+		if (phoenixPluginModuleId) {
+			pahMarkPhoenixPluginModuleRoutes(e, phoenixPluginModuleId);
 		}
 
 		if (!d.order) {

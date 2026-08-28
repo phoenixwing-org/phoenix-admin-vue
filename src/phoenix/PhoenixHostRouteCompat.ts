@@ -5,17 +5,9 @@
  */
 const legacyRoutes: Readonly<Record<string, string>> = Object.freeze({
 	'/pah/identity': '/phoenix/identity',
-	'/pah/navigation': '/phoenix/navigation',
-	'/pah/dictionary-maintenance': '/phoenix/dictionary-maintenance'
+	'/pah/navigation': '/phoenix/navigation'
 });
 
 export function phoenixCanonicalHostRoute(path: string): string {
 	return legacyRoutes[path] || path;
-}
-
-/** 兼容旧数据库菜单中的 viewPath；不改写任意外部插件 viewPath。 */
-export function phoenixCanonicalHostViewPath(viewPath: string): string {
-	return viewPath === 'modules/pah/views/dictionary-maintenance.vue'
-		? 'modules/phoenix/views/dictionary-maintenance.vue'
-		: viewPath;
 }

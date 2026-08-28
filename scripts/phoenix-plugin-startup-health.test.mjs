@@ -1,5 +1,15 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import {
+	lstatSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	readdirSync,
+	rmSync,
+	symlinkSync,
+	writeFileSync
+} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -9,6 +19,61 @@ import {
 } from './phoenix-plugin-startup-health.mjs';
 
 const roots = [];
+
+function sha256(value) {
+	return createHash('sha256').update(value).digest('hex');
+}
+
+function canonicalJson(value) {
+	if (Array.isArray(value)) return `[${value.map(item => canonicalJson(item)).join(',')}]`;
+	if (value && typeof value === 'object') {
+		return `{${Object.entries(value)
+			.filter(([, item]) => item !== undefined)
+			.sort(([left], [right]) => left.localeCompare(right, 'en'))
+			.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
+			.join(',')}}`;
+	}
+	return JSON.stringify(value);
+}
+
+function payloadFiles(root, relative = '') {
+	const files = [];
+	for (const name of readdirSync(path.join(root, relative)).sort((left, right) =>
+		left.localeCompare(right, 'en')
+	)) {
+		const next = relative ? `${relative}/${name}` : name;
+		const absolute = path.join(root, next);
+		const current = lstatSync(absolute);
+		if (current.isDirectory()) files.push(...payloadFiles(root, next));
+		else if (current.isFile()) {
+			files.push({ path: next, size: current.size, sha256: sha256(readFileSync(absolute)) });
+		}
+	}
+	return files;
+}
+
+function activateRelease(host, moduleId, moduleRoot, pluginType = null) {
+	const files = payloadFiles(moduleRoot);
+	const digest = {
+		fileCount: files.length,
+		size: files.reduce((total, item) => total + item.size, 0),
+		sha256: sha256(canonicalJson(files))
+	};
+	const directory = path.join(host, '.runtime', 'phoenix-plugin-activation', 'receipts');
+	mkdirSync(directory, { recursive: true });
+	writeFileSync(
+		path.join(directory, `${moduleId}.json`),
+		JSON.stringify({
+			formatVersion: 1,
+			moduleId,
+			version: '1.0.0',
+			pluginType,
+			packageSha256: 'a'.repeat(64),
+			manifestSha256: sha256(moduleId),
+			payloads: { node: digest, vue: digest }
+		})
+	);
+}
 
 function fixture({ branding = false, dirty = false } = {}) {
 	const root = mkdtempSync(path.join(os.tmpdir(), 'phoenix-web-plugin-'));
@@ -153,6 +218,57 @@ describe('Phoenix Web 插件启动点检', () => {
 		expect(release.plugins[0]).toMatchObject({ state: 'quarantined' });
 	});
 
+	it('正式 Web payload 仅在激活收据与当前字节一致时生成动态入口', () => {
+		const root = mkdtempSync(path.join(os.tmpdir(), 'phoenix-web-release-'));
+		roots.push(root);
+		const host = path.join(root, 'host');
+		const moduleId = 'release-plugin';
+		const moduleRoot = path.join(host, 'src', 'modules', moduleId);
+		mkdirSync(path.join(moduleRoot, 'views'), { recursive: true });
+		writeFileSync(path.join(moduleRoot, 'config.ts'), 'export default () => ({});\n');
+		writeFileSync(
+			path.join(moduleRoot, 'views', 'home.vue'),
+			'<template><div>release</div></template>\n'
+		);
+		activateRelease(host, moduleId, moduleRoot);
+
+		const ready = inspectPhoenixWebPlugins({ hostRoot: host });
+		expect(ready.plugins[0]).toMatchObject({ state: 'inspected', moduleId });
+		expect(phoenixPluginVirtualModules(ready).runtime).toContain(moduleId);
+
+		writeFileSync(
+			path.join(moduleRoot, 'config.ts'),
+			'export default () => ({ tampered: true });\n'
+		);
+		const tampered = inspectPhoenixWebPlugins({ hostRoot: host });
+		expect(tampered.plugins[0]).toMatchObject({ state: 'quarantined' });
+		expect(phoenixPluginVirtualModules(tampered).runtime).not.toContain(moduleId);
+	});
+
+	it('正式品牌收据只开放登录后 route，不执行插件全局 runtime', () => {
+		const root = mkdtempSync(path.join(os.tmpdir(), 'phoenix-web-brand-release-'));
+		roots.push(root);
+		const host = path.join(root, 'host');
+		const moduleId = 'release-branding';
+		const moduleRoot = path.join(host, 'src', 'modules', moduleId);
+		mkdirSync(path.join(moduleRoot, 'views'), { recursive: true });
+		writeFileSync(path.join(moduleRoot, 'config.ts'), 'export default () => ({});\n');
+		writeFileSync(
+			path.join(moduleRoot, 'views', 'home.vue'),
+			'<template><div>brand home</div></template>\n'
+		);
+		activateRelease(host, moduleId, moduleRoot, 'phoenix.admin.branding');
+
+		const report = inspectPhoenixWebPlugins({ hostRoot: host });
+		expect(report.plugins[0]).toMatchObject({
+			state: 'inspected',
+			runtimePolicy: 'route-only'
+		});
+		const virtual = phoenixPluginVirtualModules(report);
+		expect(virtual.runtime).not.toContain(moduleId);
+		expect(virtual.routes).toContain(moduleId);
+	});
+
 	it('扫描期间卸载模块时只隔离该模块，不阻断纯 Host 启动', () => {
 		const root = mkdtempSync(path.join(os.tmpdir(), 'phoenix-web-race-'));
 		roots.push(root);
@@ -161,7 +277,8 @@ describe('Phoenix Web 插件启动点检', () => {
 		const report = inspectPhoenixWebPlugins({
 			hostRoot: root,
 			beforeInspectModule({ moduleId }) {
-				if (moduleId === 'racing-plugin') rmSync(modulePath, { recursive: true, force: true });
+				if (moduleId === 'racing-plugin')
+					rmSync(modulePath, { recursive: true, force: true });
 			}
 		});
 		expect(report).toMatchObject({

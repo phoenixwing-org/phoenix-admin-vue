@@ -1,8 +1,5 @@
 import type { RouteLocationNormalized } from 'vue-router';
-import {
-	pahPublicLoginTitle,
-	type PahPublicLoginBrandingSnapshotV1
-} from './PahPublicLoginBranding';
+import { pahPublicLoginTitle, type PahPublicLoginBrandingSnapshot } from './PahPublicLoginBranding';
 
 const MAX_ROUTE_LABEL_LENGTH = 80;
 
@@ -29,7 +26,7 @@ export interface PahDocumentTitleTarget {
  */
 export function pahRouteDocumentTitle(
 	route: PahRouteTitleInput,
-	snapshot: PahPublicLoginBrandingSnapshotV1
+	snapshot: PahPublicLoginBrandingSnapshot
 ) {
 	const path = normalizedPath(route.path);
 
@@ -47,7 +44,7 @@ export function pahRouteDocumentTitle(
 
 export function applyPahRouteDocumentTitle(
 	route: PahRouteTitleInput,
-	snapshot: PahPublicLoginBrandingSnapshotV1,
+	snapshot: PahPublicLoginBrandingSnapshot,
 	target: PahDocumentTitleTarget = document
 ) {
 	target.title = pahRouteDocumentTitle(route, snapshot);

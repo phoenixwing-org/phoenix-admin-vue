@@ -41,6 +41,8 @@ declare namespace Process {
 		name: string;
 		path: string;
 		fullPath: string;
+		/** Host 生成的匿名 View presentation 身份，不含 route query。 */
+		pahPresentationViewId?: string;
 		meta: {
 			label: string;
 			[key: string]: any;

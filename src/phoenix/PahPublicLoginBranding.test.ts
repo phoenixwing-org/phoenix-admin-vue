@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
 	isPahPublicLoginBrandingSnapshot,
 	pahPublicLoginTitle,
-	type PahPublicLoginBrandingSnapshotV1
+	type PahPublicLoginBrandingSnapshotV1,
+	type PahPublicLoginBrandingSnapshotV2
 } from './PahPublicLoginBranding';
 
 function snapshot(): PahPublicLoginBrandingSnapshotV1 {
@@ -40,6 +41,20 @@ function snapshot(): PahPublicLoginBrandingSnapshotV1 {
 	};
 }
 
+function snapshotV2(): PahPublicLoginBrandingSnapshotV2 {
+	const legacy = snapshot();
+	return {
+		...legacy,
+		schemaVersion: 2,
+		workbench: {
+			title: 'Acme Workspace',
+			subtitle: { mode: 'text', text: '统一工作区' },
+			logo: legacy.assets.compactLogo,
+			logoDark: legacy.assets.compactLogoDark
+		}
+	};
+}
+
 describe('Public Login Branding 浏览器契约', () => {
 	it('接受严格白名单的同源哈希资源并生成品牌标题', () => {
 		const value = snapshot();
@@ -64,6 +79,18 @@ describe('Public Login Branding 浏览器契约', () => {
 		expect(isPahPublicLoginBrandingSnapshot(wrongDigestPath)).toBe(false);
 
 		const extra = { ...snapshot(), html: '<h1>unsafe</h1>' };
+		expect(isPahPublicLoginBrandingSnapshot(extra)).toBe(false);
+	});
+
+	it('接受严格工作台字段的 v2，并拒绝缺失或额外字段', () => {
+		expect(isPahPublicLoginBrandingSnapshot(snapshotV2())).toBe(true);
+
+		const missing = snapshotV2() as any;
+		delete missing.workbench.logo;
+		expect(isPahPublicLoginBrandingSnapshot(missing)).toBe(false);
+
+		const extra = snapshotV2() as any;
+		extra.workbench.html = '<strong>unsafe</strong>';
 		expect(isPahPublicLoginBrandingSnapshot(extra)).toBe(false);
 	});
 });

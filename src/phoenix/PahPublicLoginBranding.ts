@@ -1,4 +1,4 @@
-export const PAH_PUBLIC_LOGIN_BRANDING_SCHEMA_VERSION = 1 as const;
+export const PAH_PUBLIC_LOGIN_BRANDING_SCHEMA_VERSION = 2 as const;
 
 export type PahPublicLoginBrandingPresentation = 'split' | 'centered' | 'hero-image';
 
@@ -37,9 +37,24 @@ export interface PahPublicLoginBrandingSnapshotV1 {
 	};
 }
 
+export interface PahPublicLoginBrandingSnapshotV2
+	extends Omit<PahPublicLoginBrandingSnapshotV1, 'schemaVersion'> {
+	schemaVersion: 2;
+	workbench: {
+		title: string;
+		subtitle: { mode: 'web-origin' } | { mode: 'text'; text: string };
+		logo: PahPublicLoginBrandingSnapshotAssetV1;
+		logoDark: PahPublicLoginBrandingSnapshotAssetV1;
+	};
+}
+
+export type PahPublicLoginBrandingSnapshot =
+	| PahPublicLoginBrandingSnapshotV1
+	| PahPublicLoginBrandingSnapshotV2;
+
 declare global {
 	interface Window {
-		readonly __PAH_PUBLIC_LOGIN_BRANDING__?: PahPublicLoginBrandingSnapshotV1;
+		readonly __PAH_PUBLIC_LOGIN_BRANDING__?: PahPublicLoginBrandingSnapshot;
 	}
 }
 
@@ -78,7 +93,7 @@ function validAsset(
 		url.length <= 300 &&
 		!url.includes('\\') &&
 		!url.includes('..') &&
-		!(/^(?:[a-z]+:)?\/\//i.test(url)) &&
+		!/^(?:[a-z]+:)?\/\//i.test(url) &&
 		typeof value.sha256 === 'string' &&
 		/^[a-f0-9]{64}$/.test(value.sha256) &&
 		(!requireContentAddressed || url.includes(`/assets/${value.sha256}/`)) &&
@@ -92,14 +107,23 @@ function validAsset(
 
 export function isPahPublicLoginBrandingSnapshot(
 	value: unknown
-): value is PahPublicLoginBrandingSnapshotV1 {
+): value is PahPublicLoginBrandingSnapshot {
 	if (!record(value) || !record(value.login) || !record(value.assets)) return false;
 	if (
 		Object.keys(value).some(
 			key =>
-				!['schemaVersion', 'revision', 'mode', 'plugin', 'appName', 'titleTemplate', 'favicon', 'login', 'assets'].includes(
-					key
-				)
+				![
+					'schemaVersion',
+					'revision',
+					'mode',
+					'plugin',
+					'appName',
+					'titleTemplate',
+					'favicon',
+					'login',
+					'assets',
+					'workbench'
+				].includes(key)
 		)
 	) {
 		return false;
@@ -110,14 +134,16 @@ export function isPahPublicLoginBrandingSnapshot(
 		value.mode === 'host-default'
 			? value.plugin === null
 			: record(value.plugin) &&
-				Object.keys(value.plugin).every(key => ['moduleId', 'version', 'packageSha256'].includes(key)) &&
+				Object.keys(value.plugin).every(key =>
+					['moduleId', 'version', 'packageSha256'].includes(key)
+				) &&
 				typeof value.plugin.moduleId === 'string' &&
 				/^[a-z][a-z0-9-]*$/.test(value.plugin.moduleId) &&
 				safeText(value.plugin.version, 80) &&
 				typeof value.plugin.packageSha256 === 'string' &&
 				/^[a-f0-9]{64}$/.test(value.plugin.packageSha256);
-	return (
-		value.schemaVersion === PAH_PUBLIC_LOGIN_BRANDING_SCHEMA_VERSION &&
+	const baseValid =
+		[1, PAH_PUBLIC_LOGIN_BRANDING_SCHEMA_VERSION].includes(Number(value.schemaVersion)) &&
 		typeof value.revision === 'string' &&
 		/^[a-f0-9]{64}$/.test(value.revision) &&
 		['host-default', 'plugin'].includes(String(value.mode)) &&
@@ -141,7 +167,28 @@ export function isPahPublicLoginBrandingSnapshot(
 		validAsset(value.assets.logoDark, pluginMode) &&
 		validAsset(value.assets.compactLogo, pluginMode) &&
 		validAsset(value.assets.compactLogoDark, pluginMode) &&
-		(value.assets.background === undefined || validAsset(value.assets.background, pluginMode))
+		(value.assets.background === undefined || validAsset(value.assets.background, pluginMode));
+	if (!baseValid) return false;
+	if (value.schemaVersion === 1) return value.workbench === undefined;
+	if (value.schemaVersion !== 2 || !record(value.workbench)) return false;
+	if (
+		Object.keys(value.workbench).some(
+			key => !['title', 'subtitle', 'logo', 'logoDark'].includes(key)
+		) ||
+		!safeText(value.workbench.title, 80) ||
+		!record(value.workbench.subtitle) ||
+		!validAsset(value.workbench.logo, pluginMode) ||
+		!validAsset(value.workbench.logoDark, pluginMode)
+	) {
+		return false;
+	}
+	if (value.workbench.subtitle.mode === 'web-origin') {
+		return Object.keys(value.workbench.subtitle).every(key => key === 'mode');
+	}
+	return (
+		value.workbench.subtitle.mode === 'text' &&
+		Object.keys(value.workbench.subtitle).every(key => ['mode', 'text'].includes(key)) &&
+		safeText(value.workbench.subtitle.text, 160)
 	);
 }
 
@@ -153,11 +200,11 @@ export function readPahPublicLoginBrandingSnapshot() {
 	return value;
 }
 
-export function pahPublicLoginTitle(snapshot: PahPublicLoginBrandingSnapshotV1, page = '登录') {
+export function pahPublicLoginTitle(snapshot: PahPublicLoginBrandingSnapshot, page = '登录') {
 	return snapshot.titleTemplate.replace('%s', page);
 }
 
-export function applyPahPublicLoginBrandingHead(snapshot: PahPublicLoginBrandingSnapshotV1) {
+export function applyPahPublicLoginBrandingHead(snapshot: PahPublicLoginBrandingSnapshot) {
 	document.title = pahPublicLoginTitle(snapshot);
 	let favicon = document.querySelector<HTMLLinkElement>('#pah-public-login-favicon');
 	if (!favicon) {

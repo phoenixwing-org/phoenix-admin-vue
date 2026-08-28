@@ -7,6 +7,10 @@
 				</span>
 			</h1>
 			<p class="error-page__desc">{{ desc }}</p>
+			<p v-if="detail" class="error-page__detail">
+				<span>{{ $t('请求路径') }}</span>
+				<code>{{ detail }}</code>
+			</p>
 
 			<template v-if="user.token || isLogout">
 				<div class="error-page__btns">
@@ -43,7 +47,8 @@ import { useBase } from '/$/base';
 
 const props = defineProps({
 	code: Number,
-	desc: String
+	desc: String,
+	detail: String
 });
 
 const { router } = useCool();
@@ -126,6 +131,27 @@ function home() {
 		font-weight: 400;
 		color: #6c757d;
 		margin-top: 30px;
+	}
+
+	&__detail {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		max-width: min(680px, calc(100vw - 48px));
+		margin: 14px 0 0;
+		color: #8a94a3;
+		font-size: 13px;
+
+		code {
+			overflow: hidden;
+			padding: 5px 8px;
+			border: 1px solid #dce3ec;
+			border-radius: 6px;
+			color: #4b5563;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			background: #f6f8fb;
+		}
 	}
 
 	&__btns {

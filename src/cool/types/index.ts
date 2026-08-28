@@ -1,6 +1,6 @@
 import type { Component, Directive, App } from 'vue';
 import type { Router as VueRouter, RouteRecordRaw } from 'vue-router';
-import type { PhoenixViewDialogRendererContribution } from '../../pah/PahViewDialogs';
+import type { PhoenixViewDialogRendererContribution } from '../../phoenix/PahViewDialogs';
 
 export declare type Merge<A, B> = Omit<A, keyof B> & B;
 

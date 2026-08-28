@@ -2,8 +2,6 @@
 	<pnw-page-layout
 		class="dictionary-maintenance"
 		title="字典维护"
-		eyebrow="PAH · COOL DICTIONARY"
-		description="按插件 manifest 补全缺失字典及治理元数据；不会删除或覆盖管理员自定义项。"
 		:body-inset="true"
 		:body-scroll="true"
 	>
@@ -133,7 +131,7 @@ import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { PnwPageLayout } from 'phoenix-wing';
 import { useCool } from '/@/cool';
-import PahDictionaryMaintenancePrimary from '/@/phoenix/PahDictionaryMaintenancePrimary.vue';
+import PahPluginManagementPrimary from '/@/phoenix/PahPluginManagementPrimary.vue';
 import { usePahWorkbenchOutput } from '/@/phoenix/PahWorkbenchOutput';
 import { usePahViewContributions } from '/@/phoenix/PahViewContributions';
 
@@ -216,6 +214,7 @@ const planRows = computed(() =>
 	)
 );
 const primaryProps = computed(() => ({
+	active: 'dictionary' as const,
 	pluginOptions: dictionaryInstallations.value.map(installation => ({
 		label: `${installation.name} · ${installation.version}`,
 		value: installation.moduleId
@@ -231,7 +230,7 @@ const primaryProps = computed(() => ({
 
 usePahViewContributions('/phoenix/dictionary-maintenance', {
 	primary: {
-		component: markRaw(PahDictionaryMaintenancePrimary),
+		component: markRaw(PahPluginManagementPrimary),
 		props: primaryProps
 	}
 });

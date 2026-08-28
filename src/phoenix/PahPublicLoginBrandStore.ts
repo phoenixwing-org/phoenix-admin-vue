@@ -3,11 +3,11 @@ import { defineStore } from 'pinia';
 import {
 	applyPahPublicLoginBrandingHead,
 	readPahPublicLoginBrandingSnapshot,
-	type PahPublicLoginBrandingSnapshotV1
+	type PahPublicLoginBrandingSnapshot
 } from './PahPublicLoginBranding';
 
 export const usePahPublicLoginBrandStore = defineStore('pahPublicLoginBrand', () => {
-	const snapshot = shallowRef<PahPublicLoginBrandingSnapshotV1>();
+	const snapshot = shallowRef<PahPublicLoginBrandingSnapshot>();
 
 	function initialize() {
 		if (snapshot.value) return snapshot.value;

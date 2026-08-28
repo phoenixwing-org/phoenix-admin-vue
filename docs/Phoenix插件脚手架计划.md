@@ -2,8 +2,9 @@
 
 ## 状态
 
-**Host 能力已形成候选，脚手架仍待实施。** Phoenix Admin 已在隔离分支接入 Wing
-View Dialog Host，当前等待 `phoenix-wing@0.7.2` 正式发布和首个业务消费者验收。本轮仍不生成
+**Host 能力正在形成候选，脚手架仍待实施。** Phoenix Admin 已接入 Wing View Dialog Host，
+并在隔离分支实现 Phoenix 插件路由 View 的 Host 默认 presentation coordinator；当前仍等待
+`phoenix-wing@0.7.2` 正式发布、开发挂载浏览器矩阵与首个业务消费者验收。本轮仍不生成
 脚手架代码、不新增独立插件仓库。
 
 ## 目标
@@ -96,14 +97,15 @@ my-business-plugin/
 
 ### 3. 嵌入与浮出完整 View
 
-- 业务 View 使用 Wing `PnwViewPresentationPortal`、
-  `pnwCreateViewPresentationRecord` 与 `PnwPresentationFrameDefinition`。
-- 每个实例提供稳定的 `rendererId`、`viewInstanceId`、`ownerTabId` 与 `instanceKey`；这些值
-  不得来自随机数或显示文案。
-- 默认 `embedded`；只有用户发起“浮出”后才切换到非模态浮窗。关闭浮窗默认 reattach，不能
-  静默销毁用户上下文。
-- position/size 只保存 Wing 的纯数据 record；不得保存 DOM、Vue component、Teleport target
-  或 Router 对象。
+- Phoenix 插件的普通路由 View 默认由 Host 在装载边界接入 Wing presentation；业务插件不得
+  再复制 `PnwViewPresentationPortal`、record、Router/MRU 或 KeepAlive 管理。
+- 页面只需使用 Wing `PnwPageHeader`；Host context 会提供唯一的“浮出/收回”动作。没有标准
+  Header 的遗留 View 由 Host fallback 提供动作。
+- `rendererId`、匿名 `viewInstanceId`、`ownerTabId`、cache pin 与 Process 生命周期由 Host 签发；
+  插件不得用 route query、随机显示文案或用户输入构造身份。
+- 默认 `embedded`；浮窗关闭动作默认 reattach，不能静默销毁用户上下文。
+- 已自管 Portal 的旧插件只能用 `self-managed` 做短期兼容，验收后必须迁回 Host 默认能力，
+  避免双层浮窗和重复按钮。
 
 ### 4. View 对话框
 
@@ -134,9 +136,10 @@ my-business-plugin/
 4. 把 Host 的 color scheme、Overlay layer 和焦点恢复交给 Wing，而不是模板手写 z-index；
 5. 为无插件、单插件、插件异常三种情况测试 Host 仍可登录、导航和输出。
 
-当前 Host 候选已经完成第 1、2、4 项的聚焦测试、类型检查和生产构建；仍须等待 Wing 正式版本、
-首个消费者及浏览器矩阵完成后才可视为发布能力。模板在此之前**不得**锁未发布 Wing 或伪造
-“全局 View 对话框已正式可用”。
+当前 Host 候选已经完成 View Dialog 以及 Phoenix 插件 View coordinator 的聚焦测试和类型检查；
+生产构建、Process/KeepAlive 浏览器矩阵与 Wing 正式版本仍是发布门禁。模板在此之前**不得**锁
+未发布 Wing 或伪造“所有 Admin/Cool View 已默认可浮出”。Cool 原生 View 的后续范围见
+[《Cool 原生 View 默认浮出 TODO》](PhoenixCool原生View默认浮出TODO.md)。
 
 ## 开发技能与文档位置
 
