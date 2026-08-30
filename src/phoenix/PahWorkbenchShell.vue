@@ -177,6 +177,7 @@ import {
 	pahFindNavigationNodeIdByRoute,
 	pahNavigationBranchIds
 } from './PahNavigationAdapter';
+import { PAH_NAVIGATION_GROUPS_CHANGED_EVENT } from './PahNavigationGroupEvents';
 import {
 	pahAdminResourceIcon,
 	pahLegacyCoolIconName,
@@ -217,7 +218,13 @@ const props = defineProps<{
 }>();
 
 type NavigationResponse = {
-	groups: Array<{ id: number; label: string; orderNum: number; isEnabled: boolean }>;
+	groups: Array<{
+		id: number;
+		groupKey: string;
+		label: string;
+		orderNum: number;
+		isEnabled: boolean;
+	}>;
 	assignments: Array<{ targetKey: string; groupId: number }>;
 	modules: Array<{ menuId: number; targetKey: string }>;
 };
@@ -301,12 +308,18 @@ const navigationDefinitions = computed<PahModuleGroupDefinition[]>(() => {
 		: navigationResponse.value.groups
 				.filter(group => group.isEnabled)
 				.map(group => ({
-					id: `pah-group-${group.id}`,
+					id: group.groupKey,
 					label: group.label,
 					orderNum: group.orderNum,
-					moduleTargetKeys: navigationResponse
-						.value!.assignments.filter(assignment => assignment.groupId === group.id)
-						.map(assignment => assignment.targetKey)
+					moduleTargetKeys: [
+						...navigationResponse
+							.value!.assignments.filter(
+								assignment => assignment.groupId === group.id
+							)
+							.map(assignment => assignment.targetKey),
+						...(developmentRibbonProjection.value.targetKeysByGroupId[group.groupKey] ||
+							[])
+					]
 				}));
 	return definitions.map(definition => ({
 		...definition,
@@ -497,6 +510,10 @@ async function loadNavigationGroups() {
 	}
 }
 
+function handleNavigationGroupsChanged() {
+	void loadNavigationGroups();
+}
+
 function selectProcessTab(tabId: string) {
 	const item = process.list.find(entry => entry.path === tabId);
 	if (!item) return;
@@ -573,11 +590,15 @@ watch(
 
 onMounted(() => {
 	systemThemeMedia.addEventListener('change', updateSystemColorScheme);
+	mitt.on(PAH_NAVIGATION_GROUPS_CHANGED_EVENT, handleNavigationGroupsChanged);
 	void hostToolbar.load();
 	void loadNavigationGroups();
 });
 
-onBeforeUnmount(() => systemThemeMedia.removeEventListener('change', updateSystemColorScheme));
+onBeforeUnmount(() => {
+	systemThemeMedia.removeEventListener('change', updateSystemColorScheme);
+	mitt.off(PAH_NAVIGATION_GROUPS_CHANGED_EVENT, handleNavigationGroupsChanged);
+});
 </script>
 
 <style lang="scss" scoped>

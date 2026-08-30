@@ -116,6 +116,7 @@ import { PnwPageLayout } from 'phoenix-wing';
 import { module, useCool } from '/@/cool';
 import PahPluginManagementPrimary from '/@/phoenix/PahPluginManagementPrimary.vue';
 import { pahProjectDevelopmentRibbonContributions } from '/@/phoenix/PahDevelopmentRibbonContributions';
+import { PAH_NAVIGATION_GROUPS_CHANGED_EVENT } from '/@/phoenix/PahNavigationGroupEvents';
 import { usePahViewContributions } from '/@/phoenix/PahViewContributions';
 
 type Group = {
@@ -129,7 +130,7 @@ type Group = {
 type Assignment = { targetKey: string; groupId: number };
 type Module = { targetKey: string; menuId: number; label: string; source: string };
 
-const { service } = useCool();
+const { service, mitt } = useCool();
 const loading = ref(false);
 const creating = ref(false);
 const createVisible = ref(false);
@@ -186,6 +187,10 @@ function assignmentFor(targetKey: string) {
 	return assignments.value.find(item => item.targetKey === targetKey)?.groupId;
 }
 
+function notifyNavigationGroupsChanged() {
+	mitt.emit(PAH_NAVIGATION_GROUPS_CHANGED_EVENT);
+}
+
 async function load() {
 	loading.value = true;
 	try {
@@ -221,6 +226,7 @@ async function createGroup() {
 		ElMessage.success('已建立自定义大分组');
 		createVisible.value = false;
 		await load();
+		notifyNavigationGroupsChanged();
 	} catch (error: any) {
 		ElMessage.error(error.message || '新建分组失败');
 	} finally {
@@ -238,6 +244,7 @@ async function saveGroup(group: Group) {
 		});
 		ElMessage.success('大分组已保存');
 		await load();
+		notifyNavigationGroupsChanged();
 	} catch (error: any) {
 		ElMessage.error(error.message || '保存失败');
 	} finally {
@@ -264,6 +271,7 @@ async function removeGroup(group: Group) {
 		});
 		ElMessage.success('自定义大分组已删除');
 		await load();
+		notifyNavigationGroupsChanged();
 	} catch (error: any) {
 		ElMessage.error(error.message || '删除失败');
 	} finally {
@@ -281,6 +289,7 @@ async function assign(targetKey: string, groupId: number) {
 		});
 		assignments.value = data.assignments || [];
 		groups.value = data.groups || groups.value;
+		notifyNavigationGroupsChanged();
 		ElMessage.success('模块归属已更新');
 	} catch (error: any) {
 		ElMessage.error(error.message || '模块归属更新失败');

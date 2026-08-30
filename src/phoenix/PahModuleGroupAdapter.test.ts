@@ -79,6 +79,43 @@ describe('PahModuleGroupAdapter', () => {
 		]);
 	});
 
+	it('保持内置业务 stable key，并允许 Host 全局修改显示名', () => {
+		const plugin = module('plugin', '问题列表');
+		plugin.targetKey = 'plugin:open-issue:open-issue-workbench';
+		const groups = pahBuildModuleGroups(
+			[plugin],
+			[
+				{
+					id: 'pah-group-business',
+					label: '业务1',
+					moduleTargetKeys: ['plugin:open-issue:open-issue-workbench']
+				}
+			]
+		);
+
+		expect(groups).toEqual([{ id: 'pah-group-business', label: '业务1', modules: [plugin] }]);
+	});
+
+	it('自定义分组显示名修改不影响稳定归属', () => {
+		const plugin = module('issue', '问题跟踪');
+		plugin.targetKey = 'plugin:open-issue:open-issue-workbench';
+		const groups = pahBuildModuleGroups(
+			[plugin],
+			[
+				{
+					id: 'pah-group-custom-issue',
+					label: 'ISSUE1',
+					moduleTargetKeys: ['plugin:open-issue:open-issue-workbench']
+				}
+			]
+		);
+
+		expect(groups[0]).toMatchObject({
+			id: 'pah-group-custom-issue',
+			label: 'ISSUE1'
+		});
+	});
+
 	it('未配置的新模块进入其他模块且不会重复分配', () => {
 		const definitions: PahModuleGroupDefinition[] = [
 			{ id: 'base', label: '基础', moduleLabels: ['系统管理', '系统管理'] }

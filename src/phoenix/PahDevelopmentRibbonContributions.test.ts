@@ -78,6 +78,12 @@ describe('PahDevelopmentRibbonContributions', () => {
 				'plugin:example-plugin:example-plugin-tasks'
 			]
 		});
+		expect(projection.targetKeysByGroupId).toEqual({
+			'pah-group-business': [
+				'plugin:example-plugin:example-plugin-foundation',
+				'plugin:example-plugin:example-plugin-tasks'
+			]
+		});
 		expect(projection.modules).toEqual([
 			{
 				targetKey: 'plugin:example-plugin:example-plugin-foundation',

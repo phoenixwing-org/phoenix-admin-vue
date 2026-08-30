@@ -32,6 +32,7 @@ interface PahDevelopmentRibbonDocument {
 	schemaVersion: 1;
 	developmentOnly: true;
 	moduleId: string;
+	preferredGroupId?: string;
 	preferredGroupLabel: string;
 	modules: PahDevelopmentRibbonModuleDocument[];
 }
@@ -39,6 +40,7 @@ interface PahDevelopmentRibbonDocument {
 export interface PahDevelopmentRibbonProjection {
 	tabs: PahRibbonTab[];
 	modules: PahDevelopmentRibbonModuleRegistration[];
+	targetKeysByGroupId: Record<string, string[]>;
 	targetKeysByGroupLabel: Record<string, string[]>;
 	issues: string[];
 }
@@ -76,6 +78,7 @@ function pahDevelopmentDocument(
 		return undefined;
 	}
 	const moduleId = pahDevelopmentString(document.moduleId);
+	const preferredGroupId = pahDevelopmentString(document.preferredGroupId);
 	const preferredGroupLabel = pahDevelopmentString(document.preferredGroupLabel);
 	if (!moduleId || !PAH_DEVELOPMENT_ID_PATTERN.test(moduleId) || moduleId !== moduleName) {
 		issues.push(`${moduleName}: 开发 Ribbon moduleId 必须与挂载模块名一致`);
@@ -83,6 +86,10 @@ function pahDevelopmentDocument(
 	}
 	if (!preferredGroupLabel || !Array.isArray(document.modules)) {
 		issues.push(`${moduleName}: 开发 Ribbon 缺少目标分组或模块清单`);
+		return undefined;
+	}
+	if (preferredGroupId && !/^pah-group-[a-z0-9-]+$/.test(preferredGroupId)) {
+		issues.push(`${moduleName}: 开发 Ribbon preferredGroupId 必须是稳定 Host 分组键`);
 		return undefined;
 	}
 
@@ -145,7 +152,14 @@ function pahDevelopmentDocument(
 		}
 	}
 	if (modules.length === 0) return undefined;
-	return { schemaVersion: 1, developmentOnly: true, moduleId, preferredGroupLabel, modules };
+	return {
+		schemaVersion: 1,
+		developmentOnly: true,
+		moduleId,
+		...(preferredGroupId ? { preferredGroupId } : {}),
+		preferredGroupLabel,
+		modules
+	};
 }
 
 /**
@@ -160,6 +174,7 @@ export function pahProjectDevelopmentRibbonContributions(
 	const projection: PahDevelopmentRibbonProjection = {
 		tabs: [],
 		modules: [],
+		targetKeysByGroupId: {},
 		targetKeysByGroupLabel: {},
 		issues: []
 	};
@@ -230,6 +245,12 @@ export function pahProjectDevelopmentRibbonContributions(
 				preferredGroupLabel: document.preferredGroupLabel,
 				lifecycle: 'development-mounted'
 			});
+			const preferredGroupId =
+				document.preferredGroupId ||
+				(document.preferredGroupLabel === '业务' ? 'pah-group-business' : undefined);
+			if (preferredGroupId) {
+				(projection.targetKeysByGroupId[preferredGroupId] ||= []).push(targetKey);
+			}
 			(projection.targetKeysByGroupLabel[document.preferredGroupLabel] ||= []).push(
 				targetKey
 			);
