@@ -68,6 +68,18 @@ describe('Phoenix 插件包安装入口', () => {
 		expect(source).toContain('await menu.get()');
 	});
 
+	it('区分开发挂载与 Pah 生命周期，只由 Node 返回就绪结论', () => {
+		expect(source).toContain("url: '/admin/phoenix/plugin/development-status'");
+		expect(source).toContain('开发环境插件就绪检测');
+		expect(source).toContain('Dev Hub 只管代码挂载');
+		expect(source).toContain('初始化到当前开发环境');
+		expect(source).toContain('受控重物化');
+		expect(source).toContain('当前角色权限过滤');
+		expect(source).toContain("window.open('http://127.0.0.1:42100/'");
+		expect(source).not.toContain("fetch('http://127.0.0.1:42100");
+		expect(source).not.toContain('/api/services/admin-api/restart');
+	});
+
 	it('消费受控卸载结果并明确展示 payload 清理与重启要求', () => {
 		const uninstallSource = source.slice(
 			source.indexOf('async function controlledUninstall'),

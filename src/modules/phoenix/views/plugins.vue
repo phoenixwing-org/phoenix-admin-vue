@@ -53,6 +53,72 @@
 			</span>
 		</section>
 
+		<section v-if="developmentPlugins.length" class="development-status">
+			<header>
+				<div>
+					<strong>开发环境插件就绪检测</strong>
+					<span>Dev Hub 只管代码挂载；登记、DDL、台账和 Ribbon 由 Pah Node 判定。</span>
+				</div>
+				<el-button :loading="developmentStatusLoading" @click="refreshDevelopmentStatus()">
+					仅检测
+				</el-button>
+			</header>
+			<div class="development-status-grid">
+				<article
+					v-for="plugin in developmentPlugins"
+					:key="plugin.moduleId"
+					class="development-status-card"
+					:data-state="plugin.readiness.state"
+				>
+					<div class="development-status-heading">
+						<div>
+							<strong>{{ plugin.name }}</strong>
+							<code>{{ plugin.moduleId }}@{{ plugin.version || '未知' }}</code>
+						</div>
+						<el-tag :type="developmentStateTag(plugin.readiness.state)" effect="plain">
+							{{ developmentStateLabel(plugin.readiness.state) }}
+						</el-tag>
+					</div>
+					<p>{{ plugin.readiness.reason }}</p>
+					<div class="development-facts">
+						<span>迁移 {{ plugin.migrations.applied }}/{{ plugin.migrations.declared }}</span>
+						<span>贡献 {{ plugin.contributions.actual }}/{{ plugin.contributions.expected }}</span>
+						<span>可见路由 {{ plugin.permissions.accessibleVisibleRoutes }}/{{ plugin.contributions.visibleRoutes }}</span>
+					</div>
+					<footer>
+						<el-button
+							v-if="['choose-package', 'install'].includes(plugin.readiness.nextAction)"
+							type="primary"
+							@click="initializeDevelopmentPlugin(plugin)"
+						>
+							初始化到当前开发环境
+						</el-button>
+						<el-button
+							v-else-if="plugin.readiness.nextAction === 'enable'"
+							type="success"
+							@click="initializeDevelopmentPlugin(plugin)"
+						>
+							启用并物化入口
+						</el-button>
+						<el-button
+							v-else-if="plugin.readiness.nextAction === 'repair'"
+							:loading="repairingModuleId === plugin.moduleId"
+							@click="repairDevelopmentProjection(plugin)"
+						>
+							受控重物化
+						</el-button>
+						<el-button
+							v-else-if="plugin.readiness.nextAction === 'restart'"
+							type="warning"
+							@click="openDevHub"
+						>
+							打开 Dev Hub 受控重启
+						</el-button>
+					</footer>
+				</article>
+			</div>
+		</section>
+
 		<section class="plugin-grid" v-loading="loading">
 			<article
 				v-for="installation in list"
@@ -263,6 +329,13 @@
 					<div class="plan-facts">
 						<span>事务：必须</span>
 						<span>
+							可信备份：{{
+								migrationPlans[activeInstallation.moduleId]?.backupRequired
+									? '安装时服务端强制创建并完成恢复演练'
+									: '无待执行 DDL，不需要'
+							}}
+						</span>
+						<span>
 							有效期至：{{
 								formatPlanExpiry(
 									migrationPlans[activeInstallation.moduleId]?.expiresAt
@@ -365,6 +438,37 @@ interface LocalRuntimeStatus {
 	pendingMigrations: number;
 }
 
+type DevelopmentReadinessState =
+	| 'mounted-unregistered'
+	| 'mounted-version-mismatch'
+	| 'registered-not-installed'
+	| 'installed-not-enabled'
+	| 'enabled-restart-required'
+	| 'enabled-contributions-missing'
+	| 'enabled-permission-filtered'
+	| 'ready'
+	| 'quarantined';
+
+interface DevelopmentPluginStatus {
+	moduleId: string;
+	name: string;
+	version: string | null;
+	migrations: { declared: number; applied: number; pending: number; backupRequired: boolean };
+	contributions: {
+		expected: number;
+		actual: number;
+		visibleRoutes: number;
+		materializedVisibleRoutes: number;
+	};
+	permissions: { accessibleVisibleRoutes: number; filteredVisibleRoutes: number };
+	readiness: {
+		state: DevelopmentReadinessState;
+		ready: boolean;
+		reason: string;
+		nextAction: 'choose-package' | 'install' | 'enable' | 'restart' | 'repair' | 'grant' | 'none';
+	};
+}
+
 interface PublicLoginBrandingStatus {
 	revision: string;
 	mode: 'host-default' | 'plugin';
@@ -401,6 +505,9 @@ const uninstallLoadingModuleId = ref('');
 const discardLoadingModuleId = ref('');
 const dictionaryPlanLoadingModuleId = ref('');
 const brandingLoadingModuleId = ref('');
+const developmentStatusLoading = ref(false);
+const repairingModuleId = ref('');
+const developmentPlugins = ref<DevelopmentPluginStatus[]>([]);
 const brandingStatus = ref<PublicLoginBrandingStatus>();
 const runtimeStatuses = ref<Record<string, LocalRuntimeStatus | undefined>>({});
 const migrationPlans = ref<Record<string, PahMigrationDryRunPlan | undefined>>({});
@@ -464,8 +571,31 @@ const stateLabels: Record<string, string> = {
 	failed: '失败'
 };
 
+const developmentStateLabels: Record<DevelopmentReadinessState, string> = {
+	'mounted-unregistered': '已挂载 · 未登记',
+	'mounted-version-mismatch': '挂载与台账版本不一致',
+	'registered-not-installed': '已登记 · 未安装',
+	'installed-not-enabled': '已安装 · 未启用',
+	'enabled-restart-required': '待受控重启',
+	'enabled-contributions-missing': '贡献待重物化',
+	'enabled-permission-filtered': '当前角色权限过滤',
+	ready: '已就绪',
+	quarantined: '已隔离'
+};
+
 function stateLabel(state: string) {
 	return stateLabels[state] || state;
+}
+
+function developmentStateLabel(state: DevelopmentReadinessState) {
+	return developmentStateLabels[state];
+}
+
+function developmentStateTag(state: DevelopmentReadinessState) {
+	if (state === 'ready') return 'success';
+	if (state === 'quarantined') return 'danger';
+	if (state === 'enabled-permission-filtered') return 'info';
+	return 'warning';
 }
 
 function removedPayloadSummary(payloads: Array<'node' | 'vue'>) {
@@ -675,6 +805,64 @@ async function loadMigrationPlan(installation: Installation) {
 	}
 }
 
+async function refreshDevelopmentStatus(showError = true) {
+	developmentStatusLoading.value = true;
+	try {
+		const result = (await service.request({
+			url: '/admin/phoenix/plugin/development-status',
+			method: 'GET'
+		})) as { plugins: DevelopmentPluginStatus[] };
+		developmentPlugins.value = result.plugins || [];
+	} catch (error: any) {
+		developmentPlugins.value = [];
+		output(`开发插件就绪检测失败：${error.message || '未知错误'}`);
+		if (showError) ElMessage.error(error.message || '开发插件就绪检测失败');
+	} finally {
+		developmentStatusLoading.value = false;
+	}
+}
+
+function initializeDevelopmentPlugin(plugin: DevelopmentPluginStatus) {
+	const installation = list.value.find(item => item.moduleId === plugin.moduleId);
+	if (!installation || plugin.readiness.nextAction === 'choose-package') {
+		choosePackage();
+		ElMessage.info('请选择与当前开发挂载逐字节一致的 .phoenix.cool 不可变包');
+		return;
+	}
+	openInstallDialog(installation);
+}
+
+async function repairDevelopmentProjection(plugin: DevelopmentPluginStatus) {
+	const installation = list.value.find(item => item.moduleId === plugin.moduleId);
+	if (!installation || installation.state !== 'enabled') {
+		ElMessage.error('插件状态已变化，请先重新检测');
+		return;
+	}
+	try {
+		await ElMessageBox.confirm(
+			`将通过受控停用→启用重建 ${installation.name} 的菜单与 Ribbon 贡献；已有管理员分组 assignment 保持不变。`,
+			'重物化插件贡献',
+			{ type: 'warning', confirmButtonText: '受控重物化' }
+		);
+	} catch {
+		return;
+	}
+	repairingModuleId.value = plugin.moduleId;
+	try {
+		if (!(await runAction('disable', installation))) return;
+		const disabled = list.value.find(item => item.moduleId === plugin.moduleId);
+		if (!disabled || !(await enableManagedPlugin(disabled))) return;
+		await refreshDevelopmentStatus(false);
+	} finally {
+		repairingModuleId.value = '';
+	}
+}
+
+function openDevHub() {
+	window.open('http://127.0.0.1:42100/', '_blank', 'noopener,noreferrer');
+	ElMessage.info('请在 Dev Hub 中受控重启 Admin API 与 Web，然后返回点“仅检测”');
+}
+
 async function refresh() {
 	loading.value = true;
 	try {
@@ -697,6 +885,7 @@ async function refresh() {
 			brandingStatus.value = undefined;
 			output(`登录品牌状态暂不可用：${error.message || '未知错误'}`);
 		}
+		await refreshDevelopmentStatus(false);
 	} catch (error: any) {
 		ElMessage.error(error.message || '插件列表加载失败');
 	} finally {
@@ -875,8 +1064,12 @@ async function controlledInstall(installation: Installation) {
 			method: 'POST',
 			data: { moduleId: installation.moduleId },
 			timeout: 300000
-		})) as { appliedMigrations: number };
-		output(`${installation.moduleId} 受控安装完成：应用 ${result.appliedMigrations} 条迁移`);
+		})) as { appliedMigrations: number; backup: null | { backupId: string } };
+		output(
+			`${installation.moduleId} 受控安装完成：应用 ${result.appliedMigrations} 条迁移${
+				result.backup ? `；可信备份 ${result.backup.backupId}` : ''
+			}`
+		);
 		ElMessage.success('受控安装完成；现在可以启用插件');
 		await refresh();
 		return true;
@@ -1138,6 +1331,68 @@ onMounted(refresh);
 
 .package-rule strong {
 	color: var(--el-text-color-primary);
+}
+
+.development-status {
+	display: grid;
+	gap: 12px;
+	margin-top: 20px;
+	padding: 16px;
+	border: 1px solid var(--el-color-primary-light-7);
+	border-radius: 14px;
+	background: var(--el-color-primary-light-9);
+}
+
+.development-status > header,
+.development-status-heading,
+.development-status-card footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.development-status > header > div,
+.development-status-heading > div {
+	display: grid;
+	gap: 4px;
+}
+
+.development-status > header span,
+.development-status-card p,
+.development-facts {
+	color: var(--el-text-color-regular);
+	font-size: 13px;
+}
+
+.development-status-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 12px;
+}
+
+.development-status-card {
+	display: grid;
+	gap: 10px;
+	padding: 14px;
+	border: 1px solid var(--el-border-color-light);
+	border-radius: 12px;
+	background: var(--el-bg-color);
+}
+
+.development-status-card p {
+	margin: 0;
+	line-height: 1.6;
+}
+
+.development-status-card code {
+	overflow-wrap: anywhere;
+}
+
+.development-facts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 14px;
 }
 
 .plugin-grid {
