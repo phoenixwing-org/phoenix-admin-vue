@@ -57,7 +57,7 @@
 			<header>
 				<div>
 					<strong>开发环境插件就绪检测</strong>
-					<span>Dev Hub 只管代码挂载；登记、DDL、台账和 Ribbon 由 Pah Node 判定。</span>
+					<span>Hub 只管代码挂载；登记、DDL、台账和 Ribbon 由 Pah Node 判定。</span>
 				</div>
 				<el-button :loading="developmentStatusLoading" @click="refreshDevelopmentStatus()">
 					仅检测
@@ -80,18 +80,47 @@
 						</el-tag>
 					</div>
 					<p>{{ plugin.readiness.reason }}</p>
+					<div
+						v-if="plugin.readiness.nextAction === 'choose-package'"
+						class="development-package-guide"
+					>
+						<span>请选择</span>
+						<code>{{ developmentPackageName(plugin) }}</code>
+						<small>
+							该文件必须由当前挂载源码构建；系统只会先校验并登记，不会立即迁移、安装或启用。若文件不存在，请先在插件项目生成该版本包。
+						</small>
+					</div>
 					<div class="development-facts">
-						<span>迁移 {{ plugin.migrations.applied }}/{{ plugin.migrations.declared }}</span>
-						<span>贡献 {{ plugin.contributions.actual }}/{{ plugin.contributions.expected }}</span>
-						<span>可见路由 {{ plugin.permissions.accessibleVisibleRoutes }}/{{ plugin.contributions.visibleRoutes }}</span>
+						<span
+							>迁移 {{ plugin.migrations.applied }}/{{
+								plugin.migrations.declared
+							}}</span
+						>
+						<span
+							>贡献 {{ plugin.contributions.actual }}/{{
+								plugin.contributions.expected
+							}}</span
+						>
+						<span
+							>可见路由 {{ plugin.permissions.accessibleVisibleRoutes }}/{{
+								plugin.contributions.visibleRoutes
+							}}</span
+						>
 					</div>
 					<footer>
 						<el-button
-							v-if="['choose-package', 'install'].includes(plugin.readiness.nextAction)"
+							v-if="plugin.readiness.nextAction === 'choose-package'"
 							type="primary"
 							@click="initializeDevelopmentPlugin(plugin)"
 						>
-							初始化到当前开发环境
+							选择 {{ plugin.version || '当前版本' }} 插件包
+						</el-button>
+						<el-button
+							v-else-if="plugin.readiness.nextAction === 'install'"
+							type="primary"
+							@click="initializeDevelopmentPlugin(plugin)"
+						>
+							继续受控安装
 						</el-button>
 						<el-button
 							v-else-if="plugin.readiness.nextAction === 'enable'"
@@ -110,9 +139,9 @@
 						<el-button
 							v-else-if="plugin.readiness.nextAction === 'restart'"
 							type="warning"
-							@click="openDevHub"
+							@click="openHub"
 						>
-							打开 Dev Hub 受控重启
+							打开 Hub 受控重启
 						</el-button>
 					</footer>
 				</article>
@@ -465,7 +494,14 @@ interface DevelopmentPluginStatus {
 		state: DevelopmentReadinessState;
 		ready: boolean;
 		reason: string;
-		nextAction: 'choose-package' | 'install' | 'enable' | 'restart' | 'repair' | 'grant' | 'none';
+		nextAction:
+			| 'choose-package'
+			| 'install'
+			| 'enable'
+			| 'restart'
+			| 'repair'
+			| 'grant'
+			| 'none';
 	};
 }
 
@@ -596,6 +632,10 @@ function developmentStateTag(state: DevelopmentReadinessState) {
 	if (state === 'quarantined') return 'danger';
 	if (state === 'enabled-permission-filtered') return 'info';
 	return 'warning';
+}
+
+function developmentPackageName(plugin: DevelopmentPluginStatus) {
+	return `${plugin.moduleId}-${plugin.version || '当前版本'}.phoenix.cool`;
 }
 
 function removedPayloadSummary(payloads: Array<'node' | 'vue'>) {
@@ -826,7 +866,6 @@ function initializeDevelopmentPlugin(plugin: DevelopmentPluginStatus) {
 	const installation = list.value.find(item => item.moduleId === plugin.moduleId);
 	if (!installation || plugin.readiness.nextAction === 'choose-package') {
 		choosePackage();
-		ElMessage.info('请选择与当前开发挂载逐字节一致的 .phoenix.cool 不可变包');
 		return;
 	}
 	openInstallDialog(installation);
@@ -858,9 +897,9 @@ async function repairDevelopmentProjection(plugin: DevelopmentPluginStatus) {
 	}
 }
 
-function openDevHub() {
+function openHub() {
 	window.open('http://127.0.0.1:42100/', '_blank', 'noopener,noreferrer');
-	ElMessage.info('请在 Dev Hub 中受控重启 Admin API 与 Web，然后返回点“仅检测”');
+	ElMessage.info('请在 Hub 中受控重启 Admin API 与 Web，然后返回点“仅检测”');
 }
 
 async function refresh() {
@@ -1393,6 +1432,30 @@ onMounted(refresh);
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px 14px;
+}
+
+.development-package-guide {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: baseline;
+	gap: 4px 8px;
+	padding: 10px 12px;
+	border-radius: 8px;
+	color: var(--el-text-color-regular);
+	font-size: 13px;
+	background: var(--el-fill-color-light);
+}
+
+.development-package-guide code {
+	min-width: 0;
+	overflow-wrap: anywhere;
+	color: var(--el-text-color-primary);
+	font-weight: 600;
+}
+
+.development-package-guide small {
+	grid-column: 1 / -1;
+	line-height: 1.55;
 }
 
 .plugin-grid {

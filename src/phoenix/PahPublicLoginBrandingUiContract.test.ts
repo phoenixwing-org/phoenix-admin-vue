@@ -25,10 +25,21 @@ describe('Public Login Branding 首帧装配', () => {
 	it('登录页首屏只从 Host Store 取公开品牌，认证表单保持 Host-owned', () => {
 		expect(login).toContain(':aria-label="branding.login.title"');
 		expect(login).toContain('{{ branding.login.title }}');
+		expect(login).toContain('{{ branding.login.subtitle }}');
 		expect(login).toContain('{{ branding.login.prompt }}');
 		expect(login).toContain('branding.assets.logoDark.url');
+		expect(login).toContain('branding.assets.compactLogo.url');
+		expect(login).toContain('{{ branding.appName }}');
+		expect(login).not.toContain('Phoenix Admin Host');
 		expect(login).toContain('.login(createPasswordLoginPayload(form, captchaRequired.value))');
 		expect(login).toContain('pahIdentityApi.loginPolicy()');
+	});
+
+	it('内置首帧 fallback 使用完整 v2 标题与 favicon，不等待 Vue 修正', () => {
+		expect(html).toContain('schemaVersion: 2');
+		expect(html).not.toContain('effectiveSources');
+		expect(html).toContain("document.title = snapshot.titleTemplate.replace('%s', '登录')");
+		expect(html).toContain('favicon.href = snapshot.favicon.url');
 	});
 
 	it('Pinia 在动态模块和 Vue mount 前初始化快照', () => {

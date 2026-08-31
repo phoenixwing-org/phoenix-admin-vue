@@ -12,7 +12,7 @@ Node Controller、Service、Entity、任务或 Vue SFC 不会自动进入已经�
 
 ## v1 安全方案：Host 受控构建与重启
 
-v1 由 Phoenix Admin Host/Dev Hub 编排固定动作，管理员只确认动作和查看日志：
+v1 由 Phoenix Admin Host/Hub 编排固定动作，管理员只确认动作和查看日志：
 
 1. 校验包格式、签名/checksum、Host/Wing 兼容范围和普通目录边界；
 2. 解包到版本化 staging 目录，不覆盖当前 active payload；
@@ -53,7 +53,7 @@ v1 由 Phoenix Admin Host/Dev Hub 编排固定动作，管理员只确认动作�
 
 - [ ] 定义 `restart-request` API：只接受 installation ID 与一次性 nonce，不接受命令文本、
   cwd、端口或环境变量；
-- [ ] 仅 Dev Hub/systemd/Docker/Kubernetes 等受信进程管理器持有实际重启权限；
+- [ ] 仅 Hub/systemd/Docker/Kubernetes 等受信进程管理器持有实际重启权限；
 - [ ] API 进程不能杀死并重新拉起自己；请求落盘/入队后由外部 supervisor 执行；
 - [ ] 重启前记录 active/staging 版本、构建摘要、数据库计划和回滚指针；
 - [ ] 新进程通过 readiness 后才把安装向导推进到“运行点检通过”；

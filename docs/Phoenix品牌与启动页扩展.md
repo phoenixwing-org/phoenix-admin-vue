@@ -21,9 +21,11 @@ favicon。v2 另包含登录后工作台左上品牌区所需的公开 Logo、�
 - 只有管理员可以安装、验证、启用、切换、停用或卸载。
 - 可以登记多个 `phoenix.admin.branding` 扩展，但同一时刻只有一个公开登录品牌快照处于活动
   状态。
-- 安装或启用插件本身不得自动替换登录外观。只有管理员点击“设为登录品牌”才会原子切换。
+- 安装或挂载插件本身不得自动替换登录外观。管理员选择或启用品牌插件后先进入“待重启”，
+  由下一次受控 API 重启完成校验并原子发布。
 - 登录后的首页仍由同一插件的普通 route contribution 与用户权限决定，不由公开快照选择。
-- 活动插件停用/卸载、安全模式开启或当前选择不可用时，公开登录壳回退 Phoenix Admin 默认。
+- 活动插件停用、取消选择、卸载或进入安全模式后先保持 last-known-good；受控 API 重启成功后
+  发布最近一次已验证的 Host 默认品牌。
 - 新候选资源损坏或快照生成失败时保持上一份有效快照，不发布半套品牌。
 - 回退必须保留可用的 admin 密码登录和合法首页，不能进入 404，也不能形成半套用户品牌。
 
@@ -35,9 +37,9 @@ Public Login Branding Snapshot v1 允许贡献：
 - 包内、同源、带 SHA-256/MIME/size 的 Logo、紧凑 Logo、favicon 和可选背景；
 - 应用名称和精确含一个 `%s` 的 title 模板。
 
-v2 在 v1 基础上增加严格白名单的 `workbench` 字段，只承载紧凑 Logo、主标题和
-`web-origin | text` 副标题。Host 在 Vue mount 前读取同一份静态快照；工作台路由切换期间不查询
-数据库。
+v2 在 v1 基础上增加严格白名单的 `workbench` 字段，并作为完整静态插件品牌契约。Host 在 Vue
+mount 前读取已经解析完成的同一份静态快照；登录页与工作台路由切换期间都不查询数据库。
+插件贡献的标题、副标题、明暗 Logo 和 favicon 必须作为一个整体生效，不支持逐项继承 Host。
 
 禁止贡献：
 
@@ -62,11 +64,12 @@ v2 在 v1 基础上增加严格白名单的 `workbench` 字段，只承载紧凑
 Hub 的 “Phoenix Admin 干净验证”应覆盖：
 
 1. 未安装扩展时，默认 admin 可以登录且 `/` 解析为有权限首页，不跳 404。
-2. 安装、启用但未选择扩展时仍直接显示 Host 默认；管理员显式选择后，新登录页首个非空
-   可见帧直接显示插件品牌。
+2. 安装、挂载但未选择扩展时仍直接显示 Host 默认；管理员显式选择后先显示待重启，受控 API
+   重启成功后，新登录页首个非空可见帧直接显示插件品牌。
 3. 登录表单、验证码、OAuth、Token、submit 和路由守卫保持 Host-owned；普通用户不能看到
    品牌管理动作。
-4. 停用/卸载活动品牌或安全模式直接显示 Host 默认；损坏的新候选不得覆盖 last-known-good。
+4. 停用/卸载活动品牌或安全模式在受控 API 重启后显示最近已验证 Host 默认；损坏的新候选不得
+   覆盖 last-known-good。
 5. 冷/热缓存、CPU/网络降速、light/dark、宽窄屏下，视频与 DOM mutation 记录都不得出现
    Phoenix → 插件品牌的替换帧。
 
@@ -96,14 +99,13 @@ Hub 的 “Phoenix Admin 干净验证”应覆盖：
 
 验收覆盖 Host 默认与 Acme 模板的登录→首页、普通页面切换，以及缺失/异常 label 回退。
 
-## 工作台品牌快照 v2
+## 二元品牌快照与 Host 备用配置
 
-后台 `/phoenix/branding` 提供三项配置：工作台紧凑 Logo、主标题和副标题。数据库保存 Host
-默认源配置与活动插件
-选择；Node 在保存、恢复默认、选择/升级/停用/卸载活动品牌、安全模式与启动对账时，编译并
-原子发布静态派生快照。Vue 已在 mount 前读取品牌 Store，工作台直接消费 Store，不再逐页查库。
+后台 `/phoenix/branding` 提供四项 Host 输入：明暗 Logo、主标题和副标题。数据库分别保存 Host
+默认配置、品牌插件选择和并发 revision；Node 原子发布静态派生快照。Vue 在 mount 前读取品牌
+Store，登录页、浏览器标题/favicon 与工作台直接消费同一 revision，不再逐页查库。
 
-`schemaVersion=2` 快照字段为：
+公开快照只允许完整的 `host` 或 `plugin` 模式：
 
 ```ts
 workbench: {
@@ -111,6 +113,11 @@ workbench: {
   subtitle: { mode: 'web-origin' | 'text'; text?: string };
   logo: AssetDescriptor;
   logoDark: AssetDescriptor;
+}
+source: {
+  mode: 'host' | 'plugin';
+  moduleId?: string;
+  version?: string;
 }
 ```
 
@@ -120,12 +127,19 @@ Logo 收据编译为上述两个静态资源描述符。
 - 默认 Logo 复用 Host Phoenix compact SVG；主标题为 `Phoenix Admin`。
 - 副标题默认 `web-origin`，浏览器显示当前 `window.location.origin`；也可选择 `text` 并输入
   严格长度/控制字符校验后的文字。不得把固定开发端口、内部 API 地址或密钥写进公开快照。
-- 活动品牌插件必须整套覆盖 Logo、主标题、副标题，禁止形成“插件 Logo + Host 标题”的半套品牌。
-- 优先级：有效活动品牌插件 → 数据库 Host 默认配置 → 内置 Phoenix Admin 默认。
+- `mode=host` 时，四项 Host 输入同时投影到登录左右品牌区、浏览器标题/favicon 和工作台左上角；
+  亮色 Logo 默认复用为 favicon。保存并校验成功后立即原子发布新 revision，不要求 API/Web
+  重启；当前预览立即更新，新开、刷新或重新登录的页面生效，其他已打开页面刷新后切换。
+- `mode=plugin` 时，标题、副标题、明暗 Logo 和 favicon 全部使用同一插件的已验证 manifest 与
+  包内资源，不与 Host 按字段混合。页面仍允许编辑 Host 默认品牌，但明确标为“备用”；保存只
+  更新 Host 配置 revision，不改变当前插件 snapshot revision。
+- v1/v2 插件均按完整固定品牌解释；新制品继续显式声明 `contractVersion: 2` 和完整
+  `uiContributions.workbench`，不声明 `hostBindings/effectiveSources`。
 - Logo 仍使用包内或 Host 内容寻址资源描述符（SHA-256/MIME/size），禁止数据库 SVG 原文、
   任意 HTML/CSS/JS、外链 URL 与 MutationObserver 生产投影。
-- v1 插件继续按 appName、compact Logo 与登录副标题兼容投影；新制品应显式声明
-  `contractVersion: 2` 与 `uiContributions.workbench`，避免从登录文案推导工作台信息。
+- 品牌插件选择、启停、切换及 manifest/资源更新先进入待重启状态；只有受控 API 重启完成校验后
+  才发布新插件 revision。首次启用失败保持 Host，活动插件更新失败保持上一 last-known-good。
+- 停用或取消选择插件不要求卸载；受控 API 重启后发布最近一次已验证的 Host 备用配置。
 - Host 默认配置保存在 `base_sys_param`，SVG 仅以内容寻址静态资源落盘，数据库不保存 SVG
   原文。保存接口使用 revision CAS；配置冲突会要求刷新，不覆盖其他管理员的新值。
 - 后台接口固定为 `/admin/phoenix/plugin/workbench-branding/{status,save,reset}`；只有 Host

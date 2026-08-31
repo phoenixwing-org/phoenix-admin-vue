@@ -39,7 +39,7 @@ pnpm create:phoenix-plugin -- ../my-business-plugin \
 2. 校验 `moduleId` 为小写连字符命名，并由它派生路由、API、能力码和目录；
 3. 复制 Host 内维护的无业务数据模板；
 4. 初始化独立 Git 仓库，但不自动提交、不添加 remote、不联网、不安装未知依赖；
-5. 输出后续三条明确命令：安装依赖、运行轻量 verify、通过 Dev Hub 开发挂载；
+5. 输出后续三条明确命令：安装依赖、运行轻量 verify、通过 Hub 开发挂载；
 6. 生成的文件不引用 Admin 内部实现路径，只引用公开的 Host/Wing 契约。
 
 `--no-git` 可作为可选开关；默认初始化独立 Git 的原因是插件应有自己的版本、测试、发布

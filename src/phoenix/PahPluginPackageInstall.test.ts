@@ -71,8 +71,15 @@ describe('Phoenix 插件包安装入口', () => {
 	it('区分开发挂载与 Pah 生命周期，只由 Node 返回就绪结论', () => {
 		expect(source).toContain("url: '/admin/phoenix/plugin/development-status'");
 		expect(source).toContain('开发环境插件就绪检测');
-		expect(source).toContain('Dev Hub 只管代码挂载');
-		expect(source).toContain('初始化到当前开发环境');
+		expect(source).toContain('Hub 只管代码挂载');
+		expect(source).toContain("plugin.readiness.nextAction === 'choose-package'");
+		expect(source).toContain(
+			"`${plugin.moduleId}-${plugin.version || '当前版本'}.phoenix.cool`"
+		);
+		expect(source).toContain("选择 {{ plugin.version || '当前版本' }} 插件包");
+		expect(source).toContain('系统只会先校验并登记，不会立即迁移、安装或启用');
+		expect(source).toContain('继续受控安装');
+		expect(source).not.toContain('初始化到当前开发环境');
 		expect(source).toContain('受控重物化');
 		expect(source).toContain('当前角色权限过滤');
 		expect(source).toContain("window.open('http://127.0.0.1:42100/'");

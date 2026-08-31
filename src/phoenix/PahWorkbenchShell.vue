@@ -198,6 +198,7 @@ import {
 	pahResolveWorkbenchBrand,
 	pahWorkbenchBrandLogo as resolveBrandLogo
 } from './PahWorkbenchBrand';
+import { pahProvideWorkbenchBrandRuntime } from './PahWorkbenchBrandRuntime';
 import {
 	pahViewContributionRegistry,
 	type PahViewBlockComponentContributions
@@ -266,6 +267,7 @@ const { colorScheme: workbenchColorScheme, updateFromWorkbench } = usePahWorkben
 const workbenchBrand = computed(() =>
 	pahResolveWorkbenchBrand(publicLoginBrandStore.current, window.location.origin)
 );
+pahProvideWorkbenchBrandRuntime(workbenchBrand);
 const workbenchBrandLogo = computed(() =>
 	resolveBrandLogo(workbenchBrand.value, workbenchColorScheme.value)
 );

@@ -15,7 +15,7 @@
 - Registry 包：`phoenix-wing@0.6.1`
 - 来源：<https://gitee.com/phoenixwing/phoenix-wing>
 - 许可证：Apache-2.0
-- 版权：Copyright 2024–2026 上海锟钛
+- 版权：Copyright 2024–2026 PhoenixWing contributors
 - 许可全文：`licenses/Apache-2.0.txt`
 
 ## Gitee 图标
