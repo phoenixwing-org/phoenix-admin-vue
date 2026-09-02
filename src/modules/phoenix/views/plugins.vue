@@ -30,307 +30,402 @@
 			@change="onPackageSelected"
 		/>
 
-		<div v-if="packageState !== 'idle'" class="package-status" :data-state="packageState">
-			<div>
-				<strong>{{ packageStatusTitle }}</strong>
-				<span>{{ packageStatusDetail }}</span>
-			</div>
-			<el-button
-				v-if="selectedPackage && packageState !== 'success'"
-				type="primary"
-				:loading="acting"
-				@click="validateSelectedPackage"
-			>
-				验证并添加
-			</el-button>
-		</div>
-
-		<section class="package-rule">
-			<strong>无需额外 pnpm 安装</strong>
-			<span>
-				Phoenix 插件包必须自包含 Node/Vue 运行制品；若运行点检报告缺少依赖，应修正插件包，
-				不在 Host 临时安装未知 npm 包。
-			</span>
-		</section>
-
-		<section v-if="developmentPlugins.length" class="development-status">
-			<header>
-				<div>
-					<strong>开发环境插件就绪检测</strong>
-					<span>Hub 只管代码挂载；登记、DDL、台账和 Ribbon 由 Pah Node 判定。</span>
-				</div>
+		<pnw-sidebar-block
+			v-if="developmentPlugins.length"
+			v-model:expanded="developmentSectionExpanded"
+			class="plugin-section-block"
+			variant="card"
+			title="开发挂载"
+			:body-inset="false"
+		>
+			<template #suffix>{{ developmentPlugins.length }} 个</template>
+			<template #actions>
 				<el-button :loading="developmentStatusLoading" @click="refreshDevelopmentStatus()">
 					仅检测
 				</el-button>
-			</header>
-			<div class="development-status-grid">
-				<article
-					v-for="plugin in developmentPlugins"
-					:key="plugin.moduleId"
-					class="development-status-card"
-					:data-state="plugin.readiness.state"
-				>
-					<div class="development-status-heading">
-						<div>
-							<strong>{{ plugin.name }}</strong>
-							<code>{{ plugin.moduleId }}@{{ plugin.version || '未知' }}</code>
-						</div>
-						<el-tag :type="developmentStateTag(plugin.readiness.state)" effect="plain">
-							{{ developmentStateLabel(plugin.readiness.state) }}
-						</el-tag>
-					</div>
-					<p>{{ plugin.readiness.reason }}</p>
-					<div
-						v-if="plugin.readiness.nextAction === 'choose-package'"
-						class="development-package-guide"
+			</template>
+			<section class="development-status">
+				<div class="development-priority-note">
+					<strong>开发挂载优先</strong>
+					<span>
+						Node/Vue 源码始终使用 Hub 挂载目录；插件包只校验当前源码并登记
+						DDL、字典、权限、菜单与 Ribbon，不会覆盖挂载源码。
+					</span>
+					<small>就绪状态由 Phoenix Admin 后端权威判定。</small>
+				</div>
+				<div class="development-status-grid">
+					<article
+						v-for="plugin in developmentPlugins"
+						:key="plugin.moduleId"
+						class="development-status-card"
+						:data-state="plugin.readiness.state"
 					>
-						<span>请选择</span>
-						<code>{{ developmentPackageName(plugin) }}</code>
-						<small>
-							该文件必须由当前挂载源码构建；系统只会先校验并登记，不会立即迁移、安装或启用。若文件不存在，请先在插件项目生成该版本包。
-						</small>
-					</div>
-					<div class="development-facts">
-						<span
-							>迁移 {{ plugin.migrations.applied }}/{{
-								plugin.migrations.declared
-							}}</span
-						>
-						<span
-							>贡献 {{ plugin.contributions.actual }}/{{
-								plugin.contributions.expected
-							}}</span
-						>
-						<span
-							>可见路由 {{ plugin.permissions.accessibleVisibleRoutes }}/{{
-								plugin.contributions.visibleRoutes
-							}}</span
-						>
-					</div>
-					<footer>
-						<el-button
-							v-if="plugin.readiness.nextAction === 'choose-package'"
-							type="primary"
-							@click="initializeDevelopmentPlugin(plugin)"
-						>
-							选择 {{ plugin.version || '当前版本' }} 插件包
-						</el-button>
-						<el-button
-							v-else-if="plugin.readiness.nextAction === 'install'"
-							type="primary"
-							@click="initializeDevelopmentPlugin(plugin)"
-						>
-							继续受控安装
-						</el-button>
-						<el-button
-							v-else-if="plugin.readiness.nextAction === 'enable'"
-							type="success"
-							@click="initializeDevelopmentPlugin(plugin)"
-						>
-							启用并物化入口
-						</el-button>
-						<el-button
-							v-else-if="plugin.readiness.nextAction === 'repair'"
-							:loading="repairingModuleId === plugin.moduleId"
-							@click="repairDevelopmentProjection(plugin)"
-						>
-							受控重物化
-						</el-button>
-						<el-button
-							v-else-if="plugin.readiness.nextAction === 'restart'"
-							type="warning"
-							@click="openHub"
-						>
-							打开 Hub 受控重启
-						</el-button>
-					</footer>
-				</article>
-			</div>
-		</section>
-
-		<section class="plugin-grid" v-loading="loading">
-			<article
-				v-for="installation in list"
-				:key="installation.id"
-				class="plugin-card"
-				:class="{ 'is-selected': detailsModuleId === installation.moduleId }"
-				tabindex="0"
-				:aria-label="`查看 ${installation.name} 插件属性`"
-				:aria-pressed="detailsModuleId === installation.moduleId"
-				@click="openPluginDetails(installation)"
-				@keydown.enter="openPluginDetails(installation)"
-				@keydown.space.prevent="openPluginDetails(installation)"
-			>
-				<header class="card-header">
-					<img class="plugin-mark" src="/pah-phoenixwing-mark.svg" alt="Phoenix" />
-					<div class="card-identity">
-						<div class="card-badges">
-							<el-tag type="primary" effect="dark" size="small">Phoenix</el-tag>
-							<el-tag effect="plain" size="small">v{{ installation.version }}</el-tag>
-							<el-tag type="success" effect="plain" size="small">
-								{{
-									installation.manifest.pluginType === 'phoenix.admin.branding'
-										? '品牌插件'
-										: '业务插件'
-								}}
+						<div class="development-status-heading">
+							<div>
+								<strong>{{ plugin.name }}</strong>
+								<code>{{ plugin.moduleId }}@{{ plugin.version || '未知' }}</code>
+							</div>
+							<el-tag
+								:type="developmentStateTag(plugin.readiness.state)"
+								effect="plain"
+							>
+								{{ developmentStateLabel(plugin.readiness.state) }}
 							</el-tag>
-							<strong class="plugin-name">{{ installation.name }}</strong>
 						</div>
-					</div>
-					<span class="state" :data-state="installation.state">
-						{{ stateLabel(installation.state) }}
-					</span>
-				</header>
-
-				<div class="card-facts">
-					<span>{{ installation.manifest.navigation.modules.length }} 个导航模块</span>
-					<span>{{ installation.manifest.migrations.length }} 条迁移</span>
-					<span>{{ installation.manifest.dataOwnership.tables.length }} 张业务表</span>
-				</div>
-
-				<div class="reuse">
-					<el-tag
-						v-if="isActivePublicLoginBranding(installation)"
-						type="success"
-						effect="dark"
-						size="small"
-					>
-						当前登录品牌
-					</el-tag>
-					<el-tag
-						v-for="item in installation.manifest.hostReuse"
-						:key="item"
-						effect="plain"
-						size="small"
-					>
-						{{ reuseLabel[item] || item }}
-					</el-tag>
-				</div>
-
-				<p v-if="installation.state === 'uninstalled'" class="retained">
-					代码贡献已注销，业务数据保持不变。
-				</p>
-				<div
-					v-if="uninstallResults[installation.moduleId]"
-					class="uninstall-result"
-					:data-restart-required="
-						uninstallResults[installation.moduleId]?.restartRequired
-					"
-					:data-cleanup-pending="
-						Boolean(
-							uninstallResults[installation.moduleId]?.cleanupPendingPayloads.length
-						)
-					"
-					role="status"
-				>
-					<strong>
-						运行 payload 已移除：{{
-							removedPayloadSummary(
-								uninstallResults[installation.moduleId]?.removedPayloads || []
-							)
-						}}
-					</strong>
-					<span
-						v-if="
-							uninstallResults[installation.moduleId]?.cleanupPendingPayloads.length
-						"
-					>
-						外围回收目录待清理：{{
-							removedPayloadSummary(
-								uninstallResults[installation.moduleId]?.cleanupPendingPayloads ||
-									[]
-							)
-						}}。
-					</span>
-					<span v-if="uninstallResults[installation.moduleId]?.restartRequired">
-						请先受控重启 API/Web，再重新打开登录页验证登录首帧。
-					</span>
-					<span v-else>当前运行时无需重启。</span>
-				</div>
-
-				<footer class="card-actions" @click.stop>
-					<div class="card-action-buttons">
-						<el-button
+						<p>{{ plugin.readiness.reason }}</p>
+						<div
 							v-if="
-								installation.state === 'enabled' &&
-								installation.manifest.pluginType === 'phoenix.admin.branding' &&
-								!isActivePublicLoginBranding(installation)
+								['choose-package', 'restore-package'].includes(
+									plugin.readiness.nextAction
+								)
 							"
-							type="primary"
-							plain
-							:loading="brandingLoadingModuleId === installation.moduleId"
-							@click="selectPublicLoginBranding(installation)"
+							class="development-package-guide"
 						>
-							设为登录品牌
-						</el-button>
-						<el-button
-							v-if="installation.state === 'verified'"
-							type="primary"
-							@click="openInstallDialog(installation)"
-						>
-							安装
-						</el-button>
-						<el-button
-							v-else-if="installation.state === 'installed'"
-							type="success"
-							@click="openInstallDialog(installation)"
-						>
-							启用
-						</el-button>
-						<el-button
-							v-else-if="installation.state === 'enabled'"
-							:loading="acting"
-							@click="runAction('disable', installation)"
-						>
-							停用
-						</el-button>
-						<el-button
-							v-else-if="installation.state === 'disabled'"
-							type="success"
-							:loading="acting"
-							@click="enableManagedPlugin(installation)"
-						>
-							启用
-						</el-button>
-						<el-button
-							v-else-if="installation.state === 'uninstalled'"
-							@click="choosePackage"
-						>
-							重新选择插件包
-						</el-button>
-						<el-button
-							v-if="installation.state === 'verified'"
-							plain
-							:loading="discardLoadingModuleId === installation.moduleId"
-							@click="discardSelectedPackage(installation)"
-						>
-							移除已选包
-						</el-button>
+							<span>{{
+								plugin.retainedPackage?.matchesMount ? '已上传' : '请选择'
+							}}</span>
+							<code>
+								{{
+									plugin.retainedPackage?.filename ||
+									developmentPackageName(plugin)
+								}}
+							</code>
+							<small v-if="plugin.retainedPackage?.matchesMount">
+								Host 已校验并保留 ·
+								{{ formatPackageSize(plugin.retainedPackage.size) }} · SHA-256
+								{{
+									plugin.retainedPackage.packageSha256.slice(0, 12)
+								}}…；恢复时仍会重新权威验包。
+							</small>
+							<small v-else>
+								该文件必须由当前挂载源码构建；系统只会先校验并登记，不会立即迁移、安装或启用。若文件不存在，请先在插件项目生成该版本包。
+							</small>
+						</div>
+						<div class="development-facts">
+							<span
+								>迁移 {{ plugin.migrations.applied }}/{{
+									plugin.migrations.declared
+								}}</span
+							>
+							<span
+								>贡献 {{ plugin.contributions.actual }}/{{
+									plugin.contributions.expected
+								}}</span
+							>
+							<span
+								>可见路由 {{ plugin.permissions.accessibleVisibleRoutes }}/{{
+									plugin.contributions.visibleRoutes
+								}}</span
+							>
+						</div>
+						<footer>
+							<el-button
+								v-if="plugin.readiness.nextAction === 'choose-package'"
+								type="primary"
+								@click="initializeDevelopmentPlugin(plugin)"
+							>
+								选择 {{ plugin.version || '当前版本' }} 插件包
+							</el-button>
+							<el-button
+								v-else-if="plugin.readiness.nextAction === 'restore-package'"
+								type="success"
+								:loading="acting"
+								@click="restoreRetainedDevelopmentPackage(plugin)"
+							>
+								使用已上传包继续启用
+							</el-button>
+							<el-button
+								v-else-if="plugin.readiness.nextAction === 'install'"
+								type="primary"
+								@click="initializeDevelopmentPlugin(plugin)"
+							>
+								继续受控初始化
+							</el-button>
+							<el-button
+								v-else-if="plugin.readiness.nextAction === 'enable'"
+								type="success"
+								@click="initializeDevelopmentPlugin(plugin)"
+							>
+								启用并物化入口
+							</el-button>
+							<el-button
+								v-else-if="plugin.readiness.nextAction === 'repair'"
+								:loading="repairingModuleId === plugin.moduleId"
+								@click="repairDevelopmentProjection(plugin)"
+							>
+								受控重物化
+							</el-button>
+							<el-button
+								v-else-if="plugin.readiness.nextAction === 'restart'"
+								type="warning"
+								@click="openHub"
+							>
+								打开 Hub 受控重启
+							</el-button>
+						</footer>
+					</article>
+				</div>
+			</section>
+		</pnw-sidebar-block>
 
-						<el-button
-							v-if="['installed', 'disabled'].includes(installation.state)"
-							type="danger"
-							plain
-							:loading="uninstallLoadingModuleId === installation.moduleId"
-							@click="controlledUninstall(installation)"
-						>
-							卸载
-						</el-button>
+		<pnw-sidebar-block
+			v-model:expanded="pluginCenterSectionExpanded"
+			class="plugin-section-block"
+			variant="card"
+			title="Phoenix 插件中心"
+			:body-inset="false"
+		>
+			<template #suffix>已登记 {{ list.length }} 个</template>
+			<div class="plugin-center-body">
+				<div
+					v-if="packageState !== 'idle'"
+					class="package-status"
+					:data-state="packageState"
+				>
+					<div>
+						<strong>{{ packageStatusTitle }}</strong>
+						<span>{{ packageStatusDetail }}</span>
 					</div>
-					<time class="installation-date">
-						{{ formatInstallationDate(installation) }}
-					</time>
-				</footer>
-			</article>
-		</section>
+					<el-button
+						v-if="selectedPackage && packageState !== 'success'"
+						type="primary"
+						:loading="acting"
+						@click="validateSelectedPackage"
+					>
+						验证并登记
+					</el-button>
+				</div>
 
-		<el-empty v-if="!loading && !list.length" description="尚未登记 Phoenix 业务插件">
-			<el-button type="primary" @click="choosePackage">选择 .phoenix.cool</el-button>
-		</el-empty>
+				<section class="package-rule">
+					<strong>插件中心负责生命周期，不覆盖开发源码</strong>
+					<span>
+						Phoenix 插件包必须自包含 Node/Vue
+						运行制品；开发挂载存在时只做一致性校验并复用挂载目录，再初始化
+						DDL、字典、权限、菜单与 Ribbon。若运行点检报告缺少依赖，应修正插件包，不在
+						Host 临时安装未知 npm 包。
+					</span>
+				</section>
+
+				<section class="plugin-grid" v-loading="loading">
+					<article
+						v-for="installation in list"
+						:key="installation.id"
+						class="plugin-card"
+						:class="{ 'is-selected': detailsModuleId === installation.moduleId }"
+						tabindex="0"
+						:aria-label="`查看 ${installation.name} 插件属性`"
+						:aria-pressed="detailsModuleId === installation.moduleId"
+						@click="openPluginDetails(installation)"
+						@keydown.enter="openPluginDetails(installation)"
+						@keydown.space.prevent="openPluginDetails(installation)"
+					>
+						<header class="card-header">
+							<img
+								class="plugin-mark"
+								src="/pah-phoenixwing-mark.svg"
+								alt="Phoenix"
+							/>
+							<div class="card-identity">
+								<div class="card-badges">
+									<el-tag type="primary" effect="dark" size="small"
+										>Phoenix</el-tag
+									>
+									<el-tag effect="plain" size="small"
+										>v{{ installation.version }}</el-tag
+									>
+									<el-tag type="success" effect="plain" size="small">
+										{{
+											installation.manifest.pluginType ===
+											'phoenix.admin.branding'
+												? '品牌插件'
+												: '业务插件'
+										}}
+									</el-tag>
+									<strong class="plugin-name">{{ installation.name }}</strong>
+								</div>
+							</div>
+							<span class="state" :data-state="installation.state">
+								{{ stateLabel(installation.state) }}
+							</span>
+						</header>
+
+						<div class="card-facts">
+							<span
+								>{{
+									installation.manifest.navigation.modules.length
+								}}
+								个导航模块</span
+							>
+							<span>{{ installation.manifest.migrations.length }} 条迁移</span>
+							<span
+								>{{
+									installation.manifest.dataOwnership.tables.length
+								}}
+								张业务表</span
+							>
+						</div>
+
+						<div class="reuse">
+							<el-tag
+								v-if="isActivePublicLoginBranding(installation)"
+								type="success"
+								effect="dark"
+								size="small"
+							>
+								当前登录品牌
+							</el-tag>
+							<el-tag
+								v-for="item in installation.manifest.hostReuse"
+								:key="item"
+								effect="plain"
+								size="small"
+							>
+								{{ reuseLabel[item] || item }}
+							</el-tag>
+						</div>
+
+						<p v-if="installation.state === 'uninstalled'" class="retained">
+							代码贡献已注销，业务数据保持不变。
+						</p>
+						<div
+							v-if="uninstallResults[installation.moduleId]"
+							class="uninstall-result"
+							:data-restart-required="
+								uninstallResults[installation.moduleId]?.restartRequired
+							"
+							:data-cleanup-pending="
+								Boolean(
+									uninstallResults[installation.moduleId]?.cleanupPendingPayloads
+										.length
+								)
+							"
+							role="status"
+						>
+							<strong>
+								运行 payload 已移除：{{
+									removedPayloadSummary(
+										uninstallResults[installation.moduleId]?.removedPayloads ||
+											[]
+									)
+								}}
+							</strong>
+							<span
+								v-if="
+									uninstallResults[installation.moduleId]?.cleanupPendingPayloads
+										.length
+								"
+							>
+								外围回收目录待清理：{{
+									removedPayloadSummary(
+										uninstallResults[installation.moduleId]
+											?.cleanupPendingPayloads || []
+									)
+								}}。
+							</span>
+							<span v-if="uninstallResults[installation.moduleId]?.restartRequired">
+								请先受控重启 API/Web，再重新打开登录页验证登录首帧。
+							</span>
+							<span v-else>当前运行时无需重启。</span>
+						</div>
+
+						<footer class="card-actions" @click.stop>
+							<div class="card-action-buttons">
+								<el-button
+									v-if="
+										installation.state === 'enabled' &&
+										installation.manifest.pluginType ===
+											'phoenix.admin.branding' &&
+										!isActivePublicLoginBranding(installation)
+									"
+									type="primary"
+									plain
+									:loading="brandingLoadingModuleId === installation.moduleId"
+									@click="selectPublicLoginBranding(installation)"
+								>
+									设为登录品牌
+								</el-button>
+								<el-button
+									v-if="installation.state === 'verified'"
+									type="primary"
+									@click="openInstallDialog(installation)"
+								>
+									初始化插件
+								</el-button>
+								<el-button
+									v-else-if="installation.state === 'installed'"
+									type="success"
+									@click="openInstallDialog(installation)"
+								>
+									启用
+								</el-button>
+								<el-button
+									v-else-if="installation.state === 'enabled'"
+									:loading="acting"
+									@click="runAction('disable', installation)"
+								>
+									停用
+								</el-button>
+								<el-button
+									v-else-if="installation.state === 'disabled'"
+									type="success"
+									:loading="acting"
+									@click="enableManagedPlugin(installation)"
+								>
+									启用
+								</el-button>
+								<el-button
+									v-else-if="
+										installation.state === 'uninstalled' &&
+										retainedDevelopmentPackage(installation.moduleId)
+											?.matchesMount
+									"
+									type="success"
+									:loading="acting"
+									@click="restoreRetainedInstallation(installation)"
+								>
+									使用已上传包继续启用
+								</el-button>
+								<el-button
+									v-else-if="installation.state === 'uninstalled'"
+									@click="choosePackage"
+								>
+									重新选择插件包
+								</el-button>
+								<el-button
+									v-if="installation.state === 'verified'"
+									plain
+									:loading="discardLoadingModuleId === installation.moduleId"
+									@click="discardSelectedPackage(installation)"
+								>
+									撤销本次装配
+								</el-button>
+
+								<el-button
+									v-if="['installed', 'disabled'].includes(installation.state)"
+									type="danger"
+									plain
+									:loading="uninstallLoadingModuleId === installation.moduleId"
+									@click="controlledUninstall(installation)"
+								>
+									卸载
+								</el-button>
+							</div>
+							<time class="installation-date">
+								{{ formatInstallationDate(installation) }}
+							</time>
+						</footer>
+					</article>
+				</section>
+
+				<el-empty v-if="!loading && !list.length" description="尚未登记 Phoenix 业务插件">
+					<el-button type="primary" @click="choosePackage">选择 .phoenix.cool</el-button>
+				</el-empty>
+			</div>
+		</pnw-sidebar-block>
 
 		<el-dialog
 			v-model="installDialogVisible"
-			:title="activeInstallation ? `安装 ${activeInstallation.name}` : '安装插件'"
+			:title="activeInstallation ? `初始化 ${activeInstallation.name}` : '初始化插件'"
 			width="min(680px, calc(100vw - 32px))"
 			:close-on-click-modal="!installBusy"
 			:close-on-press-escape="!installBusy"
@@ -342,7 +437,7 @@
 					align-center
 				>
 					<el-step title="运行点检" />
-					<el-step title="受控安装" />
+					<el-step title="受控初始化" />
 					<el-step title="启用入口" />
 				</el-steps>
 
@@ -412,7 +507,7 @@ defineOptions({ name: 'phoenix-business-plugins' });
 
 import { computed, markRaw, onMounted, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { PnwPageLayout } from 'phoenix-wing';
+import { PnwPageLayout, PnwSidebarBlock } from 'phoenix-wing';
 import { useCool } from '/@/cool';
 import { useBase } from '/$/base';
 import type { PahMigrationDryRunPlan, PahPluginManifest } from '../manifest/PahPluginManifest';
@@ -490,12 +585,22 @@ interface DevelopmentPluginStatus {
 		materializedVisibleRoutes: number;
 	};
 	permissions: { accessibleVisibleRoutes: number; filteredVisibleRoutes: number };
+	retainedPackage: null | {
+		filename: string;
+		version: string;
+		packageSha256: string;
+		size: number;
+		sourceCommit: string;
+		storedAt: string;
+		matchesMount: boolean;
+	};
 	readiness: {
 		state: DevelopmentReadinessState;
 		ready: boolean;
 		reason: string;
 		nextAction:
 			| 'choose-package'
+			| 'restore-package'
 			| 'install'
 			| 'enable'
 			| 'restart'
@@ -556,6 +661,8 @@ const packageStatusDetail = ref('尚未选择插件包');
 const installDialogVisible = ref(false);
 const activeModuleId = ref('');
 const detailsModuleId = ref('');
+const developmentSectionExpanded = ref(true);
+const pluginCenterSectionExpanded = ref(true);
 const packageStatusTitle = computed(
 	() =>
 		({
@@ -638,6 +745,19 @@ function developmentPackageName(plugin: DevelopmentPluginStatus) {
 	return `${plugin.moduleId}-${plugin.version || '当前版本'}.phoenix.cool`;
 }
 
+function formatPackageSize(size: number) {
+	if (size < 1024) return `${size} B`;
+	return `${(size / 1024).toFixed(1)} KiB`;
+}
+
+function developmentPlugin(moduleId: string) {
+	return developmentPlugins.value.find(plugin => plugin.moduleId === moduleId) || null;
+}
+
+function retainedDevelopmentPackage(moduleId: string) {
+	return developmentPlugin(moduleId)?.retainedPackage || null;
+}
+
 function removedPayloadSummary(payloads: Array<'node' | 'vue'>) {
 	if (!payloads.length) return '无 Node/Vue payload 残留';
 	const labels = { node: 'Node payload', vue: 'Vue payload' } as const;
@@ -704,9 +824,14 @@ function formatInstallationDate(installation: Installation) {
 
 function packageProcessingErrorMessage(error: any) {
 	const message = String(error?.message || '插件包处理失败');
-	const status = Number(error?.response?.status || 0);
-	if (status >= 500 || /status code 5\d\d/iu.test(message)) {
-		return 'API 未就绪或插件包处理失败；请先确认 API Terminal 已 ready，再查看后端首条错误';
+	const status = Number(error?.status || error?.response?.status || 0);
+	const statusMatch = message.match(/status code (5\d\d)/iu);
+	const serverStatus = status >= 500 ? status : Number(statusMatch?.[1] || 0);
+	if (serverStatus >= 500) {
+		return `API 已响应，但插件包请求失败（HTTP ${serverStatus}）；请刷新核对插件是否已登记，再查看后端首条错误`;
+	}
+	if (/network error|failed to fetch|econnrefused|timeout/iu.test(message)) {
+		return '无法连接 API；请确认 API Terminal 已 ready 后重试';
 	}
 	return message;
 }
@@ -763,7 +888,7 @@ function installProgress(installation: Installation) {
 function installHeadline(installation: Installation) {
 	if (installation.state === 'verified') {
 		return runtimeStatuses.value[installation.moduleId]?.ready
-			? '运行制品已就绪，可以执行受控安装'
+			? '运行制品已就绪，可以执行受控初始化'
 			: '先检查 API 是否已加载新插件';
 	}
 	if (installation.state === 'installed') return '安装完成，等待启用菜单和权限';
@@ -777,7 +902,7 @@ function installDescription(installation: Installation) {
 		return '若本次加入了新的 Node payload，请先在 API Terminal 重启服务，再点“检查并继续”。';
 	}
 	if (installation.state === 'verified') {
-		return 'Host 会生成一次性 dry-run，校验待执行 DDL 后以事务安装并记录迁移台账。';
+		return 'Host 会生成一次性 dry-run，校验待执行 DDL 后以事务初始化并记录迁移台账；开发挂载源码不会被覆盖。';
 	}
 	if (['installed', 'disabled'].includes(installation.state)) {
 		return '启用会物化插件声明的菜单、权限和字典贡献。';
@@ -787,7 +912,7 @@ function installDescription(installation: Installation) {
 
 function installButtonLabel(installation: Installation) {
 	if (installation.state === 'verified') {
-		return runtimeStatuses.value[installation.moduleId]?.ready ? '安装并启用' : '检查并继续';
+		return runtimeStatuses.value[installation.moduleId]?.ready ? '初始化并启用' : '检查并继续';
 	}
 	if (['installed', 'disabled'].includes(installation.state)) return '启用';
 	return '继续';
@@ -869,6 +994,58 @@ function initializeDevelopmentPlugin(plugin: DevelopmentPluginStatus) {
 		return;
 	}
 	openInstallDialog(installation);
+}
+
+async function restoreRetainedDevelopmentPackage(plugin: DevelopmentPluginStatus) {
+	const retained = plugin.retainedPackage;
+	if (!retained?.matchesMount) {
+		ElMessage.error('已保留插件包与当前开发挂载不一致，请重新选择插件包');
+		return;
+	}
+	acting.value = true;
+	output(
+		`开始重新校验已上传包 ${retained.filename}（${retained.size} bytes，SHA-256 ${retained.packageSha256.slice(0, 12)}…）`
+	);
+	try {
+		const result = (await service.request({
+			url: '/admin/phoenix/plugin/retained-package/restore',
+			method: 'POST',
+			data: {
+				moduleId: plugin.moduleId,
+				version: retained.version,
+				packageSha256: retained.packageSha256
+			},
+			timeout: 120000
+		})) as {
+			moduleId: string;
+			version: string;
+			validationChecks?: Array<{ label: string; detail: string }>;
+		};
+		for (const check of result.validationChecks || []) {
+			output(`重新校验通过 · ${check.label}：${check.detail}`);
+		}
+		output(`${result.moduleId}@${result.version} 已从 Host 包仓恢复登记`);
+		ElMessage.success('已上传包重新校验通过；请继续受控初始化并启用');
+		await refresh();
+		await refreshDevelopmentStatus(false);
+		const installation = list.value.find(item => item.moduleId === result.moduleId);
+		if (installation) openInstallDialog(installation);
+	} catch (error: any) {
+		const message = packageProcessingErrorMessage(error);
+		output(`已上传包恢复失败：${message}`);
+		ElMessage.error(message);
+	} finally {
+		acting.value = false;
+	}
+}
+
+async function restoreRetainedInstallation(installation: Installation) {
+	const plugin = developmentPlugin(installation.moduleId);
+	if (!plugin) {
+		ElMessage.error('没有检测到对应开发挂载，请重新选择插件包');
+		return;
+	}
+	await restoreRetainedDevelopmentPackage(plugin);
 }
 
 async function repairDevelopmentProjection(plugin: DevelopmentPluginStatus) {
@@ -979,6 +1156,7 @@ async function resetPublicLoginBranding() {
 }
 
 function choosePackage() {
+	pluginCenterSectionExpanded.value = true;
 	packageInput.value?.click();
 }
 
@@ -1144,7 +1322,9 @@ async function runAction(action: 'enable' | 'disable', installation: Installatio
 		await refresh();
 		return true;
 	} catch (error: any) {
-		ElMessage.error(error.message || '操作失败');
+		const message = error.message || '操作失败';
+		output(`${installation.moduleId} ${action === 'enable' ? '启用' : '停用'}失败：${message}`);
+		ElMessage.error(message);
 		return false;
 	} finally {
 		acting.value = false;
@@ -1242,7 +1422,9 @@ async function controlledUninstall(installation: Installation) {
 		await synchronizeHostAfterPluginStateChange(result.installation, false);
 		await refresh();
 	} catch (error: any) {
-		ElMessage.error(error.message || '卸载失败');
+		const message = error.message || '卸载失败';
+		output(`${installation.moduleId} 卸载失败：${message}`);
+		ElMessage.error(message);
 	} finally {
 		uninstallLoadingModuleId.value = '';
 	}
@@ -1251,11 +1433,11 @@ async function controlledUninstall(installation: Installation) {
 async function discardSelectedPackage(installation: Installation) {
 	try {
 		await ElMessageBox.confirm(
-			`移除 ${installation.name}@${installation.version} 的本机 Node/Vue 已选制品并结束本次验证？不会执行 SQL，也不会删除业务表、迁移台账或管理员分组。`,
-			'移除已选包',
+			`撤销 ${installation.name}@${installation.version} 的本次 activation candidate、登记和 Node/Vue 装配？Admin 包仓仍保留已校验的原始包；不会执行 SQL，也不会删除业务表、迁移台账或管理员分组。`,
+			'撤销本次装配',
 			{
 				type: 'warning',
-				confirmButtonText: '移除并允许重新选择',
+				confirmButtonText: '撤销装配',
 				cancelButtonText: '取消'
 			}
 		);
@@ -1271,9 +1453,9 @@ async function discardSelectedPackage(installation: Installation) {
 			data: { moduleId: installation.moduleId }
 		})) as { removedPayloads: Array<'node' | 'vue'> };
 		output(
-			`${installation.moduleId}@${installation.version} 已移除本机已选包：${
+			`${installation.moduleId}@${installation.version} 已撤销本次装配：${
 				result.removedPayloads.join('/') || '无残留 payload'
-			}`
+			}；Host 包仓保留原始包`
 		);
 		selectedPackage.value = undefined;
 		packageState.value = 'idle';
@@ -1286,11 +1468,11 @@ async function discardSelectedPackage(installation: Installation) {
 			...migrationPlans.value,
 			[installation.moduleId]: undefined
 		};
-		ElMessage.success('已移除旧制品，现在可以选择新的 .phoenix.cool');
+		ElMessage.success('本次装配已撤销；原始包仍保留，也可选择新的 .phoenix.cool');
 		await refresh();
 	} catch (error: any) {
-		output(`${installation.moduleId} 已选包清理失败：${error.message || '未知错误'}`);
-		ElMessage.error(error.message || '已选包清理失败');
+		output(`${installation.moduleId} 装配撤销失败：${error.message || '未知错误'}`);
+		ElMessage.error(error.message || '装配撤销失败');
 	} finally {
 		discardLoadingModuleId.value = '';
 	}
@@ -1322,12 +1504,24 @@ onMounted(refresh);
 	display: none;
 }
 
+.plugin-section-block {
+	flex: 0 0 auto !important;
+	height: auto !important;
+	margin-top: 20px;
+}
+
+.plugin-center-body {
+	display: grid;
+	gap: 16px;
+	padding: 16px;
+}
+
 .package-status {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 16px;
-	margin-top: 20px;
+	margin: 0;
 	padding: 14px 16px;
 	border: 1px dashed var(--el-border-color);
 	border-radius: 10px;
@@ -1359,7 +1553,7 @@ onMounted(refresh);
 .package-rule {
 	display: grid;
 	gap: 4px;
-	margin-top: 20px;
+	margin: 0;
 	padding: 14px 16px;
 	border: 1px solid var(--el-border-color-light);
 	border-radius: 12px;
@@ -1375,14 +1569,10 @@ onMounted(refresh);
 .development-status {
 	display: grid;
 	gap: 12px;
-	margin-top: 20px;
 	padding: 16px;
-	border: 1px solid var(--el-color-primary-light-7);
-	border-radius: 14px;
 	background: var(--el-color-primary-light-9);
 }
 
-.development-status > header,
 .development-status-heading,
 .development-status-card footer {
 	display: flex;
@@ -1391,17 +1581,26 @@ onMounted(refresh);
 	gap: 12px;
 }
 
-.development-status > header > div,
 .development-status-heading > div {
 	display: grid;
 	gap: 4px;
 }
 
-.development-status > header span,
+.development-priority-note span,
+.development-priority-note small,
 .development-status-card p,
 .development-facts {
 	color: var(--el-text-color-regular);
 	font-size: 13px;
+}
+
+.development-priority-note {
+	display: grid;
+	gap: 4px;
+	padding: 12px 14px;
+	border: 1px solid var(--el-color-primary-light-7);
+	border-radius: 10px;
+	background: var(--el-bg-color);
 }
 
 .development-status-grid {
@@ -1462,7 +1661,7 @@ onMounted(refresh);
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 	gap: 16px;
-	margin-top: 20px;
+	margin: 0;
 }
 
 .plugin-card {

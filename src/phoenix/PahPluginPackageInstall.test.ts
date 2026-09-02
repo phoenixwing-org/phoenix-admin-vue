@@ -34,12 +34,12 @@ describe('Phoenix 插件包安装入口', () => {
 	it('以卡片和三段向导完成安装，停用与卸载保持独立动作', () => {
 		for (const label of [
 			'添加 .phoenix.cool',
-			'验证并添加',
+			'验证并登记',
 			'运行点检',
-			'受控安装',
+			'受控初始化',
 			'启用入口',
-			'安装并启用',
-			'移除已选包',
+			'初始化并启用',
+			'撤销本次装配',
 			'停用',
 			'卸载'
 		]) {
@@ -49,36 +49,53 @@ describe('Phoenix 插件包安装入口', () => {
 		expect(source).toContain('class="plugin-card"');
 		expect(source).not.toContain('自动备份');
 		expect(source).not.toContain('备份证明');
-		expect(source).toContain('无需额外 pnpm 安装');
-		expect(source).toContain('请先确认 API Terminal 已 ready');
+		expect(source).toContain('插件中心负责生命周期，不覆盖开发源码');
+		expect(source).toContain('API 已响应，但插件包请求失败');
+		expect(source).toContain('无法连接 API；请确认 API Terminal 已 ready 后重试');
 		expect(source).not.toContain('第九步：停用');
 		expect(source).not.toContain('第十步：备份并卸载');
 		expect(source).toContain("url: '/admin/phoenix/plugin/local-runtime-status'");
 		expect(source).toContain("url: '/admin/phoenix/plugin/local-controlled-install'");
 		expect(source).toContain("url: '/admin/phoenix/plugin/local-controlled-uninstall'");
 		expect(source).toContain("url: '/admin/phoenix/plugin/local-package-discard'");
+		expect(source).toContain('Admin 包仓仍保留已校验的原始包');
 		expect(source).toContain('src="/pah-phoenixwing-mark.svg"');
 		expect(source).toContain("url: '/admin/phoenix/plugin/dictionary-plan'");
 		expect(source).toContain('dictionaryFingerprint: dictionaryPlan?.fingerprint');
 		expect(source).toContain('dictionaryConfirmed: true');
 		expect(source).toContain('synchronizeHostAfterPluginStateChange');
 		expect(source).toContain('prunePluginRoutesAndTabs');
+		expect(source).toContain("action === 'enable' ? '启用' : '停用'}失败：${message}");
+		expect(source).toContain('卸载失败：${message}');
 		expect(source).toContain("['disabled', 'uninstalled'].includes(item.state)");
 		expect(source).toContain('process.list.filter');
 		expect(source).toContain('await menu.get()');
 	});
 
-	it('区分开发挂载与 Pah 生命周期，只由 Node 返回就绪结论', () => {
+	it('区分开发挂载与插件中心生命周期，只由 Node 返回就绪结论', () => {
 		expect(source).toContain("url: '/admin/phoenix/plugin/development-status'");
-		expect(source).toContain('开发环境插件就绪检测');
-		expect(source).toContain('Hub 只管代码挂载');
+		expect(source).toContain('title="开发挂载"');
+		expect(source).toContain('Node/Vue 源码始终使用 Hub 挂载目录');
 		expect(source).toContain("plugin.readiness.nextAction === 'choose-package'");
 		expect(source).toContain(
 			"`${plugin.moduleId}-${plugin.version || '当前版本'}.phoenix.cool`"
 		);
 		expect(source).toContain("选择 {{ plugin.version || '当前版本' }} 插件包");
 		expect(source).toContain('系统只会先校验并登记，不会立即迁移、安装或启用');
-		expect(source).toContain('继续受控安装');
+		expect(source).toContain("plugin.readiness.nextAction === 'restore-package'");
+		expect(source).toContain('已上传');
+		expect(source).toContain('使用已上传包继续启用');
+		expect(source).toContain("url: '/admin/phoenix/plugin/retained-package/restore'");
+		expect(source).toContain('恢复时仍会重新权威验包');
+		expect(source).toContain('就绪状态由 Phoenix Admin 后端权威判定');
+		expect(source).not.toContain('由 Pah Node 判定');
+		expect(source).toContain('PnwSidebarBlock');
+		expect(source).toContain('开发挂载优先');
+		expect(source).toContain('不会覆盖挂载源码');
+		expect(source).toContain('title="Phoenix 插件中心"');
+		expect(source).toContain('v-model:expanded="developmentSectionExpanded"');
+		expect(source).toContain('v-model:expanded="pluginCenterSectionExpanded"');
+		expect(source).toContain('继续受控初始化');
 		expect(source).not.toContain('初始化到当前开发环境');
 		expect(source).toContain('受控重物化');
 		expect(source).toContain('当前角色权限过滤');

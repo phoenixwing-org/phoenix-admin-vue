@@ -152,7 +152,7 @@ Vite 插件读取受控 ext inventory，生成 `virtual:pah-ui-extensions`，仅
 7. 失败时恢复旧 active version；
 8. 成功后卡片只显示新版本，回滚窗口结束后才清理旧制品。
 
-当前“移除已选包”只处理 `verified` 且尚未安装的候选，不替代升级流程。
+当前“撤销本次装配”只处理 `verified` 且尚未安装的 candidate、登记与 Node/Vue payload，不替代升级流程，也不删除 Admin Host 包仓已保留的原始 `.phoenix.cool`。
 
 ## v1 边界
 
