@@ -150,6 +150,12 @@ async function navigateToOwner(): Promise<void> {
 	min-width: 0;
 	min-height: 0;
 }
+.pah-plugin-route-view-host :deep(.pnw-view-presentation-portal),
+.pah-plugin-route-view-host :deep(.pnw-view-presentation-portal__main-anchor),
+.pah-plugin-route-view-host :deep(.pnw-view-presentation-portal__main-frame) {
+	height: 100%;
+	min-height: 0;
+}
 .pah-plugin-route-view-title {
 	min-width: 0;
 	overflow: hidden;
