@@ -28,7 +28,7 @@ describe('Host 工作台品牌管理入口', () => {
 		expect(view).toContain('pahWorkbenchBrandingSource(status.value)');
 		expect(view).not.toContain('hostBindings');
 		expect(view).not.toContain('effectiveSources');
-		expect(view).not.toContain('按字段');
+		expect(view).toContain('不按字段混合');
 	});
 
 	it('提供只读运行时点检并复用 Workbench 输出通道', () => {

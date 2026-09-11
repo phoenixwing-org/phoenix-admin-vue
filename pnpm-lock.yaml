@@ -57,8 +57,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       phoenix-wing:
-        specifier: 0.7.1
-        version: 0.7.1(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4))
+        specifier: 0.7.2
+        version: 0.7.2(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4))
       pinia:
         specifier: ^2.3.1
         version: 2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4))
@@ -2369,8 +2369,8 @@ packages:
   perfect-debounce@1.0.0:
     resolution: {integrity: sha512-xCy9V055GLEqoFaHoC1SoLIaLmWctgCUaBaWxDZ7/Zx4CTyX7cJQLJOok/orfjZAh9kEYpjJa4d0KcJmCbctZA==}
 
-  phoenix-wing@0.7.1:
-    resolution: {integrity: sha512-1SHBYhhqRn7nrFMIe//5aZ5jpN26E6+NBF3o9INyIGcOCTi8EIJ5sJkbA0U+F2Ob1pH9onXW5uOHTH/3g+jxiA==}
+  phoenix-wing@0.7.2:
+    resolution: {integrity: sha512-/o89wI0Rj6xUXh6JQBnJDOvRnf/SlA1+Uwv/BnhNVUuRWB5SZhXVp/JhcIYNeNluMLA/ozTDA2pIBnwBiS7rSA==}
     peerDependencies:
       element-plus: ^2.0.0
       pinia: ^2.0.0 || ^3.0.0
@@ -5313,7 +5313,7 @@ snapshots:
 
   perfect-debounce@1.0.0: {}
 
-  phoenix-wing@0.7.1(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4)):
+  phoenix-wing@0.7.2(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4)):
     dependencies:
       '@phoenix-wing/code-core': 0.6.4
       '@phoenix-wing/db-node': 0.6.3

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import ts from 'typescript';
-import { pahResolveLocalWing } from './pah-wing-mode.mjs';
+import { pahExecutableForPlatform, pahResolveLocalWing } from './pah-wing-mode.mjs';
 
 const adminRoot = path.resolve(import.meta.dirname, '..');
 const projectArgumentIndex = process.argv.indexOf('--project');
@@ -16,12 +16,13 @@ const wing = pahResolveLocalWing(adminRoot);
 
 function run(command, args, options = {}) {
 	return new Promise((resolve, reject) => {
-		const child = spawn(command, args, { stdio: 'inherit', ...options });
+		const executable = pahExecutableForPlatform(command);
+		const child = spawn(executable, args, { stdio: 'inherit', ...options });
 		child.on('error', reject);
 		child.on('exit', (code, signal) => {
-			if (signal) reject(new Error(`${command} 被信号 ${signal} 中止`));
+			if (signal) reject(new Error(`${executable} 被信号 ${signal} 中止`));
 			else if (code === 0) resolve();
-			else reject(new Error(`${command} 退出码 ${code}`));
+			else reject(new Error(`${executable} 退出码 ${code}`));
 		});
 	});
 }
@@ -37,11 +38,14 @@ function absolutePathMappings(configPath) {
 		ts.sys,
 		path.dirname(configPath)
 	);
-	const pathsBase = parsed.options.pathsBasePath || parsed.options.baseUrl || path.dirname(configPath);
+	const pathsBase =
+		parsed.options.pathsBasePath || parsed.options.baseUrl || path.dirname(configPath);
 	return Object.fromEntries(
 		Object.entries(parsed.options.paths || {}).map(([name, targets]) => [
 			name,
-			targets.map(target => (path.isAbsolute(target) ? target : path.resolve(pathsBase, target)))
+			targets.map(target =>
+				path.isAbsolute(target) ? target : path.resolve(pathsBase, target)
+			)
 		])
 	);
 }
@@ -56,11 +60,13 @@ try {
 
 	const paths = {
 		...absolutePathMappings(projectPath),
-		'vue': [path.join(adminRoot, 'node_modules', 'vue')],
+		vue: [path.join(adminRoot, 'node_modules', 'vue')],
 		'vue-router': [path.join(adminRoot, 'node_modules', 'vue-router')],
-		'pinia': [path.join(adminRoot, 'node_modules', 'pinia')],
+		pinia: [path.join(adminRoot, 'node_modules', 'pinia')],
 		'element-plus': [path.join(adminRoot, 'node_modules', 'element-plus')],
-		'@element-plus/icons-vue': [path.join(adminRoot, 'node_modules', '@element-plus', 'icons-vue')],
+		'@element-plus/icons-vue': [
+			path.join(adminRoot, 'node_modules', '@element-plus', 'icons-vue')
+		],
 		'phoenix-wing': [path.join(distRoot, 'index.d.ts')],
 		'phoenix-wing/components/*.vue': [path.join(distRoot, 'components', '*.vue.d.ts')],
 		'phoenix-wing/layout/*.vue': [path.join(distRoot, 'layout', '*.vue.d.ts')],

@@ -104,6 +104,11 @@ Phoenix Admin、业务插件和其他 Wing 消费端遵守同一套“公共组�
 4. 无插件、单插件、插件隔离三种状态下，Host 登录、导航和基础页面都可用。
 5. 本地 sibling 联调与 Registry 构建分别记录精确 Wing SHA/版本；不得用 `file:`、`link:`、
    `workspace:` 或手改 `node_modules` 冒充正式消费。
+    - 普通 Admin 开发使用 `pnpm dev:local`，启动前校验 `package.json`、`node_modules` 与登录所需
+      Wing API，并固定消费 Registry 精确版本。
+    - 只有联合修改 Wing 源码时使用 `pnpm dev:wing-local`；该入口要求标准并列目录
+      `../phoenix-wing`，且本地源码版本必须与 Admin 精确依赖一致。
+    - Windows 由启动脚本调用 `pnpm.cmd`；不得因平台差异静默回退到旧 Wing 或相邻源码。
 6. 开源仓库的文档、测试名和发布说明只使用通用消费者描述，不记录私有项目、路径或接口。
 
 Phoenix 插件路由已进入该 Host 默认模型；Cool 原生 View 仍按上节 TODO 独立研究，不能把候选

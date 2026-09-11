@@ -30,7 +30,7 @@ Bottom 是工作台实例级的全局“输出”窗口，使用 Wing 的 `PnwOu
 
 | 项目                | 地址/版本                                             |
 | ------------------- | ----------------------------------------------------- |
-| Phoenix 发行版      | `0.2.2`                                               |
+| Phoenix 发行版      | `0.3.0`                                               |
 | Phoenix Wing        | Registry `phoenix-wing@0.6.3`                         |
 | Phoenix 仓库        | <https://gitee.com/phoenixwing/phoenix-admin-vue>     |
 | Cool Admin 上游     | <https://gitee.com/cool-team-official/cool-admin-vue> |
