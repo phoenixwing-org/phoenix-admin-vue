@@ -27,8 +27,7 @@ export function coolWrapRouteView(view: Component): Component {
 		name: coolRouteViewName(view),
 		inheritAttrs: false,
 		setup(_, { attrs }) {
-			return () =>
-				h('div', { class: 'app-view-transition-host' }, [h(view, attrs)]);
+			return () => h('div', { class: 'app-view-transition-host' }, [h(view, attrs)]);
 		}
 	});
 }

@@ -1,8 +1,15 @@
 <template>
-	<div class="plugins">
-		<div class="plugins__header">
-			<cl-select-button v-model="tab.active" :options="tab.list" @change="tab.onChange" />
-
+	<pnw-page-layout class="plugins" title="Cool 插件" :body-inset="false" :body-scroll="false">
+		<template #actions>
+			<cl-select-button
+				v-model="tab.active"
+				class="plugin-tab-switch"
+				:options="tab.list"
+				small
+				@change="tab.onChange"
+			/>
+		</template>
+		<template #help>
 			<el-input
 				class="search"
 				v-model="plugin.keyWord"
@@ -18,7 +25,7 @@
 					<cl-svg name="search" :size="16" />
 				</template>
 			</el-input>
-		</div>
+		</template>
 
 		<div class="plugins__container" v-loading="plugin.loading">
 			<el-scrollbar :ref="setRefs('scrollbar')" @scroll="plugin.onScroll">
@@ -253,7 +260,7 @@
 				</div>
 			</template>
 		</cl-form>
-	</div>
+	</pnw-page-layout>
 </template>
 
 <script lang="ts" setup>
@@ -277,9 +284,10 @@ import {
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { marked } from 'marked';
 import { useI18n } from 'vue-i18n';
+import { PnwPageLayout } from 'phoenix-wing';
 import { usePlugin } from '../hooks';
-import PahPluginManagementPrimary from '/@/pah/PahPluginManagementPrimary.vue';
-import { usePahViewContributions } from '/@/pah/PahViewContributions';
+import PahPluginManagementPrimary from '/@/phoenix/PahPluginManagementPrimary.vue';
+import { usePahViewContributions } from '/@/phoenix/PahViewContributions';
 
 interface Plugin {
 	name?: string;
@@ -780,26 +788,24 @@ onMounted(() => {
 	height: 100%;
 	background-color: var(--el-bg-color);
 
-	&__header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 10px;
+	.search {
+		width: min(240px, 28vw);
 
-		.search {
-			width: 240px;
-
-			:deep(.el-input__wrapper) {
-				background-color: var(--el-fill-color-light);
-				box-shadow: none;
-				border-radius: 8px;
-				height: 39px;
-			}
+		:deep(.el-input__wrapper) {
+			height: 32px;
+			border-radius: 7px;
+			background-color: var(--el-fill-color-light);
+			box-shadow: none;
 		}
 	}
 
+	.plugin-tab-switch {
+		padding: 0;
+	}
+
 	&__container {
-		height: calc(100% - 59px);
+		height: 100%;
+		min-height: 0;
 
 		.list {
 			padding: 0 10px;

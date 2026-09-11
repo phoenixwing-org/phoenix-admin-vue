@@ -1,6 +1,12 @@
 <template>
-	<div class="page-login">
-		<section class="pah-login-hero" aria-label="Phoenix Admin Host">
+	<div
+		class="page-login"
+		:class="[
+			`pah-login--${branding.login.presentation}`,
+			{ 'is-plugin-brand': !brandStore.isHostDefault }
+		]"
+	>
+		<section class="pah-login-hero" :aria-label="branding.login.title" :style="heroStyle">
 			<div class="pah-aurora pah-aurora--warm"></div>
 			<div class="pah-aurora pah-aurora--cool"></div>
 			<div class="pah-grid"></div>
@@ -12,15 +18,12 @@
 					<span class="pah-spark pah-spark--one"></span>
 					<span class="pah-spark pah-spark--two"></span>
 					<span class="pah-spark pah-spark--three"></span>
-					<img src="/pah-phoenixwing-mark.svg" alt="" />
+					<img :src="branding.assets.logoDark.url" alt="" />
 				</div>
 
-				<p class="pah-eyebrow"><span></span> PHOENIXWING OPEN SOURCE</p>
-				<h1>Phoenix Admin Host</h1>
-				<p class="pah-hero-copy">
-					面向 Phoenix 业务模块的统一管理工作台。保留成熟权限底座，提供可切换的 Ribbon
-					与大分组侧栏。
-				</p>
+				<p class="pah-eyebrow"><span></span> {{ branding.login.eyebrow }}</p>
+				<h1>{{ branding.login.title }}</h1>
+				<p class="pah-hero-copy">{{ branding.login.subtitle }}</p>
 
 				<ul class="pah-capabilities" aria-label="宿主能力">
 					<li><span>01</span> Ribbon 工作台</li>
@@ -29,7 +32,7 @@
 				</ul>
 			</div>
 
-			<div class="pah-origin">
+			<div v-if="brandStore.isHostDefault" class="pah-origin">
 				<span>PHOENIX ADMIN / 8.x</span>
 				<span class="pah-origin-line"></span>
 				<span>POSTGRESQL READY</span>
@@ -39,13 +42,13 @@
 		<section class="pah-login-panel">
 			<div class="pah-login-card">
 				<div class="pah-mobile-brand">
-					<img src="/pah-phoenixwing-mark.svg" alt="" />
-					<strong>Phoenix Admin</strong>
+					<img :src="branding.assets.compactLogo.url" alt="" />
+					<strong>{{ branding.appName }}</strong>
 				</div>
 
 				<p class="pah-console-label"><span></span> SECURE ADMIN CONSOLE</p>
 				<h2>欢迎回来</h2>
-				<p class="pah-login-intro">登录 Phoenix Admin Host，继续管理您的工作区。</p>
+				<p class="pah-login-intro">{{ branding.login.prompt }}</p>
 
 				<div class="form">
 					<el-form label-position="top" class="form" :disabled="saving">
@@ -68,7 +71,7 @@
 							/>
 						</el-form-item>
 
-						<el-form-item :label="$t('验证码')">
+						<el-form-item v-if="captchaRequired" :label="$t('验证码')">
 							<el-input
 								v-model="form.verifyCode"
 								:placeholder="$t('验证码')"
@@ -112,7 +115,7 @@
 					{{ policyNotice }}
 				</p>
 
-				<div class="pah-fork-note">
+				<div v-if="brandStore.isHostDefault" class="pah-fork-note">
 					<span>MIT LICENSE</span>
 					<a href="https://gitee.com/phoenixwing/phoenix-admin-vue" target="_blank">
 						PhoenixWing 维护分叉 · 基于 Cool Admin 8.x
@@ -135,14 +138,26 @@ import { useBase } from '/$/base';
 import { storage } from '/@/cool/utils';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
-import { pahIdentityApi, type PahLoginPolicy } from '/@/pah/PahIdentityApi';
-import { pahIsAllowedAuthorizationUrl, pahNormalizeIdentityReturnTo } from '/@/pah/PahIdentityFlow';
+import { pahIdentityApi, type PahLoginPolicy } from '/@/phoenix/PahIdentityApi';
+import { pahIsAllowedAuthorizationUrl, pahNormalizeIdentityReturnTo } from '/@/phoenix/PahIdentityFlow';
 import PicCaptcha from './components/pic-captcha.vue';
+import { usePahPublicLoginBrandStore } from '/@/phoenix/PahPublicLoginBrandStore';
+import { createPasswordLoginPayload } from './password-login-payload';
 
 const { refs, setRefs, router, service } = useCool();
 const { user, app } = useBase();
 const { t } = useI18n();
 const route = useRoute();
+const brandStore = usePahPublicLoginBrandStore();
+const branding = computed(() => brandStore.current);
+const heroStyle = computed(() => {
+	const background = branding.value.assets.background;
+	return background
+		? {
+				backgroundImage: `linear-gradient(rgb(9 19 31 / 72%), rgb(9 19 31 / 88%)), url("${background.url}")`
+			}
+		: undefined;
+});
 
 // 状态
 const saving = ref(false);
@@ -155,6 +170,7 @@ const feishuMethod = computed(() => {
 		method => method.id === 'feishu' && method.enabled && method.ready
 	);
 });
+const captchaRequired = computed(() => loginPolicy.value?.captchaRequired !== false);
 
 // 表单数据
 const form = reactive({
@@ -213,7 +229,7 @@ async function toLogin() {
 		return ElMessage.error(t('密码不能为空'));
 	}
 
-	if (!form.verifyCode) {
+	if (captchaRequired.value && !form.verifyCode) {
 		return ElMessage.error(t('图片验证码不能为空'));
 	}
 
@@ -221,7 +237,9 @@ async function toLogin() {
 
 	try {
 		// 登录
-		await service.base.open.login(form).then(user.setToken);
+		await service.base.open
+			.login(createPasswordLoginPayload(form, captchaRequired.value))
+			.then(user.setToken);
 
 		// token 事件
 		await Promise.all(app.events.hasToken.map(e => e()));
@@ -233,7 +251,7 @@ async function toLogin() {
 		router.push('/');
 	} catch (err) {
 		// 刷新验证码
-		refs.picCaptcha.refresh();
+		refs.picCaptcha?.refresh?.();
 
 		// 提示错误
 		ElMessageBox.alert((err as Error).message, {
@@ -256,6 +274,24 @@ async function toLogin() {
 	overflow: hidden;
 	background: #f8fafc;
 	color: #111827;
+
+	&.is-plugin-brand .pah-login-hero {
+		background:
+			radial-gradient(circle at 16% 24%, rgb(43 211 209 / 24%), transparent 26%),
+			linear-gradient(145deg, #15356d 0%, #2764d4 56%, #4d55bd 100%);
+	}
+
+	&.pah-login--centered {
+		grid-template-columns: 1fr;
+
+		.pah-login-hero {
+			display: none;
+		}
+
+		.pah-mobile-brand {
+			display: flex;
+		}
+	}
 }
 
 .pah-login-hero {
@@ -268,6 +304,8 @@ async function toLogin() {
 	background: #09131f;
 	color: #f8fafc;
 	isolation: isolate;
+	background-position: center;
+	background-size: cover;
 }
 
 .pah-grid {

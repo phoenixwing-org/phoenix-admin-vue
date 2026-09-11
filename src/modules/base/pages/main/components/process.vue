@@ -55,6 +55,7 @@ import { useCool } from '/@/cool';
 import { ContextMenu } from '@cool-vue/crud';
 import { useBase } from '/$/base';
 import { useI18n } from 'vue-i18n';
+import { pahFocusFloatingViewPresentation } from '/@/phoenix/PahViewPresentationCoordinator';
 
 const { refs, setRefs, route, router, mitt } = useCool();
 const { process, app } = useBase();
@@ -110,6 +111,7 @@ function adScroll(index: number) {
 // 选择
 function onTap(item: Process.Item, index: number) {
 	adScroll(index);
+	if (pahFocusFloatingViewPresentation(item.pahPresentationViewId)) return;
 	router.push(item.fullPath);
 }
 

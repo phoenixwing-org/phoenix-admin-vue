@@ -1,5 +1,6 @@
 import type { Component, Directive, App } from 'vue';
 import type { Router as VueRouter, RouteRecordRaw } from 'vue-router';
+import type { PhoenixViewDialogRendererContribution } from '../../phoenix/PahViewDialogs';
 
 export declare type Merge<A, B> = Omit<A, keyof B> & B;
 
@@ -27,6 +28,10 @@ export declare interface ModuleConfig {
 		pc?: boolean;
 		h5?: boolean;
 		component: any;
+	};
+	/** Phoenix Host 受控能力贡献；不得把 controller、resolver 或窗口容器放进业务模块。 */
+	phoenix?: {
+		viewDialogRenderers?: PhoenixViewDialogRendererContribution[];
 	};
 	index?: {
 		component: any;

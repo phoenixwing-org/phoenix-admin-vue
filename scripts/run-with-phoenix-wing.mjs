@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { pahResolveLocalWing } from './pah-wing-mode.mjs';
+import { pahExecutableForPlatform, pahResolveLocalWing } from './pah-wing-mode.mjs';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const worktreeRoot = path.resolve(scriptDirectory, '..');
@@ -13,12 +13,13 @@ console.log(`[Wing][LOCAL] ${wing.root} (${wing.version}@${wing.commit.slice(0, 
 
 function run(command, args, options = {}) {
 	return new Promise((resolve, reject) => {
-		const child = spawn(command, args, { stdio: 'inherit', ...options });
+		const executable = pahExecutableForPlatform(command);
+		const child = spawn(executable, args, { stdio: 'inherit', ...options });
 		child.on('error', reject);
 		child.on('exit', (code, signal) => {
-			if (signal) reject(new Error(`${command} 被信号 ${signal} 中止`));
+			if (signal) reject(new Error(`${executable} 被信号 ${signal} 中止`));
 			else if (code === 0) resolve();
-			else reject(new Error(`${command} 退出码 ${code}`));
+			else reject(new Error(`${executable} 退出码 ${code}`));
 		});
 	});
 }

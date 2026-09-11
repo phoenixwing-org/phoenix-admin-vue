@@ -18,6 +18,10 @@ defineOptions({
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useBase } from '/$/base';
 import { useCool } from '/@/cool';
+import {
+	pahHasFloatingViewPresentations,
+	pahPinnedViewPresentationCacheNames
+} from '/@/phoenix/PahViewPresentationCoordinator';
 
 const { mitt } = useCool();
 const { process, app } = useBase();
@@ -27,15 +31,20 @@ const key = ref(1);
 
 // 缓存列表
 const caches = computed(() => {
-	return process.list
+	const routeCaches = process.list
 		.filter(e => e.meta?.keepAlive)
 		.map(e => {
 			return e.path.substring(1, e.path.length).replace(/\//g, '-');
 		});
+	return Array.from(new Set([...routeCaches, ...pahPinnedViewPresentationCacheNames.value]));
 });
 
 // 刷新页面
 function refresh() {
+	if (pahHasFloatingViewPresentations()) {
+		console.warn('[Phoenix View] 存在浮出 View，已阻止全局重建；请先收回浮窗再刷新');
+		return;
+	}
 	key.value += 1;
 }
 

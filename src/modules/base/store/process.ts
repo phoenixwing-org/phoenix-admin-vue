@@ -1,6 +1,10 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { assign } from 'lodash-es';
+import {
+	pahCreateViewPresentationId,
+	pahDisposeViewPresentation
+} from '/@/phoenix/PahViewPresentationCoordinator';
 
 export const useProcessStore = defineStore('process', function () {
 	const list = ref<Process.List>([]);
@@ -21,6 +25,9 @@ export const useProcessStore = defineStore('process', function () {
 			if (index < 0) {
 				list.value.push({
 					...data,
+					pahPresentationViewId: data.meta?.phoenixPluginModuleId
+						? pahCreateViewPresentationId()
+						: undefined,
 					active: true
 				});
 			} else {
@@ -34,22 +41,33 @@ export const useProcessStore = defineStore('process', function () {
 		const index = list.value.findIndex(e => e.active);
 
 		if (index > -1) {
-			list.value.splice(index, 1);
+			const [removed] = list.value.splice(index, 1);
+			pahDisposeViewPresentation(removed?.pahPresentationViewId);
 		}
 	}
 
 	// 移除
 	function remove(index: number) {
-		list.value.splice(index, 1);
+		const [removed] = list.value.splice(index, 1);
+		pahDisposeViewPresentation(removed?.pahPresentationViewId);
 	}
 
 	// 设置
 	function set(data: Process.Item[]) {
+		const retained = new Set(data.map(item => item.pahPresentationViewId).filter(Boolean));
+		for (const item of list.value) {
+			if (item.pahPresentationViewId && !retained.has(item.pahPresentationViewId)) {
+				pahDisposeViewPresentation(item.pahPresentationViewId);
+			}
+		}
 		list.value = data;
 	}
 
 	// 清空
 	function clear() {
+		for (const item of list.value) {
+			pahDisposeViewPresentation(item.pahPresentationViewId);
+		}
 		list.value = [];
 	}
 

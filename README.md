@@ -4,6 +4,8 @@ Phoenix Admin Host 的前端宿主。仓库以 Cool Admin Vue `8.x` 为固定基
 
 > 本仓库是 PhoenixWing 维护的 MIT 分叉，不是 Cool Admin 官方发行物。原 Cool Admin 版权、MIT 许可和 Git 历史完整保留。
 
+Phoenix 自有维护修改版权归凤凰之翼（PhoenixWing）贡献者所有。
+
 ## 当前阶段
 
 - `classic`：保留上游侧栏、顶栏、路由、页签与 KeepAlive，作为兼容和回退基线。
@@ -26,14 +28,14 @@ Bottom 是工作台实例级的全局“输出”窗口，使用 Wing 的 `PnwOu
 
 ## 仓库关系
 
-| 项目              | 地址/版本                                             |
-| ----------------- | ----------------------------------------------------- |
-| Phoenix 发行版    | `0.2.2`                                               |
-| Phoenix Wing      | Registry `phoenix-wing@0.6.3`                         |
-| Phoenix 仓库      | <https://gitee.com/phoenixwing/phoenix-admin-vue>     |
-| Cool Admin 上游   | <https://gitee.com/cool-team-official/cool-admin-vue> |
-| Cool 兼容固定基线 | `8.x` / `a2d4ee9bbfd6bfce880382f0bf6f8dd8f3397a2d`    |
-| 配套后端          | <https://gitee.com/phoenixwing/phoenix-admin-node>    |
+| 项目                | 地址/版本                                             |
+| ------------------- | ----------------------------------------------------- |
+| Phoenix 发行版      | `0.3.0`                                               |
+| Phoenix Wing        | Registry `phoenix-wing@0.6.3`                         |
+| Phoenix 仓库        | <https://gitee.com/phoenixwing/phoenix-admin-vue>     |
+| Cool Admin 上游     | <https://gitee.com/cool-team-official/cool-admin-vue> |
+| Cool 兼容固定基线   | `8.x` / `a2d4ee9bbfd6bfce880382f0bf6f8dd8f3397a2d`    |
+| 配套后端            | <https://gitee.com/phoenixwing/phoenix-admin-node>    |
 
 详细同步规则见 [UPSTREAM.md](UPSTREAM.md)。
 
@@ -80,3 +82,5 @@ pnpm diagnose:cool-eps
 Phoenix Admin Host 新增的源码、组件和类型统一使用 `Pah*` 前缀；Phoenix Wing 的公开符号继续使用其自身 `Pnw*` 前缀。数据库标识使用 SQL 安全的 `pah_` 前缀，不使用连字符。
 
 本仓库及仓内新增 `Pah*` 代码统一采用 MIT。根 [LICENSE](LICENSE) 保留上游原始版权和许可文本，Phoenix 分叉关系及第三方依赖边界见 [LICENSING.md](LICENSING.md) 与 [NOTICE](NOTICE)。
+
+Copyright © 2024–2026 凤凰之翼（PhoenixWing）贡献者。

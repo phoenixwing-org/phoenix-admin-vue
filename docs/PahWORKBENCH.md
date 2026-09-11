@@ -53,3 +53,63 @@ Workbench 不创建第二套路由或页签 store：
 当前 `cool-eps` 在无后端接口时会报告拉取失败，Vite 仍可完成构建；该提示属于
 联调环境事项，不视为 Host 编译失败。登录后的真实菜单、路由切换和响应式布局仍需在
 前后端联调环境做一次人工冒烟验收。
+
+## View 浮出边界
+
+Phoenix 插件 View 的 Host 默认浮出能力先在受控插件路由边界实施。Cool 原生 View 还涉及
+Process/MRU、KeepAlive pin、CRUD dirty/busy guard、overlay 与定向刷新，不能直接复用局部包装
+并宣称完成。完整后续计划见
+[《Cool 原生 View 默认浮出 TODO》](PhoenixCool原生View默认浮出TODO.md)。
+
+## 多消费者统一界面契约
+
+Phoenix Admin、业务插件和其他 Wing 消费端遵守同一套“公共组件、Host 生命周期、消费者内容”
+分层，避免每个消费者再实现一套浮窗、标题栏和工作台状态。
+
+### Wing 公共层
+
+- `PnwPageLayout`、`PnwPageHeader` 提供统一标题、说明、操作区、正文 inset 与滚动边界；View
+  不再手写 hero/header 壳。
+- View presentation、View Dialog、浮窗栈、推荐尺寸、焦点、Escape、明暗主题与 ARIA 由 Wing
+  维护；消费者不得复制 FloatingPanel、Portal、resolver 或 z-index 栈。
+- Primary、Secondary、Bottom、Output 和 Choice Dialog 只由 Wing 提供结构与中性状态，不读取
+  Admin 路由、权限、数据库或插件安装记录。
+
+### Admin Host 层
+
+- Host 将 route/process tab 投影为稳定 `viewInstanceId`，并拥有 Router、MRU、KeepAlive pin、权限
+  撤销、插件停用、登出与 owner 关闭生命周期。
+- 每个路由 View 只能有一个 presentation record 和一个 Portal；Host 在外层 provide context，标准
+  `PnwPageHeader` 自动取得“浮出/收回”动作。
+- Host 应用根只创建一套 Choice Dialog Host 与 View Dialog Host；renderer 白名单来自已通过健康
+  检查的插件贡献，单个贡献失败只隔离该插件。
+- dirty/busy/save/discard/cancel 属于 Host/产品关闭守卫；Wing 的收回动作不能被解释成销毁路由
+  或丢弃草稿。
+
+### 插件与其他消费者
+
+- 页面只提供业务组件、`PnwPageLayout`/`PnwPageHeader`、Primary/Secondary contribution、命令和
+  有限 JSON 对话框 props。
+- 不复制 Workbench、Ribbon、Output、Choice Dialog Host、View Portal、窗口堆栈或路由缓存。
+- 已有自管 Portal 的消费者先删除重复标题栏动作，再迁入 Host context；迁移期间必须显式
+  opt-out，禁止两套控制器同时生效。
+- 产品专有的文件事务、Canvas、工作空间、业务 Store 与关闭策略继续留在消费者；只有两个真实
+  消费者共享相同 DTO、fixture 和交互语义时，才下沉 Wing。
+
+### 统一门禁
+
+1. 源码测试确认页面显式导入并渲染 Wing 页面壳，不能留下未解析的自定义标签。
+2. 同一 View 的标题栏只出现一组“恢复、收回、关闭”动作，图标、tooltip 和 ARIA 各自唯一。
+3. 嵌入与浮出复用同一业务实例；收回、路由切换和 owner 关闭不产生第二份 Store 或草稿。
+4. 无插件、单插件、插件隔离三种状态下，Host 登录、导航和基础页面都可用。
+5. 本地 sibling 联调与 Registry 构建分别记录精确 Wing SHA/版本；不得用 `file:`、`link:`、
+   `workspace:` 或手改 `node_modules` 冒充正式消费。
+    - 普通 Admin 开发使用 `pnpm dev:local`，启动前校验 `package.json`、`node_modules` 与登录所需
+      Wing API，并固定消费 Registry 精确版本。
+    - 只有联合修改 Wing 源码时使用 `pnpm dev:wing-local`；该入口要求标准并列目录
+      `../phoenix-wing`，且本地源码版本必须与 Admin 精确依赖一致。
+    - Windows 由启动脚本调用 `pnpm.cmd`；不得因平台差异静默回退到旧 Wing 或相邻源码。
+6. 开源仓库的文档、测试名和发布说明只使用通用消费者描述，不记录私有项目、路径或接口。
+
+Phoenix 插件路由已进入该 Host 默认模型；Cool 原生 View 仍按上节 TODO 独立研究，不能把候选
+范围扩大成“所有 Cool 页面已经支持浮出”。
