@@ -33,6 +33,22 @@ export function pahAssertWingVersionAlignment(expected, actual, source) {
 	}
 }
 
+export function pahAssertLocalWingCompatibility(expected, actual) {
+	const expectedParts = String(expected).match(/^(\d+)\.(\d+)\.(\d+)/u)?.slice(1).map(Number);
+	const actualParts = String(actual).match(/^(\d+)\.(\d+)\.(\d+)/u)?.slice(1).map(Number);
+	if (
+		!expectedParts
+		|| !actualParts
+		|| actualParts[0] !== expectedParts[0]
+		|| actualParts[1] !== expectedParts[1]
+		|| actualParts[2] < expectedParts[2]
+	) {
+		throw new Error(
+			`Phoenix Wing 本地开发线不兼容：Admin Registry=${expected}，本地源码=${actual || '未知'}；本地版本必须位于同一 minor 且不低于 Registry 基线`
+		);
+	}
+}
+
 export function pahExecutableForPlatform(command, platform = process.platform) {
 	return platform === 'win32' && command === 'pnpm' ? 'pnpm.cmd' : command;
 }
@@ -65,7 +81,7 @@ export function pahResolveLocalWing(worktreeRoot, env = process.env) {
 
 	const manifest = pahReadJson(manifestPath);
 	const expectedVersion = pahExpectedWingVersion(canonicalAdminRoot);
-	pahAssertWingVersionAlignment(expectedVersion, manifest.version, '本地源码');
+	pahAssertLocalWingCompatibility(expectedVersion, manifest.version);
 	const commit = pahGitOutput(wingRoot, ['rev-parse', 'HEAD']);
 
 	return {

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
 	pahAssertWingVersionAlignment,
+	pahAssertLocalWingCompatibility,
 	pahExecutableForPlatform,
 	pahResolveRegistryWing
 } from './pah-wing-mode.mjs';
@@ -52,10 +53,10 @@ describe('Phoenix Wing 开发启动对齐', () => {
 		).toThrow('缺少 Admin 启动所需 API');
 	});
 
-	it('本地源码与 Admin 版本不一致时使用相同门禁', () => {
-		expect(() => pahAssertWingVersionAlignment('0.7.2', '0.7.1', '本地源码')).toThrow(
-			'Admin=0.7.2'
-		);
+	it('本地源码允许同一开发线上的更高 patch', () => {
+		expect(() => pahAssertLocalWingCompatibility('0.7.2', '0.7.4')).not.toThrow();
+		expect(() => pahAssertLocalWingCompatibility('0.7.2', '0.7.1')).toThrow('不兼容');
+		expect(() => pahAssertLocalWingCompatibility('0.7.2', '0.8.0')).toThrow('不兼容');
 	});
 
 	it('Windows 使用 pnpm.cmd，其他平台保持 pnpm', () => {

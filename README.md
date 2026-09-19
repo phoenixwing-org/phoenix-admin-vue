@@ -51,7 +51,8 @@ Phoenix Admin 使用独立 SemVer，不跟随 Cool Admin 的产品版本号。Co
 
 ```shell
 pnpm install
-pnpm dev
+pnpm dev   # Registry Wing
+pnpm wing  # 并列 ../phoenix-wing
 ```
 
 默认开发地址为 <http://localhost:9000>，开发代理连接 Phoenix Admin Node
@@ -66,7 +67,10 @@ pnpm test
 pnpm build
 ```
 
-标准 `pnpm dev` 启动时，Cool EPS 会先读取 `build/cool/eps.json`，再访问 Node Host
+`pnpm dev` 固定消费 manifest/lockfile 中的 Registry Wing；只有联合修改 Wing 源码时才运行
+`pnpm wing`，该命令会校验并构建同级 `../phoenix-wing`，不修改依赖清单和锁文件。
+
+启动时，Cool EPS 会先读取 `build/cool/eps.json`，再访问 Node Host
 刷新接口描述。后端尚未启动时，上游插件会打印红色 `[cool-eps]` 信息，但存在本地缓存时
 Vite 仍可正常启动；可先运行以下诊断区分“缓存降级”和真正缺少 API/缓存：
 
