@@ -11,7 +11,7 @@ import {
 
 const temporaryRoots = [];
 
-function createRegistryFixture({ expected = '0.7.2', actual = expected, declarations = '' } = {}) {
+function createRegistryFixture({ expected = '0.7.5', actual = expected, declarations = '' } = {}) {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'phoenix-admin-wing-'));
 	temporaryRoots.push(root);
 	const wingRoot = path.join(root, 'node_modules', 'phoenix-wing');
@@ -35,10 +35,10 @@ afterEach(() => {
 });
 
 describe('Phoenix Wing 开发启动对齐', () => {
-	it('接受精确 Registry 0.7.2 制品及登录启动 API', () => {
+	it('接受精确 Registry 0.7.5 制品及登录启动 API', () => {
 		const resolved = pahResolveRegistryWing(createRegistryFixture());
-		expect(resolved.version).toBe('0.7.2');
-		expect(resolved.expectedVersion).toBe('0.7.2');
+		expect(resolved.version).toBe('0.7.5');
+		expect(resolved.expectedVersion).toBe('0.7.5');
 	});
 
 	it('node_modules 版本落后时在 Vite 启动前失败', () => {
@@ -57,6 +57,12 @@ describe('Phoenix Wing 开发启动对齐', () => {
 		expect(() => pahAssertLocalWingCompatibility('0.7.2', '0.7.4')).not.toThrow();
 		expect(() => pahAssertLocalWingCompatibility('0.7.2', '0.7.1')).toThrow('不兼容');
 		expect(() => pahAssertLocalWingCompatibility('0.7.2', '0.8.0')).toThrow('不兼容');
+	});
+
+	it('Registry 仍要求精确版本对齐', () => {
+		expect(() => pahAssertWingVersionAlignment('0.7.5', '0.7.2', 'node_modules')).toThrow(
+			'Admin=0.7.5'
+		);
 	});
 
 	it('Windows 使用 pnpm.cmd，其他平台保持 pnpm', () => {

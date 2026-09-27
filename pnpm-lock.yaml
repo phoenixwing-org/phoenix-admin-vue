@@ -57,8 +57,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       phoenix-wing:
-        specifier: 0.7.2
-        version: 0.7.2(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4))
+        specifier: 0.7.5
+        version: 0.7.5(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4))
       pinia:
         specifier: ^2.3.1
         version: 2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4))
@@ -733,8 +733,8 @@ packages:
     resolution: {integrity: sha512-dfUnCxiN9H4ap84DvD2ubjw+3vUNpstxa0TneY/Paat8a3R4uQZDLSvWjmznAY/DoahqTHl9V46HF/Zs3F29pg==}
     engines: {node: '>= 10.0.0'}
 
-  '@phoenix-wing/code-core@0.6.4':
-    resolution: {integrity: sha512-JwR5rB9pfY0CdSsDkT1fskiYj6H7WhrIgx3fWDYtv5+1z4VPgfQlpdIPvBL/SDfQMJxuAspnuCVQB6I2Q/pMPA==}
+  '@phoenix-wing/code-core@0.6.6':
+    resolution: {integrity: sha512-gW4m9nbD67j+mK+e6LYpf/GmCWLsJ812a6MmFtwS+M0Yg8rIdd2hFyWDhGdlNvAobT/prXoLy+7w+sm9uLVauA==}
 
   '@phoenix-wing/db-node@0.6.3':
     resolution: {integrity: sha512-wX3IxX1iB4ulVZO1cmh5KZOl64lULTKhWmDieWc3RKGxVbXJPbAn0Yydq/9ZQdDpKuE6UaBrb4d/iTRvxONyYw==}
@@ -1709,6 +1709,7 @@ packages:
   eslint@9.31.0:
     resolution: {integrity: sha512-QldCVh/ztyKJJZLr4jXNUByx3gR+TDYZCRXEktiZoUR3PGy4qCmSbkxcIle8GEwGpb5JBZazlaJ/CxLidXdEbQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -1893,6 +1894,7 @@ packages:
 
   glob@10.4.5:
     resolution: {integrity: sha512-7Bv8RF0k6xjo7d4A/PxYLbUCfb6c+Vpd2/mB2yRDlew7Jb5hEXiCD9ibfO7wpk8i4sevK6DFny9h7EYbM3/sHg==}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   globals@13.24.0:
@@ -2369,8 +2371,8 @@ packages:
   perfect-debounce@1.0.0:
     resolution: {integrity: sha512-xCy9V055GLEqoFaHoC1SoLIaLmWctgCUaBaWxDZ7/Zx4CTyX7cJQLJOok/orfjZAh9kEYpjJa4d0KcJmCbctZA==}
 
-  phoenix-wing@0.7.2:
-    resolution: {integrity: sha512-/o89wI0Rj6xUXh6JQBnJDOvRnf/SlA1+Uwv/BnhNVUuRWB5SZhXVp/JhcIYNeNluMLA/ozTDA2pIBnwBiS7rSA==}
+  phoenix-wing@0.7.5:
+    resolution: {integrity: sha512-UILnKZl6luelwwkdQcmgSIBUgIqCd6+VlbK14K5IiKOCKUQoBVDCguoS1jwiY87SZSZMp4/Jw/zbitD5e3tuFA==}
     peerDependencies:
       element-plus: ^2.0.0
       pinia: ^2.0.0 || ^3.0.0
@@ -2954,6 +2956,7 @@ packages:
   vue-i18n@11.1.10:
     resolution: {integrity: sha512-C+IwnSg8QDSOAox0gdFYP5tsKLx5jNWxiawNoiNB/Tw4CReXmM1VJMXbduhbrEzAFLhreqzfDocuSVjGbxQrag==}
     engines: {node: '>= 16'}
+    deprecated: This version is NOT deprecated. Previous deprecation was a mistake.
     peerDependencies:
       vue: ^3.0.0
 
@@ -3599,7 +3602,7 @@ snapshots:
       '@parcel/watcher-win32-x64': 2.5.1
     optional: true
 
-  '@phoenix-wing/code-core@0.6.4': {}
+  '@phoenix-wing/code-core@0.6.6': {}
 
   '@phoenix-wing/db-node@0.6.3':
     dependencies:
@@ -5313,9 +5316,9 @@ snapshots:
 
   perfect-debounce@1.0.0: {}
 
-  phoenix-wing@0.7.2(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4)):
+  phoenix-wing@0.7.5(element-plus@2.10.2(vue@3.5.18(typescript@5.5.4)))(pinia@2.3.1(typescript@5.5.4)(vue@3.5.18(typescript@5.5.4)))(vue@3.5.18(typescript@5.5.4)):
     dependencies:
-      '@phoenix-wing/code-core': 0.6.4
+      '@phoenix-wing/code-core': 0.6.6
       '@phoenix-wing/db-node': 0.6.3
     optionalDependencies:
       element-plus: 2.10.2(vue@3.5.18(typescript@5.5.4))

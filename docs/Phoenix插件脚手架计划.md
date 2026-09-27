@@ -4,7 +4,7 @@
 
 **Host 能力正在形成候选，脚手架仍待实施。** Phoenix Admin 已接入 Wing View Dialog Host，
 并在隔离分支实现 Phoenix 插件路由 View 的 Host 默认 presentation coordinator；当前仍等待
-`phoenix-wing@0.7.2` 正式发布、开发挂载浏览器矩阵与首个业务消费者验收。本轮仍不生成
+`phoenix-wing@0.7.5` 正式发布、开发挂载浏览器矩阵与首个业务消费者验收。本轮仍不生成
 脚手架代码、不新增独立插件仓库。
 
 ## 目标
